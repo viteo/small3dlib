@@ -188,14 +188,18 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     lErrAdd, rErrAdd,   // error value to add in each Bresenham cycle
     lErrSub, rErrSub;   // error value to substract when moving in x direction
 
+  int16_t helperDxAbs, helperDyAbs;
+
   #define initSide(v,p1,p2)\
     v##X = p1##PointX;\
     v##Dx = p2##PointX - p1##PointX;\
     v##Dy = p2##PointY - p1##PointY;\
+    helperDxAbs = S3L_abs(v##Dx);\
+    helperDyAbs = S3L_abs(v##Dy);\
     v##Inc = v##Dx >= 0 ? 1 : -1;\
-    v##Err = 2 * v##Dx - v##Dy; \
-    v##ErrAdd = 2 * S3L_abs(v##Dx);\
-    v##ErrSub = 2 * S3L_abs(v##Dy);
+    v##Err = 2 * helperDxAbs - helperDyAbs;\
+    v##ErrAdd = 2 * helperDxAbs;\
+    v##ErrSub = 2 * helperDyAbs;
 
   #define stepSide(s)\
     while (s##Err > 0)\

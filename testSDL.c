@@ -40,31 +40,33 @@ void drawPixel(S3L_PixelInfo *p)
 const int16_t test_coords[] =
   {
     100,100, 99,101,    101,101,  // 0, small triangle
-    90,50,   100,10,    300,80,   // 1, arbitrary
-    100,30,  20,50,     40,80     // 2, arbitrary
+    190,50,  200,10,    400,80,   // 1, arbitrary
+    40,80,   20,50,     100,30,   // 2, arbitrary
+    300,300, 290,400,   310,400,  // 3, regular
+    105,300, 120,300,   201,300,  // 4, horizontal line
+    400,300, 400,320,   400,400   // 5, vertical line
   };
 
 void draw()
 {
   clearScreen();
 
-int c = 0;
+  for (int c = 0; c < 4; ++c)
+  {
+    int
+      x0 = test_coords[6 * c],
+      y0 = test_coords[6 * c + 1],
+      x1 = test_coords[6 * c + 2],
+      y1 = test_coords[6 * c + 3],
+      x2 = test_coords[6 * c + 4],
+      y2 = test_coords[6 * c + 5];
 
-  int
-    x0 = test_coords[6 * c],
-    y0 = test_coords[6 * c + 1],
-    x1 = test_coords[6 * c + 2],
-    y1 = test_coords[6 * c + 3],
-    x2 = test_coords[6 * c + 4],
-    y2 = test_coords[6 * c + 5];
+    S3L_drawTriangle(x0,y0,x1,y1,x2,y2);
 
-  S3L_drawTriangle(x0,y0,x1,y1,x2,y2);
-
-/*
-  setPixel(x0,y0,255,0,0);
-  setPixel(x1,y1,255,0,0);
-  setPixel(x2,y2,255,0,0);
-*/
+    setPixel(x0,y0,255,0,0);
+    setPixel(x1,y1,255,0,0);
+    setPixel(x2,y2,255,0,0);
+  }
 }
 
 int main()
