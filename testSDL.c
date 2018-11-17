@@ -21,30 +21,50 @@ void clearScreen()
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
 {
   uint32_t r = red & 0x000000FF;
-  r = r << 16;
+  r = r << 24;
 
   uint32_t g = green & 0x000000FF;
-  g = g << 8;
+  g = g << 16;
 
   uint32_t b = blue & 0x000000FF;
+  b = b << 8;
 
   pixels[y * SCREEN_WIDTH + x] = r | g | b;
 }
 
 void drawPixel(S3L_PixelInfo *p)
 {
-  setPixel(p->x,p->y,255,255,0);
+  setPixel(p->x,p->y,255,255,255);
 }
+
+const int16_t test_coords[] =
+  {
+    100,100, 99,101,    101,101,  // 0, small triangle
+    90,50,   100,10,    300,80,   // 1, arbitrary
+    100,30,  20,50,     40,80     // 2, arbitrary
+  };
 
 void draw()
 {
   clearScreen();
 
-  setPixel(90,50,255,0,0);
-  setPixel(100,10,255,0,0);
-  setPixel(300,80,255,0,0);
+int c = 0;
 
-  S3L_drawTriangle(90,50,100,10,300,80);
+  int
+    x0 = test_coords[6 * c],
+    y0 = test_coords[6 * c + 1],
+    x1 = test_coords[6 * c + 2],
+    y1 = test_coords[6 * c + 3],
+    x2 = test_coords[6 * c + 4],
+    y2 = test_coords[6 * c + 5];
+
+  S3L_drawTriangle(x0,y0,x1,y1,x2,y2);
+
+/*
+  setPixel(x0,y0,255,0,0);
+  setPixel(x1,y1,255,0,0);
+  setPixel(x2,y2,255,0,0);
+*/
 }
 
 int main()

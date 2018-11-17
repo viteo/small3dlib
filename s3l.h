@@ -193,7 +193,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     v##Dx = p2##PointX - p1##PointX;\
     v##Dy = p2##PointY - p1##PointY;\
     v##Inc = v##Dx >= 0 ? 1 : -1;\
-    v##Err = 2 * v##Dx - v##Dy;\
+    v##Err = 2 * v##Dx - v##Dy; \
     v##ErrAdd = 2 * S3L_abs(v##Dx);\
     v##ErrSub = 2 * S3L_abs(v##Dy);
 
@@ -213,6 +213,8 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
   while (currentY <= endY)
   {
     p.y = currentY;
+
+    // draw the line
 
     for (S3L_COORD x = lX; x <= rX; ++x)
     {
