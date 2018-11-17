@@ -31,6 +31,16 @@ static inline int16_t S3L_abs(int16_t value)
   return value >= 0 ? value : -1 * value;
 }
 
+static inline int16_t S3L_min(int16_t v1, int16_t v2)
+{
+  return v1 >= v2 ? v2 : v1;
+}
+
+static inline int16_t S3L_max(int16_t v1, int16_t v2)
+{
+  return v1 >= v2 ? v1 : v2;
+}
+
 void S3L_bresenhamInit(S3L_BresenhamState *state, int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 {
   int16_t dx = x1 - x0;
@@ -145,19 +155,47 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
   #undef handleLR
 
+  S3L_COORD splitY;
+  S3L_COORD endY;
+  int splitOnLeft;
+
+  if (rPointY <= lPointY)
+  {
+    splitY = rPointY;
+    splitOnLeft = 0;
+    endY = lPointY;
+  }
+  else
+  {
+    splitY = lPointY;
+    splitOnLeft = 1;
+    endY = rPointY;
+  }
+
   S3L_COORD currentY = tPointY;
 
   /* We'll be using a slight modification of Bresenham line algorithm (a one
      that draws a _non-continous_ line). */
 
-  #define initSide(s)\
-    int16_t s##X = tPointX;\
-    int16_t s##Dx = s##PointX - tPointX;\
-    int16_t s##Dy = s##PointY - tPointY;\
-    int16_t s##Inc = s##Dx >= 0 ? 1 : -1;\
-    int16_t s##Err = 2 * s##Dx - s##Dy;\
-    int16_t s##ErrAdd = 2 * S3L_abs(s##Dx);\
-    int16_t s##ErrSub = 2 * S3L_abs(s##Dy);
+  int16_t
+    /* triangle side:
+    left     right */
+    lX,      rX,        // current x position
+    lDx,     rDx,       // dx (end point - start point)
+    lDy,     rDy,       // dy (end point - start point)
+    lInc,    rInc,      // direction in which to increment (1 or -1)
+    lErr,    rErr,      // current error (Bresenham)
+    lErrAdd, rErrAdd,   // error value to add in each Bresenham cycle
+    lErrSub, rErrSub;   // error value to substract when moving in x direction
+
+  #define initSide(v,p1,p2)\
+    v##X = p1##PointX;\
+    v##Dx = p2##PointX - p1##PointX;\
+    v##Dy = p2##PointY - p1##PointY;\
+    v##Inc = v##Dx >= 0 ? 1 : -1;\
+    v##Err = 2 * v##Dx - v##Dy;\
+    v##ErrAdd = 2 * S3L_abs(v##Dx);\
+    v##ErrSub = 2 * S3L_abs(v##Dy);
 
   #define stepSide(s)\
     while (s##Err > 0)\
@@ -167,12 +205,12 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     }\
     s##Err += s##ErrAdd;
 
-  initSide(r)
-  initSide(l)
+  initSide(r,t,r)
+  initSide(l,t,l)
 
   S3L_PixelInfo p;
 
-  while (currentY <= rPointY)
+  while (currentY <= endY)
   {
     p.y = currentY;
 
@@ -185,12 +223,25 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     stepSide(r)
     stepSide(l)
 
+    if (currentY == splitY)
+    {
+      if (splitOnLeft)
+      {
+        initSide(l,l,r);
+      }
+      else
+      {
+        initSide(r,r,l);
+      }
+    }
+
     ++currentY;
   }
 
   #undef initSide
   #undef stepSide
-  
+
+    
 }
 
 #endif
