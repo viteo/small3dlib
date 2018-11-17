@@ -51,6 +51,26 @@ static inline int16_t S3L_max(int16_t v1, int16_t v2)
   return v1 >= v2 ? v1 : v2;
 }
 
+/**
+  Interpolated between two values, v1 and v2, in the same ratio as t is to
+  tMax. Does NOT prevent zero division.
+*/
+
+static inline int16_t S3L_interpolate(int16_t v1, int16_t v2, int16_t t,
+  int16_t tMax)
+{
+  return v1 + ((v2 - v1) * t) / tMax;
+}
+
+/**
+  Same as S3L_interpolate but with v1 = 0. Should be faster.
+*/
+
+static inline int16_t S3L_interpolateFrom0(int16_t v2, int16_t t, int16_t tMax)
+{
+  return (v2 * t) / tMax;
+}
+
 void S3L_bresenhamInit(S3L_BresenhamState *state, int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 {
   int16_t dx = x1 - x0;
@@ -165,9 +185,9 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
   #undef handleLR
 
-  S3L_COORD splitY;
-  S3L_COORD endY;
-  int splitOnLeft;
+  S3L_COORD splitY; // Y at which one side (L or R) changes
+  S3L_COORD endY;   // bottom Y of the whole triangle
+  int splitOnLeft;  // whether split happens on L or R
 
   if (rPointY <= lPointY)
   {
@@ -198,12 +218,23 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     lErrAdd, rErrAdd,   // error value to add in each Bresenham cycle
     lErrSub, rErrSub;   // error value to substract when moving in x direction
 
+  S3L_UNIT
+    lSideUnitStep, rSideUnitStep,
+    lSideUnitPos,  rSideUnitPos;
+
   int16_t helperDxAbs;
 
-  #define initSide(v,p1,p2)\
+  #define initSide(v,p1,p2, down)\
     v##X = p1##PointX;\
     v##Dx = p2##PointX - p1##PointX;\
     v##Dy = p2##PointY - p1##PointY;\
+    v##SideUnitStep = S3L_FRACTIONS_PER_UNIT / (v##Dy != 0 ? v##Dy : 1);\
+    v##SideUnitPos = 0;\
+    if (!down)\
+    {\
+      v##SideUnitPos = S3L_FRACTIONS_PER_UNIT;\
+      v##SideUnitStep *= -1;\
+    }\
     helperDxAbs = S3L_abs(v##Dx);\
     v##Inc = v##Dx >= 0 ? 1 : -1;\
     v##Err = 2 * helperDxAbs - v##Dy;\
@@ -220,8 +251,8 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     }\
     s##Err += s##ErrAdd;
 
-  initSide(r,t,r)
-  initSide(l,t,l)
+  initSide(r,t,r,1)
+  initSide(l,t,l,1)
 
   S3L_PixelInfo p;
 
@@ -229,8 +260,9 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
   p.barycentricB = 0;
   p.barycentricC = 0;
 
-//lBarStep = S3L_FRACTIONS_PER_UNIT
-//rBarStep = S3L_FRACTIONS_PER_UNIT
+  S3L_UNIT *barycentric1 = &p.barycentricA;
+  S3L_UNIT *barycentric2 = &p.barycentricB;
+  S3L_UNIT *barycentric3 = &p.barycentricC;
 
   while (currentY <= endY)
   {
@@ -238,11 +270,20 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     {
       if (splitOnLeft)
       {
-        initSide(l,l,r);
+        initSide(l,l,r,0);
+
+        barycentric1 = &p.barycentricC;
+        barycentric2 = &p.barycentricB;
+        barycentric3 = &p.barycentricA;
+
+        rSideUnitPos = S3L_FRACTIONS_PER_UNIT - rSideUnitPos;
+        rSideUnitStep *= -1;
       }
       else
       {
-        initSide(r,r,l);
+        initSide(r,r,l,0);
+
+        // TODO
       }
     }
 
@@ -250,20 +291,36 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
     // draw the line
 
+    S3L_UNIT tMax = rX - lX;
+    tMax = tMax != 0 ? tMax : 1; // prevent division by zero
+
+    S3L_UNIT t1 = 0;
+    S3L_UNIT t2 = tMax;
+
     for (S3L_COORD x = lX; x <= rX; ++x)
     {
+      *barycentric1 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
+      *barycentric2 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
+      *barycentric3 = S3L_FRACTIONS_PER_UNIT - *barycentric1 - *barycentric2;
+
       p.x = x;
       S3L_PIXEL_FUNCTION(&p);
+
+      ++t1;
+      --t2;
     }
 
     stepSide(r)
     stepSide(l)
 
+    lSideUnitPos += lSideUnitStep;
+    rSideUnitPos += rSideUnitStep;
+
     ++currentY;
   }
 
   #undef initSide
-  #undef stepSide    
+  #undef stepSide
 }
 
 #endif

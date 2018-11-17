@@ -34,7 +34,13 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
 
 void drawPixel(S3L_PixelInfo *p)
 {
-  setPixel(p->x,p->y,255,255,255);
+
+
+  setPixel(p->x,p->y,
+    p->barycentricA / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
+    p->barycentricB / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
+    p->barycentricC / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
+
 }
 
 const int16_t test_coords[] =
@@ -62,10 +68,11 @@ void draw()
       y2 = test_coords[6 * c + 5];
 
     S3L_drawTriangle(x0,y0,x1,y1,x2,y2);
-
+/*
     setPixel(x0,y0,255,0,0);
     setPixel(x1,y1,255,0,0);
     setPixel(x2,y2,255,0,0);
+*/
   }
 }
 
