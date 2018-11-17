@@ -199,7 +199,10 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     v##Inc = v##Dx >= 0 ? 1 : -1;\
     v##Err = 2 * helperDxAbs - helperDyAbs;\
     v##ErrAdd = 2 * helperDxAbs;\
-    v##ErrSub = 2 * helperDyAbs;
+    v##ErrSub = 2 * (helperDyAbs != 0 ? helperDyAbs : 1);\
+    v##ErrSub = v##ErrSub != 0 ? v##ErrSub : 1; /* don't allow 0, could lead
+                                                   to an infinite substracting
+                                                   loop */
 
   #define stepSide(s)\
     while (s##Err > 0)\
@@ -216,6 +219,18 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
   while (currentY <= endY)
   {
+    if (currentY == splitY)
+    {
+      if (splitOnLeft)
+      {
+        initSide(l,l,r);
+      }
+      else
+      {
+        initSide(r,r,l);
+      }
+    }
+
     p.y = currentY;
 
     // draw the line
@@ -228,18 +243,6 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
     stepSide(r)
     stepSide(l)
-
-    if (currentY == splitY)
-    {
-      if (splitOnLeft)
-      {
-        initSide(l,l,r);
-      }
-      else
-      {
-        initSide(r,r,l);
-      }
-    }
 
     ++currentY;
   }
