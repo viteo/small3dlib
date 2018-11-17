@@ -3,12 +3,22 @@
 
 #include <stdint.h>
 
+typedef int16_t S3L_UNIT;
+#define S3L_FRACTIONS_PER_UNIT 1024
 typedef int16_t S3L_COORD;
 
 typedef struct
 {
-  int16_t x;
-  int16_t y;
+  S3L_COORD x;           ///< Screen X coordinate.
+  S3L_COORD y;           ///< Screen Y coordinate.
+
+  S3L_UNIT barycentricA; /**< Barycentric coord A. Together with B and C coords
+                              these serve to locate the pixel on a triangle and
+                              interpolate values between it's three points. The
+                              sum of the three coordinates will always be
+                              exactly S3L_FRACTIONS_PER_UNIT. */
+  S3L_UNIT barycentricB; ///< Baryc. coord B, same semantics as barycentricA.
+  S3L_UNIT barycentricC; ///< Baryc. coord C, same semantics as barycentricA.
 } S3L_PixelInfo;
 
 typedef struct
@@ -188,22 +198,20 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     lErrAdd, rErrAdd,   // error value to add in each Bresenham cycle
     lErrSub, rErrSub;   // error value to substract when moving in x direction
 
-  int16_t helperDxAbs, helperDyAbs;
+  int16_t helperDxAbs;
 
   #define initSide(v,p1,p2)\
     v##X = p1##PointX;\
     v##Dx = p2##PointX - p1##PointX;\
     v##Dy = p2##PointY - p1##PointY;\
     helperDxAbs = S3L_abs(v##Dx);\
-    helperDyAbs = S3L_abs(v##Dy);\
     v##Inc = v##Dx >= 0 ? 1 : -1;\
-    v##Err = 2 * helperDxAbs - helperDyAbs;\
+    v##Err = 2 * helperDxAbs - v##Dy;\
     v##ErrAdd = 2 * helperDxAbs;\
-    v##ErrSub = 2 * (helperDyAbs != 0 ? helperDyAbs : 1);\
+    v##ErrSub = 2 * v##Dy;\
     v##ErrSub = v##ErrSub != 0 ? v##ErrSub : 1; /* don't allow 0, could lead
                                                    to an infinite substracting
                                                    loop */
-
   #define stepSide(s)\
     while (s##Err > 0)\
     {\
@@ -216,6 +224,13 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
   initSide(l,t,l)
 
   S3L_PixelInfo p;
+
+  p.barycentricA = 0;
+  p.barycentricB = 0;
+  p.barycentricC = 0;
+
+//lBarStep = S3L_FRACTIONS_PER_UNIT
+//rBarStep = S3L_FRACTIONS_PER_UNIT
 
   while (currentY <= endY)
   {
@@ -248,9 +263,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
   }
 
   #undef initSide
-  #undef stepSide
-
-    
+  #undef stepSide    
 }
 
 #endif
