@@ -145,11 +145,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
   S3L_UNIT *barycentric0; // bar. coord that gets higher from L to R
   S3L_UNIT *barycentric1; // bar. coord that gets higher from R to L
-  S3L_UNIT *barycentric2; // bar. coord that is computed from previous two
-
-barycentric0 = &p.barycentric0;
-barycentric1 = &p.barycentric1;
-barycentric2 = &p.barycentric2;
+  S3L_UNIT *barycentric2; // bar. coord that gets higher from bottom up
 
   // Sort the points.
 
@@ -158,11 +154,15 @@ barycentric2 = &p.barycentric2;
     {\
       lPointX = x##a; lPointY = y##a;\
       rPointX = x##b; rPointY = y##b;\
+      barycentric0 = &p.barycentric##b;\
+      barycentric1 = &p.barycentric##a;\
     }\
     else\
     {\
       lPointX = x##b; lPointY = y##b;\
       rPointX = x##a; rPointY = y##a;\
+      barycentric0 = &p.barycentric##a;\
+      barycentric1 = &p.barycentric##b;\
     }
 
   if (y0 <= y1)
@@ -171,12 +171,14 @@ barycentric2 = &p.barycentric2;
     {
       tPointX = x0;
       tPointY = y0;
+      barycentric2 = &p.barycentric0;
       handleLR(1,2)
     }
     else
     {
       tPointX = x2;
       tPointY = y2;
+      barycentric2 = &p.barycentric2;
       handleLR(0,1)
     }
   }
@@ -186,12 +188,14 @@ barycentric2 = &p.barycentric2;
     {
       tPointX = x1;
       tPointY = y1;
+      barycentric2 = &p.barycentric1;
       handleLR(0,2)
     }
     else
     {
       tPointX = x2;
       tPointY = y2;
+      barycentric2 = &p.barycentric2;
       handleLR(0,1)
     }
   }
