@@ -47,7 +47,7 @@ const int16_t test_coords[] =
   {
     100,100, 99,101,    101,101,  // 0, small triangle
     190,50,  200,10,    400,80,   // 1, arbitrary
-    40,80,   20,50,     100,30,   // 2, arbitrary
+    40,80,   60,50,     100,30,   // 2, arbitrary
     350,270, 440,200,   490,220,  // 3, arbitrary
     150,300, 290,400,   450,400,  // 4, regular
     105,200, 120,200,   201,200,  // 5, horizontal line
@@ -58,7 +58,11 @@ void draw()
 {
   clearScreen();
 
-/*
+S3L_DrawConfig conf;
+
+conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
+
+
   for (int c = 0; c < 7; ++c)
   {
     int
@@ -69,26 +73,29 @@ void draw()
       x2 = test_coords[6 * c + 4],
       y2 = test_coords[6 * c + 5];
 
-    S3L_drawTriangle(x0,y0,x1,y1,x2,y2);
+//int cent = (x0 + x1 + x2) / 3.0;
+//x1 = cent + (x1 - cent) * sin(frame * 0.01);
+
+    S3L_drawTriangle(x0,y0,x1,y1,x2,y2,conf);
+
 
     setPixel(x0,y0,255,0,0);
     setPixel(x1,y1,255,0,0);
     setPixel(x2,y2,255,0,0);
+
   }
-*/
+
 
 int16_t rotX0 = 200 + sin(frame * 0.01) * 50;
 int16_t rotY0 = 200 + cos(frame * 0.01) * 50;
 
-int16_t rotX1 = 200 + sin((frame + 300) * 0.01) * 50;
-int16_t rotY1 = 200 + cos((frame + 300) * 0.01) * 50;
+int16_t rotX1 = 200 + sin((frame + 500) * 0.01) * 50;
+int16_t rotY1 = 200 + cos((frame + 500) * 0.01) * 50;
 
-int16_t rotX2 = 200 + sin((frame + 500) * 0.01) * 50;
-int16_t rotY2 = 200 + cos((frame + 500) * 0.01) * 50;
+int16_t rotX2 = 200 + sin((frame + 300) * 0.01) * 50;
+int16_t rotY2 = 200 + cos((frame + 300) * 0.01) * 50;
 
-S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2);
-
-
+S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2,conf);
 
 }
 

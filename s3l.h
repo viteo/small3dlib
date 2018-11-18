@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef int16_t S3L_UNIT;
+typedef int16_t S3L_Unit;
 #define S3L_FRACTIONS_PER_UNIT 1024
 typedef int16_t S3L_COORD;
 
@@ -12,15 +12,26 @@ typedef struct
   S3L_COORD x;           ///< Screen X coordinate.
   S3L_COORD y;           ///< Screen Y coordinate.
 
-  S3L_UNIT barycentric0; /**< Barycentric coord A (corresponds to 1st vertex).
+  S3L_Unit barycentric0; /**< Barycentric coord A (corresponds to 1st vertex).
                               Together with B and C coords these serve to
                               locate the pixel on a triangle and interpolate
                               values between it's three points. The sum of the
                               three coordinates will always be exactly
                               S3L_FRACTIONS_PER_UNIT. */
-  S3L_UNIT barycentric1; ///< Baryc. coord B (corresponds to 2nd vertex).
-  S3L_UNIT barycentric2; ///< Baryc. coord C (corresponds to 3rd vertex).
+  S3L_Unit barycentric1; ///< Baryc. coord B (corresponds to 2nd vertex).
+  S3L_Unit barycentric2; ///< Baryc. coord C (corresponds to 3rd vertex).
 } S3L_PixelInfo;
+
+#define S3L_BACKFACE_CULLING_NONE 0
+#define S3L_BACKFACE_CULLING_CW 1
+#define S3L_BACKFACE_CULLING_CCW 2
+
+typedef struct
+{
+  int backfaceCulling;
+} S3L_DrawConfig;
+
+void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
 
 typedef struct
 {
@@ -50,6 +61,16 @@ static inline int16_t S3L_min(int16_t v1, int16_t v2)
 static inline int16_t S3L_max(int16_t v1, int16_t v2)
 {
   return v1 >= v2 ? v1 : v2;
+}
+
+static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
+{
+  return value >= 0 ? (value % mod) : (mod + (value % mod) - 1);
+}
+
+static inline S3L_nonZero(S3L_Unit value)
+{
+  return value != 0 ? value : 1;
 }
 
 /**
@@ -130,7 +151,7 @@ int S3L_bresenhamStep(S3L_BresenhamState *state)
   return state->steps >= 0;
 }
 
-void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, S3L_DrawConfig config)
 {
   S3L_COORD
     tPointX, tPointY,    // top triangle point coords
@@ -143,14 +164,19 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
   p.barycentric1 = 0;
   p.barycentric2 = 0;
 
-  S3L_UNIT *barycentric0; // bar. coord that gets higher from L to R
-  S3L_UNIT *barycentric1; // bar. coord that gets higher from R to L
-  S3L_UNIT *barycentric2; // bar. coord that gets higher from bottom up
+  S3L_Unit *barycentric0; // bar. coord that gets higher from L to R
+  S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
+  S3L_Unit *barycentric2; // bar. coord that gets higher from bottom up
 
   // Sort the points.
 
-  #define handleLR(a,b)\
-    if (x##a <= x##b)\
+  #define handleLR(t,a,b)\
+    int16_t aDx = x##a - x##t;\
+    int16_t bDx = x##b - x##t;\
+    int16_t aDy = S3L_nonZero(y##a - y##t);\
+    int16_t bDy = S3L_nonZero(y##b - y##t);\
+    if ((aDx << 4) / aDy < (bDx << 4) / bDy)\
+    /*if (x##a <= x##b)*/\
     {\
       lPointX = x##a; lPointY = y##a;\
       rPointX = x##b; rPointY = y##b;\
@@ -172,14 +198,14 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
       tPointX = x0;
       tPointY = y0;
       barycentric2 = &p.barycentric0;
-      handleLR(1,2)
+      handleLR(0,1,2)
     }
     else
     {
       tPointX = x2;
       tPointY = y2;
       barycentric2 = &p.barycentric2;
-      handleLR(0,1)
+      handleLR(2,0,1)
     }
   }
   else
@@ -189,14 +215,14 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
       tPointX = x1;
       tPointY = y1;
       barycentric2 = &p.barycentric1;
-      handleLR(0,2)
+      handleLR(1,0,2)
     }
     else
     {
       tPointX = x2;
       tPointY = y2;
       barycentric2 = &p.barycentric2;
-      handleLR(0,1)
+      handleLR(2,0,1)
     }
   }
 
@@ -237,7 +263,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     lErrAdd, rErrAdd,   // error value to add in each Bresenham cycle
     lErrSub, rErrSub;   // error value to substract when moving in x direction
 
-  S3L_UNIT
+  S3L_Unit
     lSideUnitStep, rSideUnitStep,
     lSideUnitPos,  rSideUnitPos;
 
@@ -281,7 +307,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
       {
         initSide(l,l,r,0);
 
-        S3L_UNIT *tmp = barycentric0;
+        S3L_Unit *tmp = barycentric0;
         barycentric0 = barycentric2;
         barycentric2 = tmp;
 
@@ -292,7 +318,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
       {
         initSide(r,r,l,0);
 
-        S3L_UNIT *tmp = barycentric1;
+        S3L_Unit *tmp = barycentric1;
         barycentric1 = barycentric2;
         barycentric2 = tmp;
 
@@ -305,11 +331,11 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
     // draw the line
 
-    S3L_UNIT tMax = rX - lX;
+    S3L_Unit tMax = rX - lX;
     tMax = tMax != 0 ? tMax : 1; // prevent division by zero
 
-    S3L_UNIT t1 = 0;
-    S3L_UNIT t2 = tMax;
+    S3L_Unit t1 = 0;
+    S3L_Unit t2 = tMax;
 
     for (S3L_COORD x = lX; x <= rX; ++x)
     {
