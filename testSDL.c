@@ -1,3 +1,8 @@
+/*
+  author: Miloslav Ciz
+  license: CC0
+*/
+
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <math.h>

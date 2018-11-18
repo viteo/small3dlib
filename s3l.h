@@ -65,13 +65,12 @@ typedef struct
   int16_t minorIncrement;
   int16_t majorDiff;
   int16_t minorDiff; 
-} S3L_BresenhamState;
+} S3L_BresenhamState; ///< State of drawing a line with Bresenham algorithm.
 
 /**
   Returns a value interpolated between the three triangle vertices based on
   barycentric coordinates.
 */
-
 static inline S3L_Unit S3L_interpolateBarycentric(
   S3L_Unit value0, S3L_Unit value1, S3L_Unit value2,
   S3L_Unit barycentric0, S3L_Unit barycentric1, S3L_Unit barycentric2)
@@ -84,7 +83,7 @@ static inline S3L_Unit S3L_interpolateBarycentric(
     ) / S3L_FRACTIONS_PER_UNIT;
 }
 
-// general helper functions:
+// general helper functions
 
 static inline int16_t S3L_abs(int16_t value)
 {
@@ -115,7 +114,6 @@ static inline S3L_Unit S3L_nonZero(S3L_Unit value)
   Interpolated between two values, v1 and v2, in the same ratio as t is to
   tMax. Does NOT prevent zero division.
 */
-
 static inline int16_t S3L_interpolate(int16_t v1, int16_t v2, int16_t t,
   int16_t tMax)
 {
@@ -125,7 +123,6 @@ static inline int16_t S3L_interpolate(int16_t v1, int16_t v2, int16_t t,
 /**
   Same as S3L_interpolate but with v1 = 0. Should be faster.
 */
-
 static inline int16_t S3L_interpolateFrom0(int16_t v2, int16_t t, int16_t tMax)
 {
   return (v2 * t) / tMax;
@@ -190,8 +187,11 @@ int S3L_bresenhamStep(S3L_BresenhamState *state)
   return state->steps >= 0;
 }
 
-void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
-  int16_t x2, int16_t y2, S3L_DrawConfig config)
+void S3L_drawTriangle(
+  S3L_ScreenCoord x0, S3L_ScreenCoord y0,
+  S3L_ScreenCoord x1, S3L_ScreenCoord y1,
+  S3L_ScreenCoord x2, S3L_ScreenCoord y2,
+  S3L_DrawConfig config)
 {
   if (config.backfaceCulling != S3L_BACKFACE_CULLING_NONE)
   {
@@ -334,7 +334,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
 
   S3L_ScreenCoord splitY; // Y at which one side (L or R) changes
   S3L_ScreenCoord endY;   // bottom Y of the whole triangle
-  int splitOnLeft;  // whether split happens on L or R
+  int splitOnLeft;        // whether split happens on L or R
 
   if (rPointY <= lPointY)
   {
