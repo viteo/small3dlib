@@ -48,6 +48,25 @@ typedef struct
   int16_t minorDiff; 
 } S3L_BresenhamState;
 
+/**
+  Returns a value interpolated between the three triangle vertices based on
+  barycentric coordinates.
+*/
+
+static inline S3L_Unit S3L_interpolateBarycentric(
+  S3L_Unit value0, S3L_Unit value1, S3L_Unit value2,
+  S3L_Unit barycentric0, S3L_Unit barycentric1, S3L_Unit barycentric2)
+{
+  return
+    (
+      (value0 * barycentric0) +
+      (value1 * barycentric1) +
+      (value2 * barycentric2)
+    ) / S3L_FRACTIONS_PER_UNIT;
+}
+
+// general helper functions:
+
 static inline int16_t S3L_abs(int16_t value)
 {
   return value >= 0 ? value : -1 * value;
@@ -68,7 +87,7 @@ static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
   return value >= 0 ? (value % mod) : (mod + (value % mod) - 1);
 }
 
-static inline S3L_nonZero(S3L_Unit value)
+static inline S3L_Unit S3L_nonZero(S3L_Unit value)
 {
   return value != 0 ? value : 1;
 }
