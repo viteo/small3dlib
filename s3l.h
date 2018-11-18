@@ -1,5 +1,9 @@
 /*
-  WIP simple realtime 3D rasterization-based library.
+  WIP
+
+  Simple realtime 3D software rasterization library. It is fast, focused on
+  resource-limited computers, located in a single C header file, with no
+  dependencies, using only integer arithmetic.
 
   author: Miloslav Ciz
   license: CC0 1.0
@@ -10,8 +14,16 @@
 
 #include <stdint.h>
 
-typedef int16_t S3L_Unit;
+typedef int16_t S3L_Unit; /**< Units of measurement in 3D space. There is
+                               S3L_FRACTIONS_PER_UNIT in one spatial unit.
+                               By dividing the unit into fractions we
+                               effectively achieve fixed point arithmetic.
+                               The number of fractions is a constant that
+                               serves as 1.0 in floating point arithmetic
+                               (normalization etc.). */
+
 #define S3L_FRACTIONS_PER_UNIT 1024
+
 typedef int16_t S3L_ScreenCoord;
 
 typedef struct
@@ -26,14 +38,14 @@ typedef struct
   S3L_ScreenCoord x;           ///< Screen X coordinate.
   S3L_ScreenCoord y;           ///< Screen Y coordinate.
 
-  S3L_Unit barycentric0; /**< Barycentric coord A (corresponds to 1st vertex).
-                              Together with B and C coords these serve to
+  S3L_Unit barycentric0; /**< Barycentric coord 0 (corresponds to 1st vertex).
+                              Together with 1 and 2 coords these serve to
                               locate the pixel on a triangle and interpolate
                               values between it's three points. The sum of the
                               three coordinates will always be exactly
                               S3L_FRACTIONS_PER_UNIT. */
-  S3L_Unit barycentric1; ///< Baryc. coord B (corresponds to 2nd vertex).
-  S3L_Unit barycentric2; ///< Baryc. coord C (corresponds to 3rd vertex).
+  S3L_Unit barycentric1; ///< Baryc. coord 1 (corresponds to 2nd vertex).
+  S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
 } S3L_PixelInfo;
 
 #define S3L_BACKFACE_CULLING_NONE 0
