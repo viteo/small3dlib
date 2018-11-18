@@ -12,12 +12,19 @@
 
 typedef int16_t S3L_Unit;
 #define S3L_FRACTIONS_PER_UNIT 1024
-typedef int16_t S3L_COORD;
+typedef int16_t S3L_ScreenCoord;
 
 typedef struct
 {
-  S3L_COORD x;           ///< Screen X coordinate.
-  S3L_COORD y;           ///< Screen Y coordinate.
+  S3L_Unit x;
+  S3L_Unit y;
+  S3L_Unit z;
+} S3L_Vec3;
+
+typedef struct
+{
+  S3L_ScreenCoord x;           ///< Screen X coordinate.
+  S3L_ScreenCoord y;           ///< Screen Y coordinate.
 
   S3L_Unit barycentric0; /**< Barycentric coord A (corresponds to 1st vertex).
                               Together with B and C coords these serve to
@@ -191,7 +198,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
       return;
   }
 
-  S3L_COORD
+  S3L_ScreenCoord
     tPointX, tPointY,     // top triangle point coords
     lPointX, lPointY,     // left triangle point coords
     rPointX, rPointY;     // right triangle point coords
@@ -268,8 +275,8 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
 
   #undef handleLR
 
-  S3L_COORD splitY; // Y at which one side (L or R) changes
-  S3L_COORD endY;   // bottom Y of the whole triangle
+  S3L_ScreenCoord splitY; // Y at which one side (L or R) changes
+  S3L_ScreenCoord endY;   // bottom Y of the whole triangle
   int splitOnLeft;  // whether split happens on L or R
 
   if (rPointY <= lPointY)
@@ -285,7 +292,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
     endY = rPointY;
   }
 
-  S3L_COORD currentY = tPointY;
+  S3L_ScreenCoord currentY = tPointY;
 
   /* We'll be using a slight modification of Bresenham line algorithm (a one
      that draws a _non-continous_ line). */
@@ -375,7 +382,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
     S3L_Unit t1 = 0;
     S3L_Unit t2 = tMax;
 
-    for (S3L_COORD x = lX; x <= rX; ++x)
+    for (S3L_ScreenCoord x = lX; x <= rX; ++x)
     {
       *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
       *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
