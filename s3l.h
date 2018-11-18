@@ -1,3 +1,10 @@
+/*
+  WIP simple realtime 3D rasterization-based library.
+
+  author: Miloslav Ciz
+  license: CC0 1.0
+*/
+
 #ifndef S3L_H
 #define S3L_H
 
@@ -112,7 +119,8 @@ static inline int16_t S3L_interpolateFrom0(int16_t v2, int16_t t, int16_t tMax)
   return (v2 * t) / tMax;
 }
 
-void S3L_bresenhamInit(S3L_BresenhamState *state, int16_t x0, int16_t y0, int16_t x1, int16_t y1)
+void S3L_bresenhamInit(S3L_BresenhamState *state, int16_t x0, int16_t y0,
+  int16_t x1, int16_t y1)
 {
   int16_t dx = x1 - x0;
   int16_t dy = y1 - y0;
@@ -170,12 +178,23 @@ int S3L_bresenhamStep(S3L_BresenhamState *state)
   return state->steps >= 0;
 }
 
-void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, S3L_DrawConfig config)
+void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+  int16_t x2, int16_t y2, S3L_DrawConfig config)
 {
+  if (config.backfaceCulling != S3L_BACKFACE_CULLING_NONE)
+  {
+    int cw = // matrix determinant
+      x0 * y1 + y0 * x2 + x1 * y2 - y1 * x2 - y0 * x1 - x0 * y2 > 0;
+
+    if ((config.backfaceCulling == S3L_BACKFACE_CULLING_CW && !cw) ||
+        (config.backfaceCulling == S3L_BACKFACE_CULLING_CCW && cw))
+      return;
+  }
+
   S3L_COORD
-    tPointX, tPointY,    // top triangle point coords
-    lPointX, lPointY,    // left triangle point coords
-    rPointX, rPointY;    // right triangle point coords
+    tPointX, tPointY,     // top triangle point coords
+    lPointX, lPointY,     // left triangle point coords
+    rPointX, rPointY;     // right triangle point coords
 
   S3L_PixelInfo p;
 
@@ -245,7 +264,7 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     }
   }
 
-  // Now drive the triangle line by line.
+  // Now draw the triangle line by line.
 
   #undef handleLR
 

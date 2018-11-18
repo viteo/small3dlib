@@ -62,7 +62,6 @@ S3L_DrawConfig conf;
 
 conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
 
-
   for (int c = 0; c < 7; ++c)
   {
     int
@@ -73,18 +72,16 @@ conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
       x2 = test_coords[6 * c + 4],
       y2 = test_coords[6 * c + 5];
 
-//int cent = (x0 + x1 + x2) / 3.0;
-//x1 = cent + (x1 - cent) * sin(frame * 0.01);
+int cent = (x0 + x1 + x2) / 3.0;
+x2 = cent + (x2 - cent) * sin(frame * 0.01) * 2;
 
     S3L_drawTriangle(x0,y0,x1,y1,x2,y2,conf);
-
 
     setPixel(x0,y0,255,0,0);
     setPixel(x1,y1,255,0,0);
     setPixel(x2,y2,255,0,0);
 
   }
-
 
 int16_t rotX0 = 200 + sin(frame * 0.01) * 50;
 int16_t rotY0 = 200 + cos(frame * 0.01) * 50;
