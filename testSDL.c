@@ -37,9 +37,9 @@ void drawPixel(S3L_PixelInfo *p)
 
 
   setPixel(p->x,p->y,
-    p->barycentricA / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
-    p->barycentricB / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
-    p->barycentricC / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
+    p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
+    p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
+    p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
 
 }
 
@@ -58,6 +58,7 @@ void draw()
 {
   clearScreen();
 
+/*
   for (int c = 0; c < 7; ++c)
   {
     int
@@ -69,12 +70,26 @@ void draw()
       y2 = test_coords[6 * c + 5];
 
     S3L_drawTriangle(x0,y0,x1,y1,x2,y2);
-/*
+
     setPixel(x0,y0,255,0,0);
     setPixel(x1,y1,255,0,0);
     setPixel(x2,y2,255,0,0);
-*/
   }
+*/
+
+int16_t rotX0 = 200 + sin(frame * 0.01) * 50;
+int16_t rotY0 = 200 + cos(frame * 0.01) * 50;
+
+int16_t rotX1 = 200 + sin((frame + 300) * 0.01) * 50;
+int16_t rotY1 = 200 + cos((frame + 300) * 0.01) * 50;
+
+int16_t rotX2 = 200 + sin((frame + 500) * 0.01) * 50;
+int16_t rotY2 = 200 + cos((frame + 500) * 0.01) * 50;
+
+S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2);
+
+
+
 }
 
 int main()

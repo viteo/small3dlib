@@ -12,13 +12,14 @@ typedef struct
   S3L_COORD x;           ///< Screen X coordinate.
   S3L_COORD y;           ///< Screen Y coordinate.
 
-  S3L_UNIT barycentricA; /**< Barycentric coord A. Together with B and C coords
-                              these serve to locate the pixel on a triangle and
-                              interpolate values between it's three points. The
-                              sum of the three coordinates will always be
-                              exactly S3L_FRACTIONS_PER_UNIT. */
-  S3L_UNIT barycentricB; ///< Baryc. coord B, same semantics as barycentricA.
-  S3L_UNIT barycentricC; ///< Baryc. coord C, same semantics as barycentricA.
+  S3L_UNIT barycentric0; /**< Barycentric coord A (corresponds to 1st vertex).
+                              Together with B and C coords these serve to
+                              locate the pixel on a triangle and interpolate
+                              values between it's three points. The sum of the
+                              three coordinates will always be exactly
+                              S3L_FRACTIONS_PER_UNIT. */
+  S3L_UNIT barycentric1; ///< Baryc. coord B (corresponds to 2nd vertex).
+  S3L_UNIT barycentric2; ///< Baryc. coord C (corresponds to 3rd vertex).
 } S3L_PixelInfo;
 
 typedef struct
@@ -135,6 +136,20 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
     tPointX, tPointY,    // top triangle point coords
     lPointX, lPointY,    // left triangle point coords
     rPointX, rPointY;    // right triangle point coords
+
+  S3L_PixelInfo p;
+
+  p.barycentric0 = 0;
+  p.barycentric1 = 0;
+  p.barycentric2 = 0;
+
+  S3L_UNIT *barycentric0; // bar. coord that gets higher from L to R
+  S3L_UNIT *barycentric1; // bar. coord that gets higher from R to L
+  S3L_UNIT *barycentric2; // bar. coord that is computed from previous two
+
+barycentric0 = &p.barycentric0;
+barycentric1 = &p.barycentric1;
+barycentric2 = &p.barycentric2;
 
   // Sort the points.
 
@@ -254,16 +269,6 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
-  S3L_PixelInfo p;
-
-  p.barycentricA = 0;
-  p.barycentricB = 0;
-  p.barycentricC = 0;
-
-  S3L_UNIT *barycentric1 = &p.barycentricA;
-  S3L_UNIT *barycentric2 = &p.barycentricB;
-  S3L_UNIT *barycentric3 = &p.barycentricC;
-
   while (currentY <= endY)
   {
     if (currentY == splitY)
@@ -272,8 +277,9 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
       {
         initSide(l,l,r,0);
 
-        barycentric1 = &p.barycentricC;
-        barycentric3 = &p.barycentricA;
+        S3L_UNIT *tmp = barycentric0;
+        barycentric0 = barycentric2;
+        barycentric2 = tmp;
 
         rSideUnitPos = S3L_FRACTIONS_PER_UNIT - rSideUnitPos;
         rSideUnitStep *= -1;
@@ -282,8 +288,9 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
       {
         initSide(r,r,l,0);
 
-        barycentric2 = &p.barycentricC;
-        barycentric3 = &p.barycentricB;
+        S3L_UNIT *tmp = barycentric1;
+        barycentric1 = barycentric2;
+        barycentric2 = tmp;
 
         lSideUnitPos = S3L_FRACTIONS_PER_UNIT - lSideUnitPos;
         lSideUnitStep *= -1;
@@ -302,9 +309,9 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
 
     for (S3L_COORD x = lX; x <= rX; ++x)
     {
-      *barycentric1 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
-      *barycentric2 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
-      *barycentric3 = S3L_FRACTIONS_PER_UNIT - *barycentric1 - *barycentric2;
+      *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
+      *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
+      *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 
       p.x = x;
       S3L_PIXEL_FUNCTION(&p);
