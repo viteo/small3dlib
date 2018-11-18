@@ -40,9 +40,14 @@ typedef struct
 #define S3L_BACKFACE_CULLING_CW 1
 #define S3L_BACKFACE_CULLING_CCW 2
 
+#define S3L_MODE_TRIANGLES 0
+#define S3L_MODE_LINES 1
+#define S3L_MODE_POINTS 2
+
 typedef struct
 {
   int backfaceCulling;
+  int mode;
 } S3L_DrawConfig;
 
 void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
@@ -51,8 +56,8 @@ typedef struct
 {
   int16_t steps;
   int16_t err;
-  int16_t x;
-  int16_t y;
+  S3L_ScreenCoord x;
+  S3L_ScreenCoord y;
 
   int16_t *majorCoord;
   int16_t *minorCoord;
@@ -198,16 +203,68 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
       return;
   }
 
-  S3L_ScreenCoord
-    tPointX, tPointY,     // top triangle point coords
-    lPointX, lPointY,     // left triangle point coords
-    rPointX, rPointY;     // right triangle point coords
-
   S3L_PixelInfo p;
 
   p.barycentric0 = 0;
   p.barycentric1 = 0;
   p.barycentric2 = 0;
+
+  // point mode
+
+  if (config.mode == S3L_MODE_POINTS)
+  {
+    p.x = x0; p.y = y0; p.barycentric0 = S3L_FRACTIONS_PER_UNIT;
+    p.barycentric1 = 0; p.barycentric2 = 0;
+    S3L_PIXEL_FUNCTION(&p);
+
+    p.x = x1; p.y = y1; p.barycentric0 = 0;
+    p.barycentric1 = S3L_FRACTIONS_PER_UNIT; p.barycentric2 = 0;
+    S3L_PIXEL_FUNCTION(&p);
+
+    p.x = x2; p.y = y2; p.barycentric0 = 0;
+    p.barycentric1 = 0; p.barycentric2 = S3L_FRACTIONS_PER_UNIT;
+    S3L_PIXEL_FUNCTION(&p);
+ 
+    return;
+  }
+
+  // line mode
+
+  if (config.mode == S3L_MODE_LINES)
+  {
+    S3L_BresenhamState line;
+    S3L_Unit lineLen;
+
+    #define drawLine(p1,p2)\
+      S3L_bresenhamInit(&line,x##p1,y##p1,x##p2,y##p2);\
+      p.barycentric0 = 0;\
+      p.barycentric1 = 0;\
+      p.barycentric2 = 0;\
+      lineLen = S3L_nonZero(line.steps);\
+      do\
+      {\
+        p.x = line.x; p.y = line.y;\
+        p.barycentric##p1 = S3L_interpolateFrom0(\
+          S3L_FRACTIONS_PER_UNIT,line.steps,lineLen);  \
+        p.barycentric##p2 = S3L_FRACTIONS_PER_UNIT - p.barycentric##p1;\
+        S3L_PIXEL_FUNCTION(&p);\
+      } while (S3L_bresenhamStep(&line));
+   
+    drawLine(0,1)
+    drawLine(2,0)
+    drawLine(1,2)
+
+    #undef drawLine
+
+    return;
+  }
+
+  // triangle mode
+
+  S3L_ScreenCoord
+    tPointX, tPointY,     // top triangle point coords
+    lPointX, lPointY,     // left triangle point coords
+    rPointX, rPointY;     // right triangle point coords
 
   S3L_Unit *barycentric0; // bar. coord that gets higher from L to R
   S3L_Unit *barycentric1; // bar. coord that gets higher from R to L

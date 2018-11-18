@@ -34,8 +34,6 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
 
 void drawPixel(S3L_PixelInfo *p)
 {
-
-
   setPixel(p->x,p->y,
     p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
@@ -61,6 +59,7 @@ void draw()
 S3L_DrawConfig conf;
 
 conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
+conf.mode = S3L_MODE_TRIANGLES;
 
   for (int c = 0; c < 7; ++c)
   {
