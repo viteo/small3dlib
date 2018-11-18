@@ -48,16 +48,17 @@ const int16_t test_coords[] =
     100,100, 99,101,    101,101,  // 0, small triangle
     190,50,  200,10,    400,80,   // 1, arbitrary
     40,80,   20,50,     100,30,   // 2, arbitrary
-    150,300, 290,400,   450,400,  // 3, regular
-    105,300, 120,300,   201,300,  // 4, horizontal line
-    400,300, 400,320,   400,400   // 5, vertical line
+    350,270, 440,200,   490,220,  // 3, arbitrary
+    150,300, 290,400,   450,400,  // 4, regular
+    105,200, 120,200,   201,200,  // 5, horizontal line
+    300,200, 300,250,   300,220   // 6, vertical line
   };
 
 void draw()
 {
   clearScreen();
 
-  for (int c = 0; c < 4; ++c)
+  for (int c = 0; c < 7; ++c)
   {
     int
       x0 = test_coords[6 * c],

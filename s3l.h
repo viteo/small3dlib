@@ -273,7 +273,6 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
         initSide(l,l,r,0);
 
         barycentric1 = &p.barycentricC;
-        barycentric2 = &p.barycentricB;
         barycentric3 = &p.barycentricA;
 
         rSideUnitPos = S3L_FRACTIONS_PER_UNIT - rSideUnitPos;
@@ -283,7 +282,11 @@ void S3L_drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2
       {
         initSide(r,r,l,0);
 
-        // TODO
+        barycentric2 = &p.barycentricC;
+        barycentric3 = &p.barycentricB;
+
+        lSideUnitPos = S3L_FRACTIONS_PER_UNIT - lSideUnitPos;
+        lSideUnitStep *= -1;
       }
     }
 
