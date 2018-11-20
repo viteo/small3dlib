@@ -14,6 +14,8 @@
 
   Angles are in S3L_Units, a full angle (2 pi) is S3L_FRACTIONS_PER_UNITs.
 
+  We use row vectors.
+
   COORDINATE SYSTEMS:
 
   In 3D space, a left-handed coord. system is used. One spatial unit is split
@@ -58,20 +60,83 @@ typedef int16_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                serves as 1.0 in floating point arithmetic
                                (normalization etc.). */
 
-#define S3L_FRACTIONS_PER_UNIT 1024
+#define S3L_FRACTIONS_PER_UNIT 512 /**< How many fractions a spatial unit is
+                                        split into. WARNING: if setting
+                                        higher than 1024, you'll probably
+                                        have to modify a sin table otherwise
+                                        it will overflow. Also other things
+                                        may overflow, so rather don't do it. */
 
 #define S3L_SIN_TABLE_LENGTH 128
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 {
-  0, 12, 25, 37, 50, 62, 75, 87, 100, 112, 125, 137, 150, 162, 175, 187, 199,
-  212, 224, 236, 248, 260, 273, 285, 297, 309, 321, 333, 344, 356, 368, 380,
-  391, 403, 414, 426, 437, 449, 460, 471, 482, 493, 504, 515, 526, 537, 547,
-  558, 568, 579, 589, 599, 609, 620, 629, 639, 649, 659, 668, 678, 687, 696,
-  706, 715, 724, 732, 741, 750, 758, 767, 775, 783, 791, 799, 807, 814, 822,
-  829, 837, 844, 851, 858, 865, 871, 878, 884, 890, 897, 903, 908, 914, 920,
-  925, 930, 936, 941, 946, 950, 955, 959, 964, 968, 972, 976, 979, 983, 986,
-  990, 993, 996, 999, 1001, 1004, 1006, 1008, 1010, 1012, 1014, 1016, 1017,
-  1019, 1020, 1021, 1022, 1022, 1023, 1023, 1023
+  /* 511 was chosen here as a highest number that doesn't overflow during
+     compilation for S3L_FRACTIONS_PER_UNIT == 1024 */
+
+  (0*S3L_FRACTIONS_PER_UNIT)/511, (6*S3L_FRACTIONS_PER_UNIT)/511, 
+  (12*S3L_FRACTIONS_PER_UNIT)/511, (18*S3L_FRACTIONS_PER_UNIT)/511, 
+  (25*S3L_FRACTIONS_PER_UNIT)/511, (31*S3L_FRACTIONS_PER_UNIT)/511, 
+  (37*S3L_FRACTIONS_PER_UNIT)/511, (43*S3L_FRACTIONS_PER_UNIT)/511, 
+  (50*S3L_FRACTIONS_PER_UNIT)/511, (56*S3L_FRACTIONS_PER_UNIT)/511, 
+  (62*S3L_FRACTIONS_PER_UNIT)/511, (68*S3L_FRACTIONS_PER_UNIT)/511, 
+  (74*S3L_FRACTIONS_PER_UNIT)/511, (81*S3L_FRACTIONS_PER_UNIT)/511, 
+  (87*S3L_FRACTIONS_PER_UNIT)/511, (93*S3L_FRACTIONS_PER_UNIT)/511, 
+  (99*S3L_FRACTIONS_PER_UNIT)/511, (105*S3L_FRACTIONS_PER_UNIT)/511, 
+  (111*S3L_FRACTIONS_PER_UNIT)/511, (118*S3L_FRACTIONS_PER_UNIT)/511, 
+  (124*S3L_FRACTIONS_PER_UNIT)/511, (130*S3L_FRACTIONS_PER_UNIT)/511, 
+  (136*S3L_FRACTIONS_PER_UNIT)/511, (142*S3L_FRACTIONS_PER_UNIT)/511, 
+  (148*S3L_FRACTIONS_PER_UNIT)/511, (154*S3L_FRACTIONS_PER_UNIT)/511, 
+  (160*S3L_FRACTIONS_PER_UNIT)/511, (166*S3L_FRACTIONS_PER_UNIT)/511, 
+  (172*S3L_FRACTIONS_PER_UNIT)/511, (178*S3L_FRACTIONS_PER_UNIT)/511, 
+  (183*S3L_FRACTIONS_PER_UNIT)/511, (189*S3L_FRACTIONS_PER_UNIT)/511, 
+  (195*S3L_FRACTIONS_PER_UNIT)/511, (201*S3L_FRACTIONS_PER_UNIT)/511, 
+  (207*S3L_FRACTIONS_PER_UNIT)/511, (212*S3L_FRACTIONS_PER_UNIT)/511, 
+  (218*S3L_FRACTIONS_PER_UNIT)/511, (224*S3L_FRACTIONS_PER_UNIT)/511, 
+  (229*S3L_FRACTIONS_PER_UNIT)/511, (235*S3L_FRACTIONS_PER_UNIT)/511, 
+  (240*S3L_FRACTIONS_PER_UNIT)/511, (246*S3L_FRACTIONS_PER_UNIT)/511, 
+  (251*S3L_FRACTIONS_PER_UNIT)/511, (257*S3L_FRACTIONS_PER_UNIT)/511, 
+  (262*S3L_FRACTIONS_PER_UNIT)/511, (268*S3L_FRACTIONS_PER_UNIT)/511, 
+  (273*S3L_FRACTIONS_PER_UNIT)/511, (278*S3L_FRACTIONS_PER_UNIT)/511, 
+  (283*S3L_FRACTIONS_PER_UNIT)/511, (289*S3L_FRACTIONS_PER_UNIT)/511, 
+  (294*S3L_FRACTIONS_PER_UNIT)/511, (299*S3L_FRACTIONS_PER_UNIT)/511, 
+  (304*S3L_FRACTIONS_PER_UNIT)/511, (309*S3L_FRACTIONS_PER_UNIT)/511, 
+  (314*S3L_FRACTIONS_PER_UNIT)/511, (319*S3L_FRACTIONS_PER_UNIT)/511, 
+  (324*S3L_FRACTIONS_PER_UNIT)/511, (328*S3L_FRACTIONS_PER_UNIT)/511, 
+  (333*S3L_FRACTIONS_PER_UNIT)/511, (338*S3L_FRACTIONS_PER_UNIT)/511, 
+  (343*S3L_FRACTIONS_PER_UNIT)/511, (347*S3L_FRACTIONS_PER_UNIT)/511, 
+  (352*S3L_FRACTIONS_PER_UNIT)/511, (356*S3L_FRACTIONS_PER_UNIT)/511, 
+  (361*S3L_FRACTIONS_PER_UNIT)/511, (365*S3L_FRACTIONS_PER_UNIT)/511, 
+  (370*S3L_FRACTIONS_PER_UNIT)/511, (374*S3L_FRACTIONS_PER_UNIT)/511, 
+  (378*S3L_FRACTIONS_PER_UNIT)/511, (382*S3L_FRACTIONS_PER_UNIT)/511, 
+  (386*S3L_FRACTIONS_PER_UNIT)/511, (391*S3L_FRACTIONS_PER_UNIT)/511, 
+  (395*S3L_FRACTIONS_PER_UNIT)/511, (398*S3L_FRACTIONS_PER_UNIT)/511, 
+  (402*S3L_FRACTIONS_PER_UNIT)/511, (406*S3L_FRACTIONS_PER_UNIT)/511, 
+  (410*S3L_FRACTIONS_PER_UNIT)/511, (414*S3L_FRACTIONS_PER_UNIT)/511, 
+  (417*S3L_FRACTIONS_PER_UNIT)/511, (421*S3L_FRACTIONS_PER_UNIT)/511, 
+  (424*S3L_FRACTIONS_PER_UNIT)/511, (428*S3L_FRACTIONS_PER_UNIT)/511, 
+  (431*S3L_FRACTIONS_PER_UNIT)/511, (435*S3L_FRACTIONS_PER_UNIT)/511, 
+  (438*S3L_FRACTIONS_PER_UNIT)/511, (441*S3L_FRACTIONS_PER_UNIT)/511, 
+  (444*S3L_FRACTIONS_PER_UNIT)/511, (447*S3L_FRACTIONS_PER_UNIT)/511, 
+  (450*S3L_FRACTIONS_PER_UNIT)/511, (453*S3L_FRACTIONS_PER_UNIT)/511, 
+  (456*S3L_FRACTIONS_PER_UNIT)/511, (459*S3L_FRACTIONS_PER_UNIT)/511, 
+  (461*S3L_FRACTIONS_PER_UNIT)/511, (464*S3L_FRACTIONS_PER_UNIT)/511, 
+  (467*S3L_FRACTIONS_PER_UNIT)/511, (469*S3L_FRACTIONS_PER_UNIT)/511, 
+  (472*S3L_FRACTIONS_PER_UNIT)/511, (474*S3L_FRACTIONS_PER_UNIT)/511, 
+  (476*S3L_FRACTIONS_PER_UNIT)/511, (478*S3L_FRACTIONS_PER_UNIT)/511, 
+  (481*S3L_FRACTIONS_PER_UNIT)/511, (483*S3L_FRACTIONS_PER_UNIT)/511, 
+  (485*S3L_FRACTIONS_PER_UNIT)/511, (487*S3L_FRACTIONS_PER_UNIT)/511, 
+  (488*S3L_FRACTIONS_PER_UNIT)/511, (490*S3L_FRACTIONS_PER_UNIT)/511, 
+  (492*S3L_FRACTIONS_PER_UNIT)/511, (494*S3L_FRACTIONS_PER_UNIT)/511, 
+  (495*S3L_FRACTIONS_PER_UNIT)/511, (497*S3L_FRACTIONS_PER_UNIT)/511, 
+  (498*S3L_FRACTIONS_PER_UNIT)/511, (499*S3L_FRACTIONS_PER_UNIT)/511, 
+  (501*S3L_FRACTIONS_PER_UNIT)/511, (502*S3L_FRACTIONS_PER_UNIT)/511, 
+  (503*S3L_FRACTIONS_PER_UNIT)/511, (504*S3L_FRACTIONS_PER_UNIT)/511, 
+  (505*S3L_FRACTIONS_PER_UNIT)/511, (506*S3L_FRACTIONS_PER_UNIT)/511, 
+  (507*S3L_FRACTIONS_PER_UNIT)/511, (507*S3L_FRACTIONS_PER_UNIT)/511, 
+  (508*S3L_FRACTIONS_PER_UNIT)/511, (509*S3L_FRACTIONS_PER_UNIT)/511, 
+  (509*S3L_FRACTIONS_PER_UNIT)/511, (510*S3L_FRACTIONS_PER_UNIT)/511, 
+  (510*S3L_FRACTIONS_PER_UNIT)/511, (510*S3L_FRACTIONS_PER_UNIT)/511, 
+  (510*S3L_FRACTIONS_PER_UNIT)/511, (510*S3L_FRACTIONS_PER_UNIT)/511
 };
 
 #define S3L_SIN_TABLE_UNIT_STEP\
@@ -80,32 +145,81 @@ static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
 
+/**
+  Vector that consists of four scalars and can represent homogenous
+  coordinates, but is generally also used as Vec3 and Vec2.
+*/
+
 typedef struct
 {
   S3L_Unit x;
   S3L_Unit y;
   S3L_Unit z;
-} S3L_Vec3;
+  S3L_Unit w;
+} S3L_Vec4;
 
-static inline void S3L_initVec3(S3L_Vec3 *v)
+static inline void S3L_initVec4(S3L_Vec4 *v)
 {
-  v->x = 0; v->y = 0; v->z = 0;
+  v->x = 0; v->y = 0; v->z = 0; v->w = S3L_FRACTIONS_PER_UNIT;
 }
+
+typedef S3L_Unit S3L_Mat4[3][3]; /**< 4x4 matrix, used mostly for 3D
+                                      transforms. The indexing is this:
+                                      matrix[column][row]. */
+/**
+  Initializes a 4x4 matrix to identity.
+*/
+static inline void S3L_initMat4(S3L_Mat4 *m)
+{
+  #define M(x,y) (*m)[x][y]
+  #define S S3L_FRACTIONS_PER_UNIT
+
+  M(0,0) = 0; M(1,0) = 0; M(2,0) = 0; M(3,0) = S; 
+  M(0,1) = 0; M(1,1) = 0; M(2,1) = S; M(3,1) = 0; 
+  M(0,2) = 0; M(1,2) = S; M(2,2) = 0; M(3,2) = 0; 
+  M(0,3) = S; M(1,3) = 0; M(2,3) = 0; M(3,3) = 0; 
+
+  #undef M
+  #undef S
+}
+
+/**
+  Multiplies a vector by a matrix.
+*/
+
+static inline void S3L_Vec4xMat4(S3L_Vec4 *v, S3L_Mat4 *m)
+{
+  S3L_Vec4 vBackup;
+
+  vBackup.x = v->x;  
+  vBackup.y = v->y;  
+  vBackup.z = v->z;  
+  vBackup.w = v->w;  
+
+
+  v->x = vBackup.x * (*m)[0][0] +
+         vBackup.y * (*m)[0][1] +
+         vBackup.z * (*m)[0][2] +
+         vBackup.w * (*m)[0][3];
+
+}
+
+
 
 typedef struct
 {
-  S3L_Vec3 offset;
-  S3L_Vec3 rotation; /**< Euler angles. Rortation is applied in this order:
+  S3L_Vec4 offset;
+  S3L_Vec4 rotation; /**< Euler angles. Rortation is applied in this order:
                           1. z = around z (roll) CW looking along z+
                           2. x = around x (pitch) CW looking along x+
                           3. y = around y (yaw) CW looking along y+ */
-  S3L_Vec3 scale;
+  S3L_Vec4 scale;
 } S3L_Transform3D;
 
 static inline void S3L_initTransoform3D(S3L_Transform3D *t)
 {
-  S3L_initVec3(&(t->offset));
-  S3L_initVec3(&(t->rotation));
+  S3L_initVec4(&(t->offset));
+  S3L_initVec4(&(t->rotation));
   t->scale.x = S3L_FRACTIONS_PER_UNIT;
   t->scale.y = S3L_FRACTIONS_PER_UNIT;
   t->scale.z = S3L_FRACTIONS_PER_UNIT;
@@ -628,9 +742,12 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
     (angleCos * (*y)) / S3L_FRACTIONS_PER_UNIT;
 }
 
+
+
+
 // FIXME: rewrite this to just apply one matrix, EFFICIENCY!!!
-static inline void S3L_mapModelToWorld(S3L_Vec3 point,
-  S3L_Transform3D *modelTransform, S3L_Vec3 *newPoint)
+static inline void S3L_mapModelToWorld(S3L_Vec4 point,
+  S3L_Transform3D *modelTransform, S3L_Vec4 *newPoint)
 {
   newPoint->x = point.x;
   newPoint->y = point.y;
@@ -645,15 +762,18 @@ static inline void S3L_mapModelToWorld(S3L_Vec3 point,
   newPoint->z += modelTransform->offset.z;
 }
 
-static inline void S3L_mapWorldToCamera(S3L_Vec3 point,
-  S3L_Transform3D *cameraTransform, S3L_Vec3 *newPoint)
+static inline void S3L_mapWorldToCamera(S3L_Vec4 point,
+  S3L_Transform3D *cameraTransform, S3L_Vec4 *newPoint)
 {
   newPoint->x = point.x - cameraTransform->offset.x;
   newPoint->y = point.y - cameraTransform->offset.y;
   newPoint->z = point.z - cameraTransform->offset.z;
 }
 
-static inline void S3L_mapCameraToScreen(S3L_Vec3 point, S3L_Camera *camera,
+
+
+
+static inline void S3L_mapCameraToScreen(S3L_Vec4 point, S3L_Camera *camera,
   S3L_ScreenCoord *screenX, S3L_ScreenCoord *screenY)
 {
   uint16_t halfW = camera->resolutionX >> 1; // TODO: precompute earlier? 
@@ -676,7 +796,7 @@ void S3L_drawModel(
   S3L_Index coordIndex = 0;
 
   S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2;
-  S3L_Vec3 pointModel, pointWorld, pointCamera;
+  S3L_Vec4 pointModel, pointWorld, pointCamera;
   S3L_Unit indexIndex;
 
   while (triangleIndex < triangleCount)
