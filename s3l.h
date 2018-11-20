@@ -7,6 +7,38 @@
 
   author: Miloslav Ciz
   license: CC0 1.0
+
+  --------------------
+
+  COORDINATE SYSTEMS:
+
+  In 3D space, a left-handed coord. system is used. One spatial unit is split
+  into S3L_FRACTIONS_PER_UNIT fractions.
+
+     y ^
+       |   _ 
+       |   /| z
+       |  /
+       | /
+  [0,0,0]-------> x
+
+  Untransformed camera is placed at [0,0,0], looking forward along +z axis. The
+  projection plane is centered at [0,0,0], stretrinch from
+  -S3L_FRACTIONS_PER_UNIT to S3L_FRACTIONS_PER_UNIT horizontally (x),
+  vertical size (y) depends on the camera aspect ratio. Camera FOV is defined
+  by focal length.
+
+           y ^
+             |  _
+             |  /| z
+         ____|_/__
+        |    |/   |
+     -----[0,0,0]-|-----> x
+        |____|____|
+             |    
+             |
+
+  Coordinates of pixels on screen start typically at the top left.
 */
 
 #ifndef S3L_H
@@ -25,18 +57,19 @@ typedef int16_t S3L_Unit; /**< Units of measurement in 3D space. There is
 #define S3L_FRACTIONS_PER_UNIT 1024
 
 typedef int16_t S3L_ScreenCoord;
+typedef uint16_t S3L_Index;
 
 typedef struct
 {
-  S3L_Unit x;
-  S3L_Unit y;
-  S3L_Unit z;
-} S3L_Vec3;
+  uint16_t resolutionX;
+  uint16_t resolutionY;
+  S3L_Unit focalLength;       ///< Defines the field of view (FOV).
+} S3L_Camera;
 
 typedef struct
 {
-  S3L_ScreenCoord x;           ///< Screen X coordinate.
-  S3L_ScreenCoord y;           ///< Screen Y coordinate.
+  S3L_ScreenCoord x;          ///< Screen X coordinate.
+  S3L_ScreenCoord y;          ///< Screen Y coordinate.
 
   S3L_Unit barycentric0; /**< Barycentric coord 0 (corresponds to 1st vertex).
                               Together with 1 and 2 coords these serve to
@@ -46,6 +79,7 @@ typedef struct
                               S3L_FRACTIONS_PER_UNIT. */
   S3L_Unit barycentric1; ///< Baryc. coord 1 (corresponds to 2nd vertex).
   S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
+  S3L_Index triangleID;
 } S3L_PixelInfo;
 
 #define S3L_BACKFACE_CULLING_NONE 0
@@ -475,6 +509,59 @@ void S3L_drawTriangle(
 
   #undef initSide
   #undef stepSide
+}
+
+void S3L_mapViewToScreen(
+  S3L_Unit viewX,
+  S3L_Unit viewY,
+  S3L_Unit viewZ,
+  uint16_t screenWidth,
+  uint16_t screenHeight,
+  S3L_ScreenCoord *screenX,
+  S3L_ScreenCoord *screenY)
+{
+  uint16_t halfW = screenWidth >> 1; // TODO: precompute earlier? 
+  uint16_t halfH = screenHeight >> 1;
+
+  *screenX = halfW + (viewX * halfW) / S3L_FRACTIONS_PER_UNIT;
+  *screenY = halfH - (viewY * halfW) / S3L_FRACTIONS_PER_UNIT;
+}
+
+void S3L_drawModel(
+  const S3L_Unit coords[],
+  const S3L_Index triangleVertexIndices[],
+  uint16_t triangleCount,
+  S3L_Camera camera,
+  S3L_DrawConfig config)
+{
+  S3L_Index triangleIndex = 0;
+  S3L_Index coordIndex = 0;
+
+  while (triangleIndex < triangleCount)
+  {
+    S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2;
+    S3L_Unit vX, vY, vZ;
+    S3L_Unit indexIndex;
+
+    #define mapCoords(n)\
+      indexIndex = triangleVertexIndices[coordIndex] * 3;\
+      vX = coords[indexIndex];\
+      ++indexIndex; /* TODO: put into square brackets? */\
+      vY = coords[indexIndex];\
+      ++indexIndex;\
+      vZ = coords[indexIndex];\
+      ++coordIndex;\
+      S3L_mapViewToScreen(\
+        vX,vY,vZ,camera.resolutionX,camera.resolutionY,&sX##n,&sY##n);
+
+    mapCoords(0)
+    mapCoords(1)
+    mapCoords(2)
+
+    S3L_drawTriangle(sX0,sY0,sX1,sY1,sX2,sY2,config);
+
+    ++triangleIndex;
+  }
 }
 
 #endif
