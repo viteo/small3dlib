@@ -628,6 +628,7 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
     (angleCos * (*y)) / S3L_FRACTIONS_PER_UNIT;
 }
 
+// FIXME: rewrite this to just apply one matrix, EFFICIENCY!!!
 static inline void S3L_mapModelToWorld(S3L_Vec3 point,
   S3L_Transform3D *modelTransform, S3L_Vec3 *newPoint)
 {
