@@ -284,7 +284,8 @@ void S3L_drawTriangle(
   S3L_ScreenCoord x0, S3L_ScreenCoord y0,
   S3L_ScreenCoord x1, S3L_ScreenCoord y1,
   S3L_ScreenCoord x2, S3L_ScreenCoord y2,
-  S3L_DrawConfig config)
+  S3L_DrawConfig config,
+  S3L_Index triangleID)
 {
   if (config.backfaceCulling != S3L_BACKFACE_CULLING_NONE)
   {
@@ -298,6 +299,7 @@ void S3L_drawTriangle(
 
   S3L_PixelInfo p;
   S3L_initPixelInfo(&p);
+  p.triangleID = triangleID;
 
   // point mode
 
@@ -555,6 +557,14 @@ void S3L_drawTriangle(
   #undef stepSide
 }
 
+static inline void S3L_mapModelToWorld(S3L_Vec3 point,
+  S3L_Transform3D *modelTransform, S3L_Vec3 *newPoint)
+{
+  newPoint->x = point.x + modelTransform->offset.x;
+  newPoint->y = point.y + modelTransform->offset.y;
+  newPoint->z = point.z + modelTransform->offset.z;
+}
+
 static inline void S3L_mapWorldToCamera(S3L_Vec3 point,
   S3L_Transform3D *cameraTransform, S3L_Vec3 *newPoint)
 {
@@ -578,34 +588,36 @@ void S3L_drawModel(
   const S3L_Unit coords[],
   const S3L_Index triangleVertexIndices[],
   uint16_t triangleCount,
+  S3L_Transform3D modelTransform,
   S3L_Camera camera,
   S3L_DrawConfig config)
 {
   S3L_Index triangleIndex = 0;
   S3L_Index coordIndex = 0;
 
+  S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2;
+  S3L_Vec3 pointModel, pointWorld, pointCamera;
+  S3L_Unit indexIndex;
+
   while (triangleIndex < triangleCount)
   {
-    S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2;
-    S3L_Vec3 point, point2;
-    S3L_Unit indexIndex;
-
     #define mapCoords(n)\
       indexIndex = triangleVertexIndices[coordIndex] * 3;\
-      point.x = coords[indexIndex];\
+      pointModel.x = coords[indexIndex];\
       ++indexIndex; /* TODO: put into square brackets? */\
-      point.y = coords[indexIndex];\
+      pointModel.y = coords[indexIndex];\
       ++indexIndex;\
-      point.z = coords[indexIndex];\
+      pointModel.z = coords[indexIndex];\
       ++coordIndex;\
-      S3L_mapWorldToCamera(point,&camera.transform,&point2);\
-      S3L_mapCameraToScreen(point2,&camera,&sX##n,&sY##n);
+      S3L_mapModelToWorld(pointModel,&modelTransform,&pointWorld);\
+      S3L_mapWorldToCamera(pointWorld,&camera.transform,&pointCamera);\
+      S3L_mapCameraToScreen(pointCamera,&camera,&sX##n,&sY##n);
 
     mapCoords(0)
     mapCoords(1)
     mapCoords(2)
 
-    S3L_drawTriangle(sX0,sY0,sX1,sY1,sX2,sY2,config);
+    S3L_drawTriangle(sX0,sY0,sX1,sY1,sX2,sY2,config,triangleIndex);
 
     ++triangleIndex;
   }
