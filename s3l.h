@@ -10,6 +10,10 @@
 
   --------------------
 
+  CONVENTIONS:
+
+  Angles are in S3L_Units, a full angle (2 pi) is S3L_FRACTIONS_PER_UNITs.
+
   COORDINATE SYSTEMS:
 
   In 3D space, a left-handed coord. system is used. One spatial unit is split
@@ -91,7 +95,10 @@ static inline void S3L_initVec3(S3L_Vec3 *v)
 typedef struct
 {
   S3L_Vec3 offset;
-  S3L_Vec3 rotation;
+  S3L_Vec3 rotation; /**< Euler angles. Rortation is applied in this order:
+                          1. z = around z (roll) CW looking along z+
+                          2. x = around x (pitch) CW looking along x+
+                          3. y = around y (yaw) CW looking along y+ */
   S3L_Vec3 scale;
 } S3L_Transform3D;
 
@@ -223,17 +230,24 @@ static inline S3L_Unit S3L_nonZero(S3L_Unit value)
 static inline S3L_Unit S3L_sin(S3L_Unit x)
 {
   x = S3L_wrap(x / S3L_SIN_TABLE_UNIT_STEP,S3L_SIN_TABLE_LENGTH * 4);
+  int8_t positive = 1;
 
   if (x < S3L_SIN_TABLE_LENGTH)
     x = x;
   else if (x < S3L_SIN_TABLE_LENGTH * 2)
     x = S3L_SIN_TABLE_LENGTH * 2 - x - 1;
   else if (x < S3L_SIN_TABLE_LENGTH * 3)
+  {
     x = x - S3L_SIN_TABLE_LENGTH * 2;
+    positive = 0;
+  }
   else
+  {
     x = S3L_SIN_TABLE_LENGTH - (x - S3L_SIN_TABLE_LENGTH * 3) - 1;
+    positive = 0;
+  }
 
-  return S3L_sinTable[x];
+  return positive ? S3L_sinTable[x] : -1 * S3L_sinTable[x];
 }
 
 static inline S3L_Unit S3L_cos(S3L_Unit x)
@@ -595,12 +609,39 @@ void S3L_drawTriangle(
   #undef stepSide
 }
 
+static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
+{
+  if (angle < S3L_SIN_TABLE_UNIT_STEP)
+    return; // no visible rotation
+
+  S3L_Unit angleSin = S3L_sin(angle);
+  S3L_Unit angleCos = S3L_cos(angle);
+
+  S3L_Unit xBackup = *x;
+
+  *x =
+    (angleCos * (*x)) / S3L_FRACTIONS_PER_UNIT -
+    (angleSin * (*y)) / S3L_FRACTIONS_PER_UNIT;
+
+  *y =
+    (angleSin * xBackup) / S3L_FRACTIONS_PER_UNIT +
+    (angleCos * (*y)) / S3L_FRACTIONS_PER_UNIT;
+}
+
 static inline void S3L_mapModelToWorld(S3L_Vec3 point,
   S3L_Transform3D *modelTransform, S3L_Vec3 *newPoint)
 {
-  newPoint->x = point.x + modelTransform->offset.x;
-  newPoint->y = point.y + modelTransform->offset.y;
-  newPoint->z = point.z + modelTransform->offset.z;
+  newPoint->x = point.x;
+  newPoint->y = point.y;
+  newPoint->z = point.z;
+
+  S3L_rotate2DPoint(&(newPoint->x),&(newPoint->y),modelTransform->rotation.z);
+  S3L_rotate2DPoint(&(newPoint->z),&(newPoint->y),modelTransform->rotation.x);
+  S3L_rotate2DPoint(&(newPoint->z),&(newPoint->x),modelTransform->rotation.y);
+
+  newPoint->x += modelTransform->offset.x;
+  newPoint->y += modelTransform->offset.y;
+  newPoint->z += modelTransform->offset.z;
 }
 
 static inline void S3L_mapWorldToCamera(S3L_Vec3 point,
