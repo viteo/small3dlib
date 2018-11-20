@@ -56,6 +56,23 @@ typedef int16_t S3L_Unit; /**< Units of measurement in 3D space. There is
 
 #define S3L_FRACTIONS_PER_UNIT 1024
 
+#define S3L_SIN_TABLE_LENGTH 128
+static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
+{
+  0, 12, 25, 37, 50, 62, 75, 87, 100, 112, 125, 137, 150, 162, 175, 187, 199,
+  212, 224, 236, 248, 260, 273, 285, 297, 309, 321, 333, 344, 356, 368, 380,
+  391, 403, 414, 426, 437, 449, 460, 471, 482, 493, 504, 515, 526, 537, 547,
+  558, 568, 579, 589, 599, 609, 620, 629, 639, 649, 659, 668, 678, 687, 696,
+  706, 715, 724, 732, 741, 750, 758, 767, 775, 783, 791, 799, 807, 814, 822,
+  829, 837, 844, 851, 858, 865, 871, 878, 884, 890, 897, 903, 908, 914, 920,
+  925, 930, 936, 941, 946, 950, 955, 959, 964, 968, 972, 976, 979, 983, 986,
+  990, 993, 996, 999, 1001, 1004, 1006, 1008, 1010, 1012, 1014, 1016, 1017,
+  1019, 1020, 1021, 1022, 1022, 1023, 1023, 1023
+};
+
+#define S3L_SIN_TABLE_UNIT_STEP\
+  (S3L_FRACTIONS_PER_UNIT / (S3L_SIN_TABLE_LENGTH * 4))
+
 typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
 
@@ -201,6 +218,27 @@ static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
 static inline S3L_Unit S3L_nonZero(S3L_Unit value)
 {
   return value != 0 ? value : 1;
+}
+
+static inline S3L_Unit S3L_sin(S3L_Unit x)
+{
+  x = S3L_wrap(x / S3L_SIN_TABLE_UNIT_STEP,S3L_SIN_TABLE_LENGTH * 4);
+
+  if (x < S3L_SIN_TABLE_LENGTH)
+    x = x;
+  else if (x < S3L_SIN_TABLE_LENGTH * 2)
+    x = S3L_SIN_TABLE_LENGTH * 2 - x - 1;
+  else if (x < S3L_SIN_TABLE_LENGTH * 3)
+    x = x - S3L_SIN_TABLE_LENGTH * 2;
+  else
+    x = S3L_SIN_TABLE_LENGTH - (x - S3L_SIN_TABLE_LENGTH * 3) - 1;
+
+  return S3L_sinTable[x];
+}
+
+static inline S3L_Unit S3L_cos(S3L_Unit x)
+{
+  return S3L_sin(x - S3L_FRACTIONS_PER_UNIT / 4);
 }
 
 /**
