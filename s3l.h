@@ -61,10 +61,47 @@ typedef uint16_t S3L_Index;
 
 typedef struct
 {
+  S3L_Unit x;
+  S3L_Unit y;
+  S3L_Unit z;
+} S3L_Vec3;
+
+static inline void S3L_initVec3(S3L_Vec3 *v)
+{
+  v->x = 0; v->y = 0; v->z = 0;
+}
+
+typedef struct
+{
+  S3L_Vec3 offset;
+  S3L_Vec3 rotation;
+  S3L_Vec3 scale;
+} S3L_Transform3D;
+
+static inline void S3L_initTransoform3D(S3L_Transform3D *t)
+{
+  S3L_initVec3(&(t->offset));
+  S3L_initVec3(&(t->rotation));
+  t->scale.x = S3L_FRACTIONS_PER_UNIT;
+  t->scale.y = S3L_FRACTIONS_PER_UNIT;
+  t->scale.z = S3L_FRACTIONS_PER_UNIT;
+}
+
+typedef struct
+{
   uint16_t resolutionX;
   uint16_t resolutionY;
   S3L_Unit focalLength;       ///< Defines the field of view (FOV).
+  S3L_Transform3D transform;
 } S3L_Camera;
+
+static inline void S3L_initCamera(S3L_Camera *c)
+{
+  c->resolutionX = 128;
+  c->resolutionY = 64;
+  c->focalLength = S3L_FRACTIONS_PER_UNIT;
+  S3L_initTransoform3D(&(c->transform));
+}
 
 typedef struct
 {
@@ -81,6 +118,16 @@ typedef struct
   S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
   S3L_Index triangleID;
 } S3L_PixelInfo;
+
+static inline void S3L_initPixelInfo(S3L_PixelInfo *p)
+{
+  p->x = 0;
+  p->y = 0;
+  p->barycentric0 = S3L_FRACTIONS_PER_UNIT;
+  p->barycentric1 = 0;
+  p->barycentric2 = 0;
+  p->triangleID = 0;
+}
 
 #define S3L_BACKFACE_CULLING_NONE 0
 #define S3L_BACKFACE_CULLING_CW 1
@@ -250,10 +297,7 @@ void S3L_drawTriangle(
   }
 
   S3L_PixelInfo p;
-
-  p.barycentric0 = 0;
-  p.barycentric1 = 0;
-  p.barycentric2 = 0;
+  S3L_initPixelInfo(&p);
 
   // point mode
 
@@ -511,20 +555,23 @@ void S3L_drawTriangle(
   #undef stepSide
 }
 
-void S3L_mapViewToScreen(
-  S3L_Unit viewX,
-  S3L_Unit viewY,
-  S3L_Unit viewZ,
-  uint16_t screenWidth,
-  uint16_t screenHeight,
-  S3L_ScreenCoord *screenX,
-  S3L_ScreenCoord *screenY)
+static inline void S3L_mapWorldToCamera(S3L_Vec3 point,
+  S3L_Transform3D *cameraTransform, S3L_Vec3 *newPoint)
 {
-  uint16_t halfW = screenWidth >> 1; // TODO: precompute earlier? 
-  uint16_t halfH = screenHeight >> 1;
+  newPoint->x = point.x - cameraTransform->offset.x;
+  newPoint->y = point.y - cameraTransform->offset.y;
+  newPoint->z = point.z - cameraTransform->offset.z;
+}
 
-  *screenX = halfW + (viewX * halfW) / S3L_FRACTIONS_PER_UNIT;
-  *screenY = halfH - (viewY * halfW) / S3L_FRACTIONS_PER_UNIT;
+static inline void S3L_mapCameraToScreen(S3L_Vec3 point, S3L_Camera *camera,
+  S3L_ScreenCoord *screenX, S3L_ScreenCoord *screenY)
+{
+  uint16_t halfW = camera->resolutionX >> 1; // TODO: precompute earlier? 
+  uint16_t halfH = camera->resolutionY >> 1;
+
+  *screenX = halfW + (point.x * halfW) / point.z;
+  *screenY = halfH - (point.y * halfW) / point.z;
+  // ^ S3L_FRACTIONS_PER_UNIT cancel out
 }
 
 void S3L_drawModel(
@@ -540,19 +587,19 @@ void S3L_drawModel(
   while (triangleIndex < triangleCount)
   {
     S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2;
-    S3L_Unit vX, vY, vZ;
+    S3L_Vec3 point, point2;
     S3L_Unit indexIndex;
 
     #define mapCoords(n)\
       indexIndex = triangleVertexIndices[coordIndex] * 3;\
-      vX = coords[indexIndex];\
+      point.x = coords[indexIndex];\
       ++indexIndex; /* TODO: put into square brackets? */\
-      vY = coords[indexIndex];\
+      point.y = coords[indexIndex];\
       ++indexIndex;\
-      vZ = coords[indexIndex];\
+      point.z = coords[indexIndex];\
       ++coordIndex;\
-      S3L_mapViewToScreen(\
-        vX,vY,vZ,camera.resolutionX,camera.resolutionY,&sX##n,&sY##n);
+      S3L_mapWorldToCamera(point,&camera.transform,&point2);\
+      S3L_mapCameraToScreen(point2,&camera,&sX##n,&sY##n);
 
     mapCoords(0)
     mapCoords(1)

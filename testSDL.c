@@ -43,7 +43,6 @@ void drawPixel(S3L_PixelInfo *p)
     p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
-
 }
 
 const int16_t test_coords[] =
