@@ -52,14 +52,13 @@
 
 #include <stdint.h>
 
-typedef int16_t S3L_Unit; /**< Units of measurement in 3D space. There is
+typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                S3L_FRACTIONS_PER_UNIT in one spatial unit.
                                By dividing the unit into fractions we
                                effectively achieve fixed point arithmetic.
                                The number of fractions is a constant that
                                serves as 1.0 in floating point arithmetic
                                (normalization etc.). */
-
 #define S3L_FRACTIONS_PER_UNIT 512 /**< How many fractions a spatial unit is
                                         split into. WARNING: if setting
                                         higher than 1024, you'll probably
@@ -158,14 +157,24 @@ typedef struct
   S3L_Unit w;
 } S3L_Vec4;
 
+#define S3L_writeVec4(v)\
+  printf("Vec4: %d %d %d %d\n",(v.x),(v.y),(v.z),(v.w))
+
 static inline void S3L_initVec4(S3L_Vec4 *v)
 {
   v->x = 0; v->y = 0; v->z = 0; v->w = S3L_FRACTIONS_PER_UNIT;
 }
 
-typedef S3L_Unit S3L_Mat4[3][3]; /**< 4x4 matrix, used mostly for 3D
+typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
                                       transforms. The indexing is this:
                                       matrix[column][row]. */
+#define S3L_writeMat4(m)\
+  printf("Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
+   ,(m)[0][0],(m)[1][0],(m)[2][0],(m)[3][0],\
+    (m)[0][1],(m)[1][1],(m)[2][1],(m)[3][1],\
+    (m)[0][2],(m)[1][2],(m)[2][2],(m)[3][2],\
+    (m)[0][3],(m)[1][3],(m)[2][3],(m)[3][3])
+
 /**
   Initializes a 4x4 matrix to identity.
 */
@@ -174,20 +183,20 @@ static inline void S3L_initMat4(S3L_Mat4 *m)
   #define M(x,y) (*m)[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
 
-  M(0,0) = 0; M(1,0) = 0; M(2,0) = 0; M(3,0) = S; 
-  M(0,1) = 0; M(1,1) = 0; M(2,1) = S; M(3,1) = 0; 
-  M(0,2) = 0; M(1,2) = S; M(2,2) = 0; M(3,2) = 0; 
-  M(0,3) = S; M(1,3) = 0; M(2,3) = 0; M(3,3) = 0; 
+  M(0,0) = S; M(1,0) = 0; M(2,0) = 0; M(3,0) = 0; 
+  M(0,1) = 0; M(1,1) = S; M(2,1) = 0; M(3,1) = 0; 
+  M(0,2) = 0; M(1,2) = 0; M(2,2) = S; M(3,2) = 0; 
+  M(0,3) = 0; M(1,3) = 0; M(2,3) = 0; M(3,3) = S; 
 
   #undef M
   #undef S
 }
 
 /**
-  Multiplies a vector by a matrix.
+  Multiplies a vector by a matrix with normalization by S3L_FRACTIONS_PER_UNIT.
 */
 
-static inline void S3L_Vec4xMat4(S3L_Vec4 *v, S3L_Mat4 *m)
+static inline void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
 
@@ -196,15 +205,36 @@ static inline void S3L_Vec4xMat4(S3L_Vec4 *v, S3L_Mat4 *m)
   vBackup.z = v->z;  
   vBackup.w = v->w;  
 
+  // TODO: try alternative operation orders to optimize
 
-  v->x = vBackup.x * (*m)[0][0] +
-         vBackup.y * (*m)[0][1] +
-         vBackup.z * (*m)[0][2] +
-         vBackup.w * (*m)[0][3];
+  #define dot(col)\
+    (vBackup.x * (*m)[col][0]) / S3L_FRACTIONS_PER_UNIT +\
+    (vBackup.y * (*m)[col][1]) / S3L_FRACTIONS_PER_UNIT +\
+    (vBackup.z * (*m)[col][2]) / S3L_FRACTIONS_PER_UNIT +\
+    (vBackup.w * (*m)[col][3]) / S3L_FRACTIONS_PER_UNIT
 
+  v->x = dot(0);
+  v->y = dot(1);
+  v->z = dot(2);
+  v->w = dot(3);
+
+  #undef dot
 }
 
+static inline void S3L_makeTranslationMat(S3L_Unit offsetX, S3L_Unit offsetY,
+  S3L_Unit offsetZ, S3L_Mat4 *m)
+{
+  #define M(x,y) (*m)[x][y]
+  #define S S3L_FRACTIONS_PER_UNIT
 
+  M(0,0) = S; M(1,0) = 0; M(2,0) = 0; M(3,0) = 0; 
+  M(0,1) = 0; M(1,1) = S; M(2,1) = 0; M(3,1) = 0; 
+  M(0,2) = 0; M(1,2) = 0; M(2,2) = S; M(3,2) = 0; 
+  M(0,3) = offsetX; M(1,3) = offsetY; M(2,3) = offsetZ; M(3,3) = S;
+
+  #undef M
+  #undef S
+}
 
 typedef struct
 {
