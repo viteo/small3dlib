@@ -194,9 +194,10 @@ static inline void S3L_initMat4(S3L_Mat4 *m)
 
 /**
   Multiplies a vector by a matrix with normalization by S3L_FRACTIONS_PER_UNIT.
+  Result is stored in the input vector.
 */
 
-static inline void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
+void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
 
@@ -219,6 +220,30 @@ static inline void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
   v->w = dot(3);
 
   #undef dot
+}
+
+/**
+  Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT. Result
+  is stored in the first matrix.
+*/
+
+void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2)
+{
+  S3L_Mat4 mat1;
+
+  for (uint16_t row = 0; row < 4; ++row)
+    for (uint16_t col = 0; col < 4; ++col)
+      mat1[col][row] = (*m1)[col][row];
+
+  for (uint16_t row = 0; row < 4; ++row)
+    for (uint16_t col = 0; col < 4; ++col)
+    {
+      (*m1)[col][row] = 0;
+
+      for (uint16_t i = 0; i < 4; ++i)
+        (*m1)[col][row] +=
+          (mat1[i][row] * (*m2)[col][i]) / S3L_FRACTIONS_PER_UNIT;
+    }
 }
 
 static inline void S3L_makeTranslationMat(S3L_Unit offsetX, S3L_Unit offsetY,
