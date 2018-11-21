@@ -19,7 +19,7 @@
   COORDINATE SYSTEMS:
 
   In 3D space, a left-handed coord. system is used. One spatial unit is split
-  into S3L_FRACTIONS_PER_UNIT fractions.
+  into S3L_FRACTIONS_PER_UNIT fractions (fixed point arithmetic).
 
      y ^
        |   _ 
@@ -44,7 +44,7 @@
              |    
              |
 
-  Coordinates of pixels on screen start typically at the top left.
+  Coordinates of pixels on screen start typically at the top left, from [0,0].
 */
 
 #ifndef S3L_H
@@ -222,6 +222,33 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
   #undef dot
 }
 
+// general helper functions
+
+static inline int16_t S3L_abs(int16_t value)
+{
+  return value >= 0 ? value : -1 * value;
+}
+
+static inline int16_t S3L_min(int16_t v1, int16_t v2)
+{
+  return v1 >= v2 ? v2 : v1;
+}
+
+static inline int16_t S3L_max(int16_t v1, int16_t v2)
+{
+  return v1 >= v2 ? v1 : v2;
+}
+
+static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
+{
+  return value >= 0 ? (value % mod) : (mod + (value % mod) - 1);
+}
+
+static inline S3L_Unit S3L_nonZero(S3L_Unit value)
+{
+  return value != 0 ? value : 1;
+}
+
 /**
   Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT. Result
   is stored in the first matrix.
@@ -246,8 +273,36 @@ void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2)
     }
 }
 
-static inline void S3L_makeTranslationMat(S3L_Unit offsetX, S3L_Unit offsetY,
-  S3L_Unit offsetZ, S3L_Mat4 *m)
+S3L_Unit S3L_sin(S3L_Unit x)
+{
+  x = S3L_wrap(x / S3L_SIN_TABLE_UNIT_STEP,S3L_SIN_TABLE_LENGTH * 4);
+  int8_t positive = 1;
+
+  if (x < S3L_SIN_TABLE_LENGTH)
+    x = x;
+  else if (x < S3L_SIN_TABLE_LENGTH * 2)
+    x = S3L_SIN_TABLE_LENGTH * 2 - x - 1;
+  else if (x < S3L_SIN_TABLE_LENGTH * 3)
+  {
+    x = x - S3L_SIN_TABLE_LENGTH * 2;
+    positive = 0;
+  }
+  else
+  {
+    x = S3L_SIN_TABLE_LENGTH - (x - S3L_SIN_TABLE_LENGTH * 3) - 1;
+    positive = 0;
+  }
+
+  return positive ? S3L_sinTable[x] : -1 * S3L_sinTable[x];
+}
+
+static inline S3L_Unit S3L_cos(S3L_Unit x)
+{
+  return S3L_sin(x - S3L_FRACTIONS_PER_UNIT / 4);
+}
+
+void S3L_makeTranslationMat(
+  S3L_Unit offsetX, S3L_Unit offsetY, S3L_Unit offsetZ, S3L_Mat4 *m)
 {
   #define M(x,y) (*m)[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
@@ -259,6 +314,48 @@ static inline void S3L_makeTranslationMat(S3L_Unit offsetX, S3L_Unit offsetY,
 
   #undef M
   #undef S
+}
+
+/**
+  Makes a rotation matrix. For the rotation conventions (meaning, order, units)
+  see the appropriate structure comments.
+*/
+void S3L_makeRotationMatrix(
+  S3L_Unit aroundX, S3L_Unit aroundY, S3L_Unit aroundZ, S3L_Mat4 *m)
+{
+  S3L_Unit sx = S3L_sin(aroundX);
+  S3L_Unit sy = S3L_sin(aroundY);
+  S3L_Unit sz = S3L_sin(aroundZ);
+
+  S3L_Unit cx = S3L_cos(aroundX);
+  S3L_Unit cy = S3L_cos(aroundY);
+  S3L_Unit cz = S3L_cos(aroundZ);
+
+  #define M(x,y) (*m)[x][y]
+  #define S S3L_FRACTIONS_PER_UNIT
+
+  M(0,0) = (cy * cz) / S + (sy * sx * sz) / (S * S);
+  M(1,0) = (cx * sz) / S;
+  M(2,0) = (cy * sx * sz) / (S * S) - (cz * sy) / S;
+  M(3,0) = 0;
+
+  M(0,1) = (cz * sy * sx) / (S * S) - (cy * sz) / S;
+  M(1,1) = (cx * cz) / S;
+  M(2,1) = (cy * cz * sx) / (S * S) + (sy * sz) / S;
+  M(3,1) = 0;
+
+  M(0,2) = (cx * sy) / S;
+  M(1,2) = -1 * sx;
+  M(2,2) = (cy * cx) / S;
+  M(3,2) = 0;
+
+  M(0,3) = 0;
+  M(1,3) = 0;
+  M(2,3) = 0;
+  M(3,3) = S3L_FRACTIONS_PER_UNIT;
+
+  #undef M
+  #undef S 
 }
 
 typedef struct
@@ -367,61 +464,6 @@ static inline S3L_Unit S3L_interpolateBarycentric(
       (value1 * barycentric1) +
       (value2 * barycentric2)
     ) / S3L_FRACTIONS_PER_UNIT;
-}
-
-// general helper functions
-
-static inline int16_t S3L_abs(int16_t value)
-{
-  return value >= 0 ? value : -1 * value;
-}
-
-static inline int16_t S3L_min(int16_t v1, int16_t v2)
-{
-  return v1 >= v2 ? v2 : v1;
-}
-
-static inline int16_t S3L_max(int16_t v1, int16_t v2)
-{
-  return v1 >= v2 ? v1 : v2;
-}
-
-static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
-{
-  return value >= 0 ? (value % mod) : (mod + (value % mod) - 1);
-}
-
-static inline S3L_Unit S3L_nonZero(S3L_Unit value)
-{
-  return value != 0 ? value : 1;
-}
-
-static inline S3L_Unit S3L_sin(S3L_Unit x)
-{
-  x = S3L_wrap(x / S3L_SIN_TABLE_UNIT_STEP,S3L_SIN_TABLE_LENGTH * 4);
-  int8_t positive = 1;
-
-  if (x < S3L_SIN_TABLE_LENGTH)
-    x = x;
-  else if (x < S3L_SIN_TABLE_LENGTH * 2)
-    x = S3L_SIN_TABLE_LENGTH * 2 - x - 1;
-  else if (x < S3L_SIN_TABLE_LENGTH * 3)
-  {
-    x = x - S3L_SIN_TABLE_LENGTH * 2;
-    positive = 0;
-  }
-  else
-  {
-    x = S3L_SIN_TABLE_LENGTH - (x - S3L_SIN_TABLE_LENGTH * 3) - 1;
-    positive = 0;
-  }
-
-  return positive ? S3L_sinTable[x] : -1 * S3L_sinTable[x];
-}
-
-static inline S3L_Unit S3L_cos(S3L_Unit x)
-{
-  return S3L_sin(x - S3L_FRACTIONS_PER_UNIT / 4);
 }
 
 /**
@@ -799,11 +841,24 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
 
 void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
 {
+  S3L_makeRotationMatrix(
+    worldTransform.rotation.x,
+    worldTransform.rotation.y,
+    worldTransform.rotation.z,
+    m);
+
+S3L_Mat4 t;
+
+
   S3L_makeTranslationMat(
     worldTransform.translation.x,
     worldTransform.translation.y,
     worldTransform.translation.z,
-    m);
+    &t);
+
+S3L_mat4Xmat4(m,&t);
+
+  
 }
 
 void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
