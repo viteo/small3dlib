@@ -263,7 +263,7 @@ static inline void S3L_makeTranslationMat(S3L_Unit offsetX, S3L_Unit offsetY,
 
 typedef struct
 {
-  S3L_Vec4 offset;
+  S3L_Vec4 translation;
   S3L_Vec4 rotation; /**< Euler angles. Rortation is applied in this order:
                           1. z = around z (roll) CW looking along z+
                           2. x = around x (pitch) CW looking along x+
@@ -273,7 +273,7 @@ typedef struct
 
 static inline void S3L_initTransoform3D(S3L_Transform3D *t)
 {
-  S3L_initVec4(&(t->offset));
+  S3L_initVec4(&(t->translation));
   S3L_initVec4(&(t->rotation));
   t->scale.x = S3L_FRACTIONS_PER_UNIT;
   t->scale.y = S3L_FRACTIONS_PER_UNIT;
@@ -797,36 +797,23 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
     (angleCos * (*y)) / S3L_FRACTIONS_PER_UNIT;
 }
 
-
-
-
-// FIXME: rewrite this to just apply one matrix, EFFICIENCY!!!
-static inline void S3L_mapModelToWorld(S3L_Vec4 point,
-  S3L_Transform3D *modelTransform, S3L_Vec4 *newPoint)
+void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
 {
-  newPoint->x = point.x;
-  newPoint->y = point.y;
-  newPoint->z = point.z;
-
-  S3L_rotate2DPoint(&(newPoint->x),&(newPoint->y),modelTransform->rotation.z);
-  S3L_rotate2DPoint(&(newPoint->z),&(newPoint->y),modelTransform->rotation.x);
-  S3L_rotate2DPoint(&(newPoint->z),&(newPoint->x),modelTransform->rotation.y);
-
-  newPoint->x += modelTransform->offset.x;
-  newPoint->y += modelTransform->offset.y;
-  newPoint->z += modelTransform->offset.z;
+  S3L_makeTranslationMat(
+    worldTransform.translation.x,
+    worldTransform.translation.y,
+    worldTransform.translation.z,
+    m);
 }
 
-static inline void S3L_mapWorldToCamera(S3L_Vec4 point,
-  S3L_Transform3D *cameraTransform, S3L_Vec4 *newPoint)
+void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 {
-  newPoint->x = point.x - cameraTransform->offset.x;
-  newPoint->y = point.y - cameraTransform->offset.y;
-  newPoint->z = point.z - cameraTransform->offset.z;
+  S3L_makeTranslationMat(
+    -1 * cameraTransform.translation.x,
+    -1 * cameraTransform.translation.y,
+    -1 * cameraTransform.translation.z,
+    m);
 }
-
-
-
 
 static inline void S3L_mapCameraToScreen(S3L_Vec4 point, S3L_Camera *camera,
   S3L_ScreenCoord *screenX, S3L_ScreenCoord *screenY)
@@ -851,8 +838,16 @@ void S3L_drawModel(
   S3L_Index coordIndex = 0;
 
   S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2;
-  S3L_Vec4 pointModel, pointWorld, pointCamera;
+  S3L_Vec4 pointModel;
   S3L_Unit indexIndex;
+
+  pointModel.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
+
+  S3L_Mat4 mat1, mat2;
+
+  S3L_makeWorldMatrix(modelTransform,&mat1);
+  S3L_makeCameraMatrix(camera.transform,&mat2);
+  S3L_mat4Xmat4(&mat1,&mat2);
 
   while (triangleIndex < triangleCount)
   {
@@ -864,9 +859,8 @@ void S3L_drawModel(
       ++indexIndex;\
       pointModel.z = coords[indexIndex];\
       ++coordIndex;\
-      S3L_mapModelToWorld(pointModel,&modelTransform,&pointWorld);\
-      S3L_mapWorldToCamera(pointWorld,&camera.transform,&pointCamera);\
-      S3L_mapCameraToScreen(pointCamera,&camera,&sX##n,&sY##n);
+      S3L_vec4Xmat4(&pointModel,&mat1);\
+      S3L_mapCameraToScreen(pointModel,&camera,&sX##n,&sY##n);
 
     mapCoords(0)
     mapCoords(1)
