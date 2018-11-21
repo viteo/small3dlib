@@ -253,7 +253,6 @@ static inline S3L_Unit S3L_nonZero(S3L_Unit value)
   Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT. Result
   is stored in the first matrix.
 */
-
 void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2)
 {
   S3L_Mat4 mat1;
@@ -314,6 +313,23 @@ void S3L_makeTranslationMat(
 
   #undef M
   #undef S
+}
+
+/**
+  Makes a scaling matrix. DON'T FORGET: scale of 1.0 is set with
+  S3L_FRACTIONS_PER_UNIT!
+*/
+void S3L_makeScaleMatrix(
+  S3L_Unit scaleX, S3L_Unit scaleY, S3L_Unit scaleZ, S3L_Mat4 *m)
+{
+  #define M(x,y) (*m)[x][y]
+
+  M(0,0) = scaleX; M(2,0) = 0;     M(3,0) = 0; 
+  M(0,1) = 0;      M(1,1) = scaleY; M(2,1) = 0; M(3,1) = 0; 
+  M(0,2) = 0;      M(1,2) = 0;     M(2,2) = scaleZ; M(3,2) = 0; 
+  M(0,3) = 0;      M(1,3) = 0;     M(2,3) = 0; M(3,3) = S3L_FRACTIONS_PER_UNIT; 
+
+  #undef M
 }
 
 /**
@@ -841,14 +857,22 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
 
 void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
 {
+  S3L_makeScaleMatrix(
+    worldTransform.scale.x,
+    worldTransform.scale.y,
+    worldTransform.scale.z,
+    m
+  );
+
+  S3L_Mat4 t;
+
   S3L_makeRotationMatrix(
     worldTransform.rotation.x,
     worldTransform.rotation.y,
     worldTransform.rotation.z,
-    m);
+    &t);
 
-S3L_Mat4 t;
-
+  S3L_mat4Xmat4(m,&t);
 
   S3L_makeTranslationMat(
     worldTransform.translation.x,
@@ -856,9 +880,7 @@ S3L_Mat4 t;
     worldTransform.translation.z,
     &t);
 
-S3L_mat4Xmat4(m,&t);
-
-  
+  S3L_mat4Xmat4(m,&t);
 }
 
 void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
