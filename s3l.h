@@ -85,6 +85,9 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                         it will overflow. Also other things
                                         may overflow, so rather don't do it. */
 
+#define S3L_NONZERO(value) ((value) != 0 ? (value) : 1) /**< prevents division
+                                                             by zero */
+
 #define S3L_SIN_TABLE_LENGTH 128
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 {
@@ -722,9 +725,9 @@ void S3L_drawTriangle(
 
   #undef handleLR
 
-  S3L_ScreenCoord splitY; // Y at which one side (L or R) changes
+  S3L_ScreenCoord splitY; // Y of the vertically middle point of the triangle
   S3L_ScreenCoord endY;   // bottom Y of the whole triangle
-  int splitOnLeft;        // whether split happens on L or R
+  int splitOnLeft;        // whether splitY happens on L or R side
 
   if (rPointY <= lPointY)
   {
@@ -761,7 +764,12 @@ void S3L_drawTriangle(
 
   int16_t helperDxAbs;
 
-  #define initSide(v,p1,p2, down)\
+          /* init side for the algorithm, params:
+             v - which side (l or r)
+             p1 - point from (t, l or r)
+             p2 - point to (t, l or r)
+             down - whether going top-down or bottom-up */
+  #define initSide(v,p1,p2,down)\
     v##X = p1##PointX;\
     v##Dx = p2##PointX - p1##PointX;\
     v##Dy = p2##PointY - p1##PointY;\
@@ -791,10 +799,14 @@ void S3L_drawTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
-  while (currentY <= endY)
+  S3L_Unit xFrom_prev = tPointX; // helper vars, hold previous values of xFrom
+  S3L_Unit xTo_prev = tPointX;   // and xTo (declared later) to prevent
+                                 // discontinuities
+
+  while (currentY <= endY)  // draw the triangle from top to bottom
   {
-    if (currentY == splitY)
-    {
+    if (currentY == splitY) // reached a vertical split of the triangle?
+    {                       // then reinit one side
       if (splitOnLeft)
       {
         initSide(l,l,r,0);
@@ -821,15 +833,20 @@ void S3L_drawTriangle(
 
     p.y = currentY;
 
-    // draw the line
+    // draw the horizontal line
 
-    S3L_Unit tMax = rX - lX;
-    tMax = tMax != 0 ? tMax : 1; // prevent division by zero
+    S3L_Unit xFrom = lX < (xTo_prev + 1) ? lX : (xTo_prev + 1);
+    S3L_Unit xTo = rX > (xFrom_prev - 1) ? rX : (xFrom_prev - 1);
+                 /* ^ these conditions prevent discontinuities when drawing
+                      "long" triangles (thinner than 1 px) */
+
+    S3L_Unit tMax = xTo - xFrom;
+    tMax = S3L_NONZERO(tMax); // prevent division by zero
 
     S3L_Unit t1 = 0;
     S3L_Unit t2 = tMax;
 
-    for (S3L_ScreenCoord x = lX; x <= rX; ++x)
+    for (S3L_ScreenCoord x = xFrom; x <= xTo; ++x)
     {
       *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
       *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
@@ -847,6 +864,9 @@ void S3L_drawTriangle(
 
     lSideUnitPos += lSideUnitStep;
     rSideUnitPos += rSideUnitStep;
+
+    xFrom_prev = xFrom;
+    xTo_prev = xTo;
 
     ++currentY;
   }

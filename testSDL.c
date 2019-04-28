@@ -76,7 +76,8 @@ conf.mode = S3L_MODE_TRIANGLES;
       y2 = test_coords[6 * c + 5];
 
 int cent = (x0 + x1 + x2) / 3.0;
-x2 = cent + (x2 - cent) * sin(frame * 0.01) * 2;
+x2 = cent + (x2 - cent) * sin(frame * 0.001) * 2;
+//x2 = cent + (x2 - cent) * sin(600 * 0.001) * 2;
 
     S3L_drawTriangle(x0,y0,x1,y1,x2,y2,conf,0);
 
