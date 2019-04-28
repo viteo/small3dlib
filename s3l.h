@@ -10,6 +10,25 @@
 
   --------------------
 
+  This work's goal is to never be encumbered by any exclusive intellectual
+  property rights. The work is therefore provided under CC0 1.0 + additional
+  WAIVER OF ALL INTELLECTUAL PROPERTY RIGHTS that waives the rest of
+  intellectual property rights not already waived by CC0 1.0. The WAIVER OF ALL
+  INTELLECTUAL PROPERTY RGHTS is as follows:
+
+  Each contributor to this work agrees that they waive any exclusive rights,
+  including but not limited to copyright, patents, trademark, trade dress,
+  industrial design, plant varieties and trade secrets, to any and all ideas,
+  concepts, processes, discoveries, improvements and inventions conceived,
+  discovered, made, designed, researched or developed by the contributor either
+  solely or jointly with others, which relate to this work or result from this
+  work. Should any waiver of such right be judged legally invalid or
+  ineffective under applicable law, the contributor hereby grants to each
+  affected person a royalty-free, non transferable, non sublicensable, non
+  exclusive, irrevocable and unconditional license to this right.
+
+  --------------------
+
   CONVENTIONS:
 
   Angles are in S3L_Units, a full angle (2 pi) is S3L_FRACTIONS_PER_UNITs.

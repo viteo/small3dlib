@@ -78,7 +78,7 @@ conf.mode = S3L_MODE_TRIANGLES;
 int cent = (x0 + x1 + x2) / 3.0;
 x2 = cent + (x2 - cent) * sin(frame * 0.01) * 2;
 
-    S3L_drawTriangle(x0,y0,x1,y1,x2,y2,conf);
+    S3L_drawTriangle(x0,y0,x1,y1,x2,y2,conf,0);
 
     setPixel(x0,y0,255,0,0);
     setPixel(x1,y1,255,0,0);
@@ -95,7 +95,7 @@ int16_t rotY1 = 200 + cos((frame + 500) * 0.01) * 50;
 int16_t rotX2 = 200 + sin((frame + 300) * 0.01) * 50;
 int16_t rotY2 = 200 + cos((frame + 300) * 0.01) * 50;
 
-S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2,conf);
+S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2,conf,0);
 
 }
 
