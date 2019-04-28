@@ -14,6 +14,26 @@
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 
+const uint8_t testTexture[] =
+{
+  2,2,2,0,0,0,2,2,2,2,0,0,0,2,2,2,
+  2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+  2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+  0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,
+  0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,
+  2,0,0,0,0,1,1,1,1,1,0,0,0,0,0,2,
+  2,0,0,0,0,1,1,0,0,0,0,0,0,0,0,2,
+  2,0,0,0,0,1,1,0,0,0,0,0,0,0,0,2,
+  2,0,0,0,0,1,1,0,0,0,0,0,0,0,0,2,
+  0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,
+  0,0,2,2,0,0,0,0,0,0,0,0,1,1,0,0,
+  2,0,2,2,0,0,0,0,0,0,0,0,1,1,0,2,
+  2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+  2,2,2,0,0,0,2,2,2,2,0,0,0,2,2,2
+};
+
 uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
 
 uint32_t frame = 0;
@@ -37,12 +57,32 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
   pixels[y * SCREEN_WIDTH + x] = r | g | b;
 }
 
+uint8_t texturePixel(int32_t u, int32_t v)
+{
+  u %= 16;
+  v %= 16;
+
+  return testTexture[v * 16 + u];
+}
+
 void drawPixel(S3L_PixelInfo *p)
 {
-  setPixel(p->x,p->y,
+  float b0 = p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT);
+  float b1 = p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT);
+  float b2 = p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT);
+
+  int32_t u = b0 * 0 + b1 * 0 + b2 * 16;
+  int32_t v = b0 * 0 + b1 * 16 + b2 * 16;
+
+  uint8_t col = texturePixel(u,v);
+
+  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
+
+/*  setPixel(p->x,p->y,
     p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
+*/
 }
 
 const int16_t test_coords[] =
