@@ -65,19 +65,29 @@
 
   Coordinates of pixels on screen start typically at the top left, from [0,0].
 
-  Rasterization rules are to be the same as in OpenGL or DirectX:
+  Triangle rasterization rules are these (mostly same as OpenGL, D3D etc.):
 
-  - Pixel centers are at integer coordinates.
-  - Pixel is rasterized if its center is inside the primitive (e.g. a triangle)
-    OR
-    if its center is exactly on the primitive's side, which is either left
-    (no exactly horizontal and on the left side of triangle) or top (exactly
-    horizontal and above the other two edges)
+  - Let's define:
+    - left side: not exactly horizontal, and on the left side of triangle
+    - top side: exactly horizontal and above the other two sides
+    - right side: not left side nor top side
+  - Pixel centers are at integer coordinates and triangle for drawing are
+    specified with integer coordinates of pixel centers.
+  - A pixel is rasterized:
+    - if its center is inside the triangle OR
+    - if its center is exactly on the triangle side which is either left or top
+      and at the same time is not on the side that's right (case of a triangle
+      that's on a single line) OR
+    - if its center is exactly on the triangle corner of sides neither of which
+      is right.
 
-  These rules imply e.g.:
+  These rules imply among others:
 
-  - Triangles of points that lie on a single line are not rasterized.
-  - A single "long" triangle can be rasterized as non-continuous.
+  - Adjacent triangles don't have any overlapping pixels, nor gaps between.
+  - Triangles of points that lie on a single line are NOT rasterized.
+  - A single "long" triangle CAN be rasterized as non-continuous.
+  - Bottom most corner (or side) of a triangle is never rasterized if specified
+    with integer coordinates. 
 */
 
 #ifndef S3L_H
@@ -666,7 +676,7 @@ void S3L_drawTriangle(
     return;
   }
 
-  // triangle mode
+  // triangle mode -- TODO: maybe move to the top as this is most common?
 
   S3L_ScreenCoord
     tPointX, tPointY,     // top triangle point coords
