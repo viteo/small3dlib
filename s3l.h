@@ -813,10 +813,6 @@ void S3L_drawTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
-  S3L_Unit xFrom_prev = tPointX; // helper vars, hold previous values of xFrom
-  S3L_Unit xTo_prev = tPointX;   // and xTo (declared later) to prevent
-                                 // discontinuities
-
   while (currentY <= endY)  // draw the triangle from top to bottom
   {
     if (currentY == splitY) // reached a vertical split of the triangle?
@@ -849,18 +845,13 @@ void S3L_drawTriangle(
 
     // draw the horizontal line
 
-    S3L_Unit xFrom = lX < (xTo_prev + 1) ? lX : (xTo_prev + 1);
-    S3L_Unit xTo = rX > (xFrom_prev - 1) ? rX : (xFrom_prev - 1);
-                 /* ^ these conditions prevent discontinuities when drawing
-                      "long" triangles (thinner than 1 px) */
-
-    S3L_Unit tMax = xTo - xFrom;
+    S3L_Unit tMax = rX - lX;
     tMax = S3L_NONZERO(tMax); // prevent division by zero
 
     S3L_Unit t1 = 0;
     S3L_Unit t2 = tMax;
 
-    for (S3L_ScreenCoord x = xFrom; x <= xTo; ++x)
+    for (S3L_ScreenCoord x = lX; x <= rX; ++x)
     {
       *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
       *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
@@ -878,9 +869,6 @@ void S3L_drawTriangle(
 
     lSideUnitPos += lSideUnitStep;
     rSideUnitPos += rSideUnitStep;
-
-    xFrom_prev = xFrom;
-    xTo_prev = xTo;
 
     ++currentY;
   }
