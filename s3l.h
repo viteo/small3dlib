@@ -64,6 +64,20 @@
              |
 
   Coordinates of pixels on screen start typically at the top left, from [0,0].
+
+  Rasterization rules are to be the same as in OpenGL or DirectX:
+
+  - Pixel centers are at integer coordinates.
+  - Pixel is rasterized if its center is inside the primitive (e.g. a triangle)
+    OR
+    if its center is exactly on the primitive's side, which is either left
+    (no exactly horizontal and on the left side of triangle) or top (exactly
+    horizontal and above the other two edges)
+
+  These rules imply e.g.:
+
+  - Triangles of points that lie on a single line are not rasterized.
+  - A single "long" triangle can be rasterized as non-continuous.
 */
 
 #ifndef S3L_H
