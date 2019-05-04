@@ -786,43 +786,40 @@ void S3L_drawTriangle(
     lSideUnitStep, rSideUnitStep,
     lSideUnitPos,  rSideUnitPos;
 
-  int16_t helperDxAbs;
-
           /* init side for the algorithm, params:
-             v - which side (l or r)
+             s - which side (l or r)
              p1 - point from (t, l or r)
              p2 - point to (t, l or r)
              down - whether the side coordinate goes top-down or vice versa 
-             shift - initial shift of the line, to rasterize pix. centers */
-  #define initSide(v,p1,p2,down,shift)\
-    v##X = p1##PointX;\
-    v##Dx = p2##PointX - p1##PointX;\
-    v##Dy = p2##PointY - p1##PointY;\
-    v##SideUnitStep = S3L_FRACTIONS_PER_UNIT / (v##Dy != 0 ? v##Dy : 1);\
-    v##SideUnitPos = 0;\
+             left - whether to rasterize on left of the line or vice versa */
+
+  #define initSide(s,p1,p2,down,left)\
+    s##X = p1##PointX;\
+    s##Dx = p2##PointX - p1##PointX;\
+    s##Dy = p2##PointY - p1##PointY;\
+    s##SideUnitStep = S3L_FRACTIONS_PER_UNIT / (s##Dy != 0 ? s##Dy : 1);\
+    s##SideUnitPos = 0;\
     if (!down)\
     {\
-      v##SideUnitPos = S3L_FRACTIONS_PER_UNIT;\
-      v##SideUnitStep *= -1;\
+      s##SideUnitPos = S3L_FRACTIONS_PER_UNIT;\
+      s##SideUnitStep *= -1;\
     }\
-    helperDxAbs = S3L_abs(v##Dx);\
-    v##Inc = v##Dx >= 0 ? 1 : -1;\
-    v##Err = (2 + shift) * helperDxAbs - v##Dy;\
-    v##ErrAdd = 2 * helperDxAbs;\
-    v##ErrSub = 2 * v##Dy;\
-    v##ErrSub = v##ErrSub != 0 ? v##ErrSub : 1; /* don't allow 0, could lead
-                                                   to an infinite substracting
-                                                   loop */
+    s##Inc = s##Dx >= 0 ? 1 : -1;\
+    s##Err = left != (s##Dx < 0) ? 0 : s##Dy;\
+    s##ErrAdd = S3L_abs(s##Dx);\
+    s##ErrSub = s##Dy != 0 ? s##Dy : 1; /* don't allow 0, could lead to an
+                                           infinite substracting loop */
+
   #define stepSide(s)\
-    while (s##Err > 0)\
+    while (s##Err > s##Dy)\
     {\
       s##X += s##Inc;\
       s##Err -= s##ErrSub;\
     }\
     s##Err += s##ErrAdd;
 
-  initSide(r,t,r,1,-1)
-  initSide(l,t,l,1,1)
+  initSide(r,t,r,1,1)
+  initSide(l,t,l,1,0)
 
   while (currentY <= endY)  // draw the triangle from top to bottom
   {
@@ -830,7 +827,7 @@ void S3L_drawTriangle(
     {                       // then reinit one side
       if (splitOnLeft)
       {
-        initSide(l,l,r,0,1);
+        initSide(l,l,r,0,0);
 
         S3L_Unit *tmp = barycentric0;
         barycentric0 = barycentric2;
@@ -841,7 +838,7 @@ void S3L_drawTriangle(
       }
       else
       {
-        initSide(r,r,l,0,-1);
+        initSide(r,r,l,0,1);
 
         S3L_Unit *tmp = barycentric1;
         barycentric1 = barycentric2;
@@ -851,6 +848,9 @@ void S3L_drawTriangle(
         lSideUnitStep *= -1;
       }
     }
+
+    stepSide(r)
+    stepSide(l)
 
     p.y = currentY;
 
@@ -862,7 +862,7 @@ void S3L_drawTriangle(
     S3L_Unit t1 = 0;
     S3L_Unit t2 = tMax;
 
-    for (S3L_ScreenCoord x = lX; x < rX; ++x)
+    for (S3L_ScreenCoord x = lX; x <= rX; ++x)
     {
       *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
       *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
@@ -874,9 +874,6 @@ void S3L_drawTriangle(
       ++t1;
       --t2;
     }
-
-    stepSide(r)
-    stepSide(l)
 
     lSideUnitPos += lSideUnitStep;
     rSideUnitPos += rSideUnitStep;
