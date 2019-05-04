@@ -142,7 +142,30 @@ uint16_t testRasterization()
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0  // F
   }; 
 
-  numErrors += testTriangleRasterization(2,1, 6,9, 1,3, pixels3);
+  numErrors += testTriangleRasterization(2,1, 1,3, 6,9, pixels3);
+
+  uint8_t pixels4[TEST_BUFFER_W * TEST_BUFFER_H] =
+  {
+  // 0 1 2 3 4 5 6 7 8 9 A B C D E F
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0
+     0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 1
+     0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0, // 2
+     0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0, // 3
+     0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0, // 4
+     0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0, // 5
+     0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0, // 6
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 7
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 8
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 9
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // A
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // B
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // C
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // D
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // E
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0  // F
+  }; 
+
+  numErrors += testTriangleRasterization(4,8, 4,2, 0,0, pixels4);
 
   uint8_t pixelsEmpty[TEST_BUFFER_W * TEST_BUFFER_H];
   memset(pixelsEmpty,0,TEST_BUFFER_W * TEST_BUFFER_H);
@@ -150,6 +173,7 @@ uint16_t testRasterization()
   numErrors += testTriangleRasterization(5,3, 3,3, 9,3, pixelsEmpty);
   numErrors += testTriangleRasterization(9,4, 9,0, 9,9, pixelsEmpty);
   numErrors += testTriangleRasterization(3,3, 6,6, 7,7, pixelsEmpty);
+  numErrors += testTriangleRasterization(5,5, 3,7, 9,1, pixelsEmpty);
 
   printf("total rasterization errors: %d\n",numErrors);
 }
