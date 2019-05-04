@@ -634,28 +634,233 @@ void S3L_drawTriangle(
   S3L_initPixelInfo(&p);
   p.triangleID = triangleID;
 
-  // point mode
-
-  if (config.mode == S3L_MODE_POINTS)
+  if (config.mode == S3L_MODE_TRIANGLES)  // triangle mode
   {
-    p.x = x0; p.y = y0; p.barycentric0 = S3L_FRACTIONS_PER_UNIT;
-    p.barycentric1 = 0; p.barycentric2 = 0;
-    S3L_PIXEL_FUNCTION(&p);
+    S3L_ScreenCoord
+      tPointX, tPointY,     // top triangle point coords
+      lPointX, lPointY,     // left triangle point coords
+      rPointX, rPointY;     // right triangle point coords
 
-    p.x = x1; p.y = y1; p.barycentric0 = 0;
-    p.barycentric1 = S3L_FRACTIONS_PER_UNIT; p.barycentric2 = 0;
-    S3L_PIXEL_FUNCTION(&p);
+    S3L_Unit *barycentric0; // bar. coord that gets higher from L to R
+    S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
+    S3L_Unit *barycentric2; // bar. coord that gets higher from bottom up
 
-    p.x = x2; p.y = y2; p.barycentric0 = 0;
-    p.barycentric1 = 0; p.barycentric2 = S3L_FRACTIONS_PER_UNIT;
-    S3L_PIXEL_FUNCTION(&p);
- 
-    return;
+    // Sort the points.
+
+    #define handleLR(t,a,b)\
+      int16_t aDx = x##a - x##t;\
+      int16_t bDx = x##b - x##t;\
+      int16_t aDy = S3L_nonZero(y##a - y##t);\
+      int16_t bDy = S3L_nonZero(y##b - y##t);\
+      if ((aDx << 4) / aDy < (bDx << 4) / bDy)\
+      /*if (x##a <= x##b)*/\
+      {\
+        lPointX = x##a; lPointY = y##a;\
+        rPointX = x##b; rPointY = y##b;\
+        barycentric0 = &p.barycentric##b;\
+        barycentric1 = &p.barycentric##a;\
+      }\
+      else\
+      {\
+        lPointX = x##b; lPointY = y##b;\
+        rPointX = x##a; rPointY = y##a;\
+        barycentric0 = &p.barycentric##a;\
+        barycentric1 = &p.barycentric##b;\
+      }
+
+    if (y0 <= y1)
+    {
+      if (y0 <= y2)
+      {
+        tPointX = x0;
+        tPointY = y0;
+        barycentric2 = &p.barycentric0;
+        handleLR(0,1,2)
+      }
+      else
+      {
+        tPointX = x2;
+        tPointY = y2;
+        barycentric2 = &p.barycentric2;
+        handleLR(2,0,1)
+      }
+    }
+    else
+    {
+      if (y1 <= y2)
+      {
+        tPointX = x1;
+        tPointY = y1;
+        barycentric2 = &p.barycentric1;
+        handleLR(1,0,2)
+      }
+      else
+      {
+        tPointX = x2;
+        tPointY = y2;
+        barycentric2 = &p.barycentric2;
+        handleLR(2,0,1)
+      }
+    }
+
+    // Now draw the triangle line by line.
+
+    #undef handleLR
+
+    S3L_ScreenCoord splitY; // Y of the vertically middle point of the triangle
+    S3L_ScreenCoord endY;   // bottom Y of the whole triangle
+    int splitOnLeft;        // whether splitY happens on L or R side
+
+    if (rPointY <= lPointY)
+    {
+      splitY = rPointY;
+      splitOnLeft = 0;
+      endY = lPointY;
+    }
+    else
+    {
+      splitY = lPointY;
+      splitOnLeft = 1;
+      endY = rPointY;
+    }
+
+    S3L_ScreenCoord currentY = tPointY;
+
+    /* We'll be using an algorithm similar to Bresenham line algorithm. The
+       specifics of this algorithm are among others:
+
+       - drawing possibly a NON-CONTINUOUS line
+       - NOT tracing the line exactly, but rather rasterizing either on the
+         left or right side of it (depending on what's chosen), according to
+         the pixel CENTERS
+       
+       The principle is this:
+
+       - Move vertically by pixels and accumulate the error (abs(dx/dy)).
+       - If the error is greater than one (crossed the next pixel center), keep
+         moving horizontally and substracting 1 from the error until it is less
+         than 1 again.
+       - To make this INTEGER ONLY, scale the case so that distance between
+         pixels is equal to dy (instead of 1). This way the error becomes
+         dx/dy * dy == dx, and we're comparing the error to (and potentially
+         substracting) 1 * dy == dy.
+       - The inital error is set to either 0 or dy (effectively shifting the
+         line) dependin on whether we want to rasterize on right or left. */
+
+    int16_t
+      /* triangle side:
+      left     right */
+      lX,      rX,       // current x position
+      lDx,     rDx,      // dx (end point - start point)
+      lDy,     rDy,      // dy (end point - start point)
+      lInc,    rInc,     // direction in which to increment (1 or -1)
+      lErr,    rErr,     // current error (Bresenham)
+      lErrAdd, rErrAdd,  // error value to add in each Bresenham cycle
+      lErrSub, rErrSub;  // error value to substract when moving in x direction
+
+    S3L_Unit
+      lSideUnitStep, rSideUnitStep,
+      lSideUnitPos,  rSideUnitPos;
+
+            /* init side for the algorithm, params:
+               s - which side (l or r)
+               p1 - point from (t, l or r)
+               p2 - point to (t, l or r)
+               down - whether the side coordinate goes top-down or vice versa 
+               left - whether to rasterize on left of the line or vice versa */
+
+    #define initSide(s,p1,p2,down,left)\
+      s##X = p1##PointX;\
+      s##Dx = p2##PointX - p1##PointX;\
+      s##Dy = p2##PointY - p1##PointY;\
+      s##SideUnitStep = S3L_FRACTIONS_PER_UNIT / (s##Dy != 0 ? s##Dy : 1);\
+      s##SideUnitPos = 0;\
+      if (!down)\
+      {\
+        s##SideUnitPos = S3L_FRACTIONS_PER_UNIT;\
+        s##SideUnitStep *= -1;\
+      }\
+      s##Inc = s##Dx >= 0 ? 1 : -1;\
+      s##Err = left != (s##Dx < 0) ? 0 : s##Dy;\
+      s##ErrAdd = S3L_abs(s##Dx);\
+      s##ErrSub = s##Dy != 0 ? s##Dy : 1; /* don't allow 0, could lead to an
+                                             infinite substracting loop */
+
+    #define stepSide(s)\
+      while (s##Err > s##Dy)\
+      {\
+        s##X += s##Inc;\
+        s##Err -= s##ErrSub;\
+      }\
+      s##Err += s##ErrAdd;
+
+    initSide(r,t,r,1,1)
+    initSide(l,t,l,1,0)
+
+    while (currentY <= endY)  // draw the triangle from top to bottom
+    {
+      if (currentY == splitY) // reached a vertical split of the triangle?
+      {                       // then reinit one side
+        if (splitOnLeft)
+        {
+          initSide(l,l,r,0,0);
+
+          S3L_Unit *tmp = barycentric0;
+          barycentric0 = barycentric2;
+          barycentric2 = tmp;
+
+          rSideUnitPos = S3L_FRACTIONS_PER_UNIT - rSideUnitPos;
+          rSideUnitStep *= -1;
+        }
+        else
+        {
+          initSide(r,r,l,0,1);
+
+          S3L_Unit *tmp = barycentric1;
+          barycentric1 = barycentric2;
+          barycentric2 = tmp;
+
+          lSideUnitPos = S3L_FRACTIONS_PER_UNIT - lSideUnitPos;
+          lSideUnitStep *= -1;
+        }
+      }
+
+      stepSide(r)
+      stepSide(l)
+
+      p.y = currentY;
+
+      // draw the horizontal line
+
+      S3L_Unit tMax = rX - lX;
+      tMax = S3L_NONZERO(tMax); // prevent division by zero
+
+      S3L_Unit t1 = 0;
+      S3L_Unit t2 = tMax;
+
+      for (S3L_ScreenCoord x = lX; x <= rX; ++x)
+      {
+        *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
+        *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
+        *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
+
+        p.x = x;
+        S3L_PIXEL_FUNCTION(&p);
+
+        ++t1;
+        --t2;
+      }
+
+      lSideUnitPos += lSideUnitStep;
+      rSideUnitPos += rSideUnitStep;
+
+      ++currentY;
+    }
+
+    #undef initSide
+    #undef stepSide
   }
-
-  // line mode
-
-  if (config.mode == S3L_MODE_LINES)
+  else if (config.mode == S3L_MODE_LINES) // line mode
   {
     S3L_BresenhamState line;
     S3L_Unit lineLen;
@@ -680,235 +885,21 @@ void S3L_drawTriangle(
     drawLine(1,2)
 
     #undef drawLine
-
-    return;
   }
-
-  // triangle mode -- TODO: maybe move to the top as this is most common?
-
-  S3L_ScreenCoord
-    tPointX, tPointY,     // top triangle point coords
-    lPointX, lPointY,     // left triangle point coords
-    rPointX, rPointY;     // right triangle point coords
-
-  S3L_Unit *barycentric0; // bar. coord that gets higher from L to R
-  S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
-  S3L_Unit *barycentric2; // bar. coord that gets higher from bottom up
-
-  // Sort the points.
-
-  #define handleLR(t,a,b)\
-    int16_t aDx = x##a - x##t;\
-    int16_t bDx = x##b - x##t;\
-    int16_t aDy = S3L_nonZero(y##a - y##t);\
-    int16_t bDy = S3L_nonZero(y##b - y##t);\
-    if ((aDx << 4) / aDy < (bDx << 4) / bDy)\
-    /*if (x##a <= x##b)*/\
-    {\
-      lPointX = x##a; lPointY = y##a;\
-      rPointX = x##b; rPointY = y##b;\
-      barycentric0 = &p.barycentric##b;\
-      barycentric1 = &p.barycentric##a;\
-    }\
-    else\
-    {\
-      lPointX = x##b; lPointY = y##b;\
-      rPointX = x##a; rPointY = y##a;\
-      barycentric0 = &p.barycentric##a;\
-      barycentric1 = &p.barycentric##b;\
-    }
-
-  if (y0 <= y1)
+  else                                    // point mode
   {
-    if (y0 <= y2)
-    {
-      tPointX = x0;
-      tPointY = y0;
-      barycentric2 = &p.barycentric0;
-      handleLR(0,1,2)
-    }
-    else
-    {
-      tPointX = x2;
-      tPointY = y2;
-      barycentric2 = &p.barycentric2;
-      handleLR(2,0,1)
-    }
+    p.x = x0; p.y = y0; p.barycentric0 = S3L_FRACTIONS_PER_UNIT;
+    p.barycentric1 = 0; p.barycentric2 = 0;
+    S3L_PIXEL_FUNCTION(&p);
+
+    p.x = x1; p.y = y1; p.barycentric0 = 0;
+    p.barycentric1 = S3L_FRACTIONS_PER_UNIT; p.barycentric2 = 0;
+    S3L_PIXEL_FUNCTION(&p);
+
+    p.x = x2; p.y = y2; p.barycentric0 = 0;
+    p.barycentric1 = 0; p.barycentric2 = S3L_FRACTIONS_PER_UNIT;
+    S3L_PIXEL_FUNCTION(&p);
   }
-  else
-  {
-    if (y1 <= y2)
-    {
-      tPointX = x1;
-      tPointY = y1;
-      barycentric2 = &p.barycentric1;
-      handleLR(1,0,2)
-    }
-    else
-    {
-      tPointX = x2;
-      tPointY = y2;
-      barycentric2 = &p.barycentric2;
-      handleLR(2,0,1)
-    }
-  }
-
-  // Now draw the triangle line by line.
-
-  #undef handleLR
-
-  S3L_ScreenCoord splitY; // Y of the vertically middle point of the triangle
-  S3L_ScreenCoord endY;   // bottom Y of the whole triangle
-  int splitOnLeft;        // whether splitY happens on L or R side
-
-  if (rPointY <= lPointY)
-  {
-    splitY = rPointY;
-    splitOnLeft = 0;
-    endY = lPointY;
-  }
-  else
-  {
-    splitY = lPointY;
-    splitOnLeft = 1;
-    endY = rPointY;
-  }
-
-  S3L_ScreenCoord currentY = tPointY;
-
-  /* We'll be using an algorithm similar to Bresenham line algorithm. The
-     specifics of this algorithm are among others:
-
-     - drawing possibly a NON-CONTINUOUS line
-     - NOT tracing the line exactly, but rather rasterizing either on the
-       left or right side of it (depending on what's chosen), according to
-       the pixel CENTERS
-     
-     The principle is this:
-
-     - Move vertically by pixels and accumulate the error (abs(dx/dy)).
-     - If the error is greater than one (crossed the next pixel center), keep
-       moving horizontally and substracting 1 from the error until it is less
-       than 1 again.
-     - To make this INTEGER ONLY, scale the case so that distance between
-       pixels is equal to dy (instead of 1). This way the error becomes
-       dx/dy * dy == dx, and we're comparing the error to (and potentially
-       substracting) 1 * dy == dy.
-     - The inital error is set to either 0 or dy (effectively shifting the
-       line) dependin on whether we want to rasterize on right or left. */
-
-  int16_t
-    /* triangle side:
-    left     right */
-    lX,      rX,        // current x position
-    lDx,     rDx,       // dx (end point - start point)
-    lDy,     rDy,       // dy (end point - start point)
-    lInc,    rInc,      // direction in which to increment (1 or -1)
-    lErr,    rErr,      // current error (Bresenham)
-    lErrAdd, rErrAdd,   // error value to add in each Bresenham cycle
-    lErrSub, rErrSub;   // error value to substract when moving in x direction
-
-  S3L_Unit
-    lSideUnitStep, rSideUnitStep,
-    lSideUnitPos,  rSideUnitPos;
-
-          /* init side for the algorithm, params:
-             s - which side (l or r)
-             p1 - point from (t, l or r)
-             p2 - point to (t, l or r)
-             down - whether the side coordinate goes top-down or vice versa 
-             left - whether to rasterize on left of the line or vice versa */
-
-  #define initSide(s,p1,p2,down,left)\
-    s##X = p1##PointX;\
-    s##Dx = p2##PointX - p1##PointX;\
-    s##Dy = p2##PointY - p1##PointY;\
-    s##SideUnitStep = S3L_FRACTIONS_PER_UNIT / (s##Dy != 0 ? s##Dy : 1);\
-    s##SideUnitPos = 0;\
-    if (!down)\
-    {\
-      s##SideUnitPos = S3L_FRACTIONS_PER_UNIT;\
-      s##SideUnitStep *= -1;\
-    }\
-    s##Inc = s##Dx >= 0 ? 1 : -1;\
-    s##Err = left != (s##Dx < 0) ? 0 : s##Dy;\
-    s##ErrAdd = S3L_abs(s##Dx);\
-    s##ErrSub = s##Dy != 0 ? s##Dy : 1; /* don't allow 0, could lead to an
-                                           infinite substracting loop */
-
-  #define stepSide(s)\
-    while (s##Err > s##Dy)\
-    {\
-      s##X += s##Inc;\
-      s##Err -= s##ErrSub;\
-    }\
-    s##Err += s##ErrAdd;
-
-  initSide(r,t,r,1,1)
-  initSide(l,t,l,1,0)
-
-  while (currentY <= endY)  // draw the triangle from top to bottom
-  {
-    if (currentY == splitY) // reached a vertical split of the triangle?
-    {                       // then reinit one side
-      if (splitOnLeft)
-      {
-        initSide(l,l,r,0,0);
-
-        S3L_Unit *tmp = barycentric0;
-        barycentric0 = barycentric2;
-        barycentric2 = tmp;
-
-        rSideUnitPos = S3L_FRACTIONS_PER_UNIT - rSideUnitPos;
-        rSideUnitStep *= -1;
-      }
-      else
-      {
-        initSide(r,r,l,0,1);
-
-        S3L_Unit *tmp = barycentric1;
-        barycentric1 = barycentric2;
-        barycentric2 = tmp;
-
-        lSideUnitPos = S3L_FRACTIONS_PER_UNIT - lSideUnitPos;
-        lSideUnitStep *= -1;
-      }
-    }
-
-    stepSide(r)
-    stepSide(l)
-
-    p.y = currentY;
-
-    // draw the horizontal line
-
-    S3L_Unit tMax = rX - lX;
-    tMax = S3L_NONZERO(tMax); // prevent division by zero
-
-    S3L_Unit t1 = 0;
-    S3L_Unit t2 = tMax;
-
-    for (S3L_ScreenCoord x = lX; x <= rX; ++x)
-    {
-      *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
-      *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
-      *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
-
-      p.x = x;
-      S3L_PIXEL_FUNCTION(&p);
-
-      ++t1;
-      --t2;
-    }
-
-    lSideUnitPos += lSideUnitStep;
-    rSideUnitPos += rSideUnitStep;
-
-    ++currentY;
-  }
-
-  #undef initSide
-  #undef stepSide
 }
 
 static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
