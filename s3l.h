@@ -68,16 +68,19 @@
   Triangle rasterization rules are these (mostly same as OpenGL, D3D etc.):
 
   - Let's define:
-    - left side: not exactly horizontal, and on the left side of triangle
-    - top side: exactly horizontal and above the other two sides
-    - right side: not left side nor top side
+    - left side:
+      - not exactly horizontal, and on the left side of triangle
+      - exactly horizontal and above the topmost
+      (in other words: its normal points at least a little to the left or
+       completely up)
+    - right side: not left side
   - Pixel centers are at integer coordinates and triangle for drawing are
     specified with integer coordinates of pixel centers.
   - A pixel is rasterized:
     - if its center is inside the triangle OR
-    - if its center is exactly on the triangle side which is either left or top
-      and at the same time is not on the side that's right (case of a triangle
-      that's on a single line) OR
+    - if its center is exactly on the triangle side which is left and at the
+      same time is not on the side that's right (case of a triangle that's on
+      a single line) OR
     - if its center is exactly on the triangle corner of sides neither of which
       is right.
 
@@ -86,8 +89,13 @@
   - Adjacent triangles don't have any overlapping pixels, nor gaps between.
   - Triangles of points that lie on a single line are NOT rasterized.
   - A single "long" triangle CAN be rasterized as non-continuous.
-  - Bottom most corner (or side) of a triangle is never rasterized if specified
-    with integer coordinates. 
+  - If specifying a triangle with integer coordinates, then:
+    - a Bottom-most corner (or side) of a triangle is never rasterized (because
+      it is connected to a right side).
+    - Top-most corner can only be rasterized on completely horizontal side
+      (otherwise it is connected to a right side).
+    - Vertically middle corner is rasterized if and only if it is on the left
+      of the triangle and at the same time is also not the bottom-most corner.
 */
 
 #ifndef S3L_H
@@ -768,8 +776,26 @@ void S3L_drawTriangle(
 
   S3L_ScreenCoord currentY = tPointY;
 
-  /* We'll be using a slight modification of Bresenham line algorithm (a one
-     that draws a _non-continous_ line). */
+  /* We'll be using an algorithm similar to Bresenham line algorithm. The
+     specifics of this algorithm are among others:
+
+     - drawing possibly a NON-CONTINUOUS line
+     - NOT tracing the line exactly, but rather rasterizing either on the
+       left or right side of it (depending on what's chosen), according to
+       the pixel CENTERS
+     
+     The principle is this:
+
+     - Move vertically by pixels and accumulate the error (abs(dx/dy)).
+     - If the error is greater than one (crossed the next pixel center), keep
+       moving horizontally and substracting 1 from the error until it is less
+       than 1 again.
+     - To make this INTEGER ONLY, scale the case so that distance between
+       pixels is equal to dy (instead of 1). This way the error becomes
+       dx/dy * dy == dx, and we're comparing the error to (and potentially
+       substracting) 1 * dy == dy.
+     - The inital error is set to either 0 or dy (effectively shifting the
+       line) dependin on whether we want to rasterize on right or left. */
 
   int16_t
     /* triangle side:
