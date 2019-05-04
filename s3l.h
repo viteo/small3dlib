@@ -792,8 +792,9 @@ void S3L_drawTriangle(
              v - which side (l or r)
              p1 - point from (t, l or r)
              p2 - point to (t, l or r)
-             down - whether going top-down or bottom-up */
-  #define initSide(v,p1,p2,down)\
+             down - whether the side coordinate goes top-down or vice versa 
+             shift - initial shift of the line, to rasterize pix. centers */
+  #define initSide(v,p1,p2,down,shift)\
     v##X = p1##PointX;\
     v##Dx = p2##PointX - p1##PointX;\
     v##Dy = p2##PointY - p1##PointY;\
@@ -806,7 +807,7 @@ void S3L_drawTriangle(
     }\
     helperDxAbs = S3L_abs(v##Dx);\
     v##Inc = v##Dx >= 0 ? 1 : -1;\
-    v##Err = 2 * helperDxAbs - v##Dy;\
+    v##Err = (2 + shift) * helperDxAbs - v##Dy;\
     v##ErrAdd = 2 * helperDxAbs;\
     v##ErrSub = 2 * v##Dy;\
     v##ErrSub = v##ErrSub != 0 ? v##ErrSub : 1; /* don't allow 0, could lead
@@ -820,8 +821,8 @@ void S3L_drawTriangle(
     }\
     s##Err += s##ErrAdd;
 
-  initSide(r,t,r,1)
-  initSide(l,t,l,1)
+  initSide(r,t,r,1,-1)
+  initSide(l,t,l,1,1)
 
   while (currentY <= endY)  // draw the triangle from top to bottom
   {
@@ -829,7 +830,7 @@ void S3L_drawTriangle(
     {                       // then reinit one side
       if (splitOnLeft)
       {
-        initSide(l,l,r,0);
+        initSide(l,l,r,0,1);
 
         S3L_Unit *tmp = barycentric0;
         barycentric0 = barycentric2;
@@ -840,7 +841,7 @@ void S3L_drawTriangle(
       }
       else
       {
-        initSide(r,r,l,0);
+        initSide(r,r,l,0,-1);
 
         S3L_Unit *tmp = barycentric1;
         barycentric1 = barycentric2;
@@ -861,7 +862,7 @@ void S3L_drawTriangle(
     S3L_Unit t1 = 0;
     S3L_Unit t2 = tMax;
 
-    for (S3L_ScreenCoord x = lX; x <= rX; ++x)
+    for (S3L_ScreenCoord x = lX; x < rX; ++x)
     {
       *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
       *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
