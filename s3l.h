@@ -121,7 +121,7 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                         it will overflow. Also other things
                                         may overflow, so rather don't do it. */
 
-#define S3L_NONZERO(value) ((value) != 0 ? (value) : 1) /**< prevents division
+#define S3L_nonzero(value) ((value) != 0 ? (value) : 1) /**< prevents division
                                                              by zero */
 
 #define S3L_SIN_TABLE_LENGTH 128
@@ -841,9 +841,7 @@ void S3L_drawTriangle(
 
       // draw the horizontal line
 
-      S3L_Unit tMax = rX - lX;
-      tMax = S3L_NONZERO(tMax); // prevent division by zero
-
+      S3L_Unit tMax = S3L_nonzero(rX - lX - 1); // prevent division by zero
       S3L_Unit t1 = 0;
       S3L_Unit t2 = tMax;
 
