@@ -94,9 +94,9 @@
     transformation to triangle A first and then rasterizing it. Even the number
     of rasterized pixels is usually different.
   - If specifying a triangle with integer coordinates, then:
-    - a Bottom-most corner (or side) of a triangle is never rasterized (because
-      it is connected to a right side).
-    - Top-most corner can only be rasterized on completely horizontal side
+    - The bottom-most corner (or side) of a triangle is never rasterized
+      (because it is connected to a right side).
+    - The top-most corner can only be rasterized on completely horizontal side
       (otherwise it is connected to a right side).
     - Vertically middle corner is rasterized if and only if it is on the left
       of the triangle and at the same time is also not the bottom-most corner.
@@ -791,7 +791,7 @@ void S3L_drawTriangle(
                                              infinite substracting loop */
 
     #define stepSide(s)\
-      while (s##Err > s##Dy)\
+      while (s##Err >= s##Dy)\
       {\
         s##X += s##Inc;\
         s##Err -= s##ErrSub;\
@@ -801,7 +801,10 @@ void S3L_drawTriangle(
     initSide(r,t,r,1,1)
     initSide(l,t,l,1,0)
 
-    while (currentY <= endY)  // draw the triangle from top to bottom
+    while (currentY < endY)   /* draw the triangle from top to bottom -- the
+                                 bottom-most row is left out because, following
+                                 from the rasterization rules (see top of the
+                                 source), it is to never be rasterized. */
     {
       if (currentY == splitY) // reached a vertical split of the triangle?
       {                       // then reinit one side
