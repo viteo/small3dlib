@@ -289,7 +289,7 @@ uint16_t testRasterization()
   dt(12,12,12);
   dt(9,10,10);
   dt(1,10,10);
-//  dt(9,6,1);
+  dt(9,6,1);
   dt(0,6,10);
 
   #undef dt

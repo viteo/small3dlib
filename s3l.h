@@ -734,8 +734,9 @@ void S3L_drawTriangle(
        specifics of this algorithm are among others:
 
        - drawing possibly a NON-CONTINUOUS line
-       - NOT tracing the line exactly, but rather rasterizing on one (right)
-         side of it, according to the pixel CENTERS
+       - NOT tracing the line exactly, but rather rasterizing one the right
+         side of it, according to the pixel CENTERS, INCLUDING the pixel
+         centers
        
        The principle is this:
 
@@ -756,6 +757,7 @@ void S3L_drawTriangle(
       lDy,     rDy,      // dy (end point - start point)
       lInc,    rInc,     // direction in which to increment (1 or -1)
       lErr,    rErr,     // current error (Bresenham)
+      lErrCmp, rErrCmp,  // helper for deciding comparison (> vs >=)
       lErrAdd, rErrAdd,  // error value to add in each Bresenham cycle
       lErrSub, rErrSub;  // error value to substract when moving in x direction
 
@@ -782,13 +784,16 @@ void S3L_drawTriangle(
         s##SideUnitStep *= -1;\
       }\
       s##Inc = s##Dx >= 0 ? 1 : -1;\
-      s##Err = (s##Dx < 0) ? 0 : s##Dy;\
+      if (s##Dx < 0)\
+        {s##Err = 0;     s##ErrCmp = 0;}\
+      else\
+        {s##Err = s##Dy; s##ErrCmp = 1;}\
       s##ErrAdd = S3L_abs(s##Dx);\
       s##ErrSub = s##Dy != 0 ? s##Dy : 1; /* don't allow 0, could lead to an
                                              infinite substracting loop */
 
     #define stepSide(s)\
-      while (s##Err > s##Dy)\
+      while (s##Err - s##Dy >= s##ErrCmp)\
       {\
         s##X += s##Inc;\
         s##Err -= s##ErrSub;\
