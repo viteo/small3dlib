@@ -121,6 +121,13 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                         it will overflow. Also other things
                                         may overflow, so rather don't do it. */
 
+#define S3L_LERP_QUALITY 3 /**< Quality (scaling) of SOME linear interpolations.
+                                0 will most likely be faster, but artifacts can
+                                occur, while higher values can fix this -- in
+                                theory all higher values will have the same 
+                                speed (it is a shift value), but it mustn't be
+                                too high to prevent overflow (3 seems okay). */
+
 #define S3L_nonzero(value) ((value) != 0 ? (value) : 1) /**< prevents division
                                                              by zero */
 
@@ -771,16 +778,16 @@ void S3L_drawTriangle(
                p2 - point to (t, l or r)
                down - whether the side coordinate goes top-down or vice versa 
             */
-
     #define initSide(s,p1,p2,down)\
       s##X = p1##PointX;\
       s##Dx = p2##PointX - p1##PointX;\
       s##Dy = p2##PointY - p1##PointY;\
-      s##SideUnitStep = S3L_FRACTIONS_PER_UNIT / (s##Dy != 0 ? s##Dy : 1);\
+      s##SideUnitStep = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)\
+                        / (s##Dy != 0 ? s##Dy : 1);\
       s##SideUnitPos = 0;\
       if (!down)\
       {\
-        s##SideUnitPos = S3L_FRACTIONS_PER_UNIT;\
+        s##SideUnitPos = S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY;\
         s##SideUnitStep *= -1;\
       }\
       s##Inc = s##Dx >= 0 ? 1 : -1;\
@@ -818,7 +825,9 @@ void S3L_drawTriangle(
           barycentric0 = barycentric2;
           barycentric2 = tmp;
 
-          rSideUnitPos = S3L_FRACTIONS_PER_UNIT - rSideUnitPos;
+          rSideUnitPos = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)
+                         - rSideUnitPos;
+
           rSideUnitStep *= -1;
         }
         else
@@ -829,7 +838,9 @@ void S3L_drawTriangle(
           barycentric1 = barycentric2;
           barycentric2 = tmp;
 
-          lSideUnitPos = S3L_FRACTIONS_PER_UNIT - lSideUnitPos;
+          lSideUnitPos = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)
+                         - lSideUnitPos;
+
           lSideUnitStep *= -1;
         }
       }
@@ -847,8 +858,13 @@ void S3L_drawTriangle(
 
       for (S3L_ScreenCoord x = lX; x < rX; ++x)
       {
-        *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
-        *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
+        // TODO: try to do this with stepping and S3L_LERP_QUALITY
+        *barycentric0 =
+          S3L_interpolateFrom0(rSideUnitPos >> S3L_LERP_QUALITY,t1,tMax);
+
+        *barycentric1 =
+          S3L_interpolateFrom0(lSideUnitPos >> S3L_LERP_QUALITY,t2,tMax);
+
         *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 
         p.x = x;
