@@ -80,7 +80,7 @@ uint16_t testRasterization()
 
   numErrors += testTriangleRasterization(5,3, 3,3, 9,3, pixelsEmpty);
   numErrors += testTriangleRasterization(9,4, 9,0, 9,9, pixelsEmpty);
-  numErrors += testTriangleRasterization(3,3, 6,6, 7,7, pixelsEmpty);
+  numErrors += testTriangleRasterization(3,3, 6,6, 9,9, pixelsEmpty);
   numErrors += testTriangleRasterization(7,0, 3,3, 0,7, pixelsEmpty);
   numErrors += testTriangleRasterization(7,7, 7,7, 7,7, pixelsEmpty);
 
@@ -297,8 +297,8 @@ uint16_t testRasterization()
   uint16_t numErrors2 = 0;
  
   for (uint8_t y = 0; y < TEST_BUFFER_H - 1; ++y)
-  {
-    printf("  ");
+  {                                    // ^ complete left and bottom aren't 
+    printf("  ");                      // supposed to be rasterized
 
     for (uint8_t x = 0; x < TEST_BUFFER_W - 1; ++x)
     {

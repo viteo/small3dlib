@@ -734,9 +734,8 @@ void S3L_drawTriangle(
        specifics of this algorithm are among others:
 
        - drawing possibly a NON-CONTINUOUS line
-       - NOT tracing the line exactly, but rather rasterizing either on the
-         left or right side of it (depending on what's chosen), according to
-         the pixel CENTERS
+       - NOT tracing the line exactly, but rather rasterizing on one (right)
+         side of it, according to the pixel CENTERS
        
        The principle is this:
 
@@ -747,9 +746,7 @@ void S3L_drawTriangle(
        - To make this INTEGER ONLY, scale the case so that distance between
          pixels is equal to dy (instead of 1). This way the error becomes
          dx/dy * dy == dx, and we're comparing the error to (and potentially
-         substracting) 1 * dy == dy.
-       - The inital error is set to either 0 or dy (effectively shifting the
-         line) dependin on whether we want to rasterize on right or left. */
+         substracting) 1 * dy == dy. */
 
     int16_t
       /* triangle side:
@@ -771,9 +768,9 @@ void S3L_drawTriangle(
                p1 - point from (t, l or r)
                p2 - point to (t, l or r)
                down - whether the side coordinate goes top-down or vice versa 
-               left - whether to rasterize on left of the line or vice versa */
+            */
 
-    #define initSide(s,p1,p2,down,left)\
+    #define initSide(s,p1,p2,down)\
       s##X = p1##PointX;\
       s##Dx = p2##PointX - p1##PointX;\
       s##Dy = p2##PointY - p1##PointY;\
@@ -785,7 +782,7 @@ void S3L_drawTriangle(
         s##SideUnitStep *= -1;\
       }\
       s##Inc = s##Dx >= 0 ? 1 : -1;\
-      s##Err = left != (s##Dx < 0) ? 0 : s##Dy;\
+      s##Err = (s##Dx < 0) ? 0 : s##Dy;\
       s##ErrAdd = S3L_abs(s##Dx);\
       s##ErrSub = s##Dy != 0 ? s##Dy : 1; /* don't allow 0, could lead to an
                                              infinite substracting loop */
@@ -798,8 +795,8 @@ void S3L_drawTriangle(
       }\
       s##Err += s##ErrAdd;
 
-    initSide(r,t,r,1,0)
-    initSide(l,t,l,1,0)
+    initSide(r,t,r,1)
+    initSide(l,t,l,1)
 
     while (currentY < endY)   /* draw the triangle from top to bottom -- the
                                  bottom-most row is left out because, following
@@ -810,7 +807,7 @@ void S3L_drawTriangle(
       {                       // then reinit one side
         if (splitOnLeft)
         {
-          initSide(l,l,r,0,0);
+          initSide(l,l,r,0);
 
           S3L_Unit *tmp = barycentric0;
           barycentric0 = barycentric2;
@@ -821,7 +818,7 @@ void S3L_drawTriangle(
         }
         else
         {
-          initSide(r,r,l,0,0);
+          initSide(r,r,l,0);
 
           S3L_Unit *tmp = barycentric1;
           barycentric1 = barycentric2;
