@@ -74,6 +74,14 @@ uint16_t testRasterization()
   printf("\n=== TESTING RASTERIZATION ===\n");
   
   uint16_t numErrors = 0;
+  
+  uint8_t pixelsEmpty[TEST_BUFFER_W * TEST_BUFFER_H];
+  memset(pixelsEmpty,0,TEST_BUFFER_W * TEST_BUFFER_H);
+
+  numErrors += testTriangleRasterization(5,3, 3,3, 9,3, pixelsEmpty);
+  numErrors += testTriangleRasterization(9,4, 9,0, 9,9, pixelsEmpty);
+  numErrors += testTriangleRasterization(3,3, 6,6, 7,7, pixelsEmpty);
+  numErrors += testTriangleRasterization(5,5, 3,7, 9,1, pixelsEmpty);
 
   uint8_t pixels1[TEST_BUFFER_W * TEST_BUFFER_H] =
   {
@@ -167,13 +175,51 @@ uint16_t testRasterization()
 
   numErrors += testTriangleRasterization(4,8, 4,2, 0,0, pixels4);
 
-  uint8_t pixelsEmpty[TEST_BUFFER_W * TEST_BUFFER_H];
-  memset(pixelsEmpty,0,TEST_BUFFER_W * TEST_BUFFER_H);
+  uint8_t pixels5[TEST_BUFFER_W * TEST_BUFFER_H] =
+  {
+  // 0 1 2 3 4 5 6 7 8 9 A B C D E F
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0
+     0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0, // 1
+     0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0, // 2
+     0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0, // 3
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 4
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 5
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 6
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 7
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 8
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 9
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // A
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // B
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // C
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // D
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // E
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0  // F
+  }; 
 
-  numErrors += testTriangleRasterization(5,3, 3,3, 9,3, pixelsEmpty);
-  numErrors += testTriangleRasterization(9,4, 9,0, 9,9, pixelsEmpty);
-  numErrors += testTriangleRasterization(3,3, 6,6, 7,7, pixelsEmpty);
-  numErrors += testTriangleRasterization(5,5, 3,7, 9,1, pixelsEmpty);
+  numErrors += testTriangleRasterization(6,2, 2,4, 0,0, pixels5);
+
+  uint8_t pixels6[TEST_BUFFER_W * TEST_BUFFER_H] =
+  {
+  // 0 1 2 3 4 5 6 7 8 9 A B C D E F
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0
+     0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0, // 1
+     1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0, // 2
+     0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0, // 3
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 4
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 5
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 6
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 7
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 8
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 9
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // A
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // B
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // C
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // D
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // E
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0  // F
+  }; 
+
+  numErrors += testTriangleRasterization(0,2, 6,0, 4,4, pixels6);
 
   printf("total rasterization errors: %d\n",numErrors);
 }

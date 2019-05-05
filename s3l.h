@@ -89,6 +89,10 @@
   - Adjacent triangles don't have any overlapping pixels, nor gaps between.
   - Triangles of points that lie on a single line are NOT rasterized.
   - A single "long" triangle CAN be rasterized as non-continuous.
+  - Transforming (e.g. mirroring, rotating by 90 degrees etc.) a result of
+    rasterizing triangle A is NOT generally equal to applying the same
+    transformation to triangle A first and then rasterizing it. Even the number
+    of rasterized pixels is usually different.
   - If specifying a triangle with integer coordinates, then:
     - a Bottom-most corner (or side) of a triangle is never rasterized (because
       it is connected to a right side).
