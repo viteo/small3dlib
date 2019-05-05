@@ -80,8 +80,8 @@ uint16_t testRasterization()
 
   numErrors += testTriangleRasterization(5,3, 3,3, 9,3, pixelsEmpty);
   numErrors += testTriangleRasterization(9,4, 9,0, 9,9, pixelsEmpty);
-  numErrors += testTriangleRasterization(3,3, 6,6, 9,9, pixelsEmpty);
-  numErrors += testTriangleRasterization(7,0, 3,3, 0,7, pixelsEmpty);
+  numErrors += testTriangleRasterization(9,9, 6,6, 3,3, pixelsEmpty);
+  numErrors += testTriangleRasterization(0,6, 3,3, 6,0, pixelsEmpty);
   numErrors += testTriangleRasterization(7,7, 7,7, 7,7, pixelsEmpty);
 
   uint8_t pixels1[TEST_BUFFER_W * TEST_BUFFER_H] =
