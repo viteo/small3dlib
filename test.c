@@ -9,7 +9,7 @@ uint8_t testRaster[TEST_BUFFER_W * TEST_BUFFER_H];
 
 void pixelFunc(S3L_PixelInfo *p)
 {
-  testRaster[p->y * TEST_BUFFER_W + p->x] = 1;
+  testRaster[p->y * TEST_BUFFER_W + p->x] += 1;
 }
 
 uint16_t testTriangleRasterization(
@@ -22,7 +22,7 @@ uint16_t testTriangleRasterization(
   uint8_t *expectedPixels
   )
 {
-  printf("  --- testing tringle rasterization (|: expected, -: rasterized) ----\n");
+  printf("  --- testing tringle rasterization [%d,%d] [%d,%d] [%d,%d] (|: expected, -: rasterized) ----\n",x0,y0,x1,y1,x2,y2);
 
   S3L_DrawConfig conf;
 
@@ -81,7 +81,8 @@ uint16_t testRasterization()
   numErrors += testTriangleRasterization(5,3, 3,3, 9,3, pixelsEmpty);
   numErrors += testTriangleRasterization(9,4, 9,0, 9,9, pixelsEmpty);
   numErrors += testTriangleRasterization(3,3, 6,6, 7,7, pixelsEmpty);
-  numErrors += testTriangleRasterization(5,5, 3,7, 9,1, pixelsEmpty);
+  numErrors += testTriangleRasterization(7,0, 3,3, 0,7, pixelsEmpty);
+  numErrors += testTriangleRasterization(7,7, 7,7, 7,7, pixelsEmpty);
 
   uint8_t pixels1[TEST_BUFFER_W * TEST_BUFFER_H] =
   {
@@ -220,6 +221,102 @@ uint16_t testRasterization()
   }; 
 
   numErrors += testTriangleRasterization(0,2, 6,0, 4,4, pixels6);
+
+  printf("cover test (each pixel should be covered exactly once):\n\n");
+
+  S3L_DrawConfig conf;
+
+  conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
+  conf.mode = S3L_MODE_TRIANGLES;
+
+  S3L_ScreenCoord coords[] =
+  {
+    0,0,
+    6,0,       
+    13,0,     
+    15,0,
+    14,1,
+    11,2,
+    3,3,
+    11,4,
+    14,5,
+    0,6,
+    6,6,
+    13,8,
+    8,9,
+    3,12,       
+    9,12,
+    11,13,
+    9,14,
+    0,15,                          
+    15,15
+  };
+
+  memset(testRaster,0,TEST_BUFFER_W * TEST_BUFFER_H);
+
+  #define dt(i1,i2,i3) S3L_drawTriangle(coords[2*i1],coords[2*i1 + 1],coords[2*i2],coords[2*i2+1],coords[2*i3],coords[2*i3+1],conf,0)
+  dt(0,1,6);    // 0
+  dt(1,2,5);    // 1
+  dt(2,4,5);    // 2
+  dt(2,3,4);    // 3
+  dt(0,6,9);    // 4
+  dt(1,10,6);   // 5
+  dt(1,5,10);   // 6
+  dt(5,4,8);    // 7
+  dt(4,3,8);    // 8
+  dt(9,6,10);   // 9
+  dt(10,5,12);  // 10
+  dt(5,7,12);   // 11
+  dt(5,7,11);   // 12
+  dt(5,8,11);   // 13
+  dt(8,3,18);   // 14
+  dt(9,10,13);  // 15
+  dt(10,12,13); // 16
+  dt(12,7,11);  // 17
+  dt(11,8,18);  // 18
+  dt(9,13,17);  // 19
+  dt(13,12,14); // 20
+  dt(12,11,14); // 21
+  dt(11,14,15); // 22
+  dt(15,11,18); // 23
+  dt(13,14,16); // 24
+  dt(14,15,16); // 25
+  dt(17,13,16); // 26
+  dt(16,15,18); // 27
+  dt(16,17,18); // 28
+
+  // extra empty triangles
+  dt(12,12,12);
+  dt(9,10,10);
+  dt(1,10,10);
+//  dt(9,6,1);
+  dt(0,6,10);
+
+  #undef dt
+
+  uint16_t numErrors2 = 0;
+ 
+  for (uint8_t y = 0; y < TEST_BUFFER_H - 1; ++y)
+  {
+    printf("  ");
+
+    for (uint8_t x = 0; x < TEST_BUFFER_W - 1; ++x)
+    {
+      uint8_t count = testRaster[y * TEST_BUFFER_W + x];
+     
+      printf("%d",count);
+      
+      if (count != 1)
+        numErrors2++;
+    }
+ 
+    printf("\n");
+  }
+
+  printf("  errors: %d\n",numErrors2);
+
+  numErrors += numErrors2;
+
 
   printf("total rasterization errors: %d\n",numErrors);
 }
