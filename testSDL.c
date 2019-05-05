@@ -76,13 +76,12 @@ void drawPixel(S3L_PixelInfo *p)
 
   uint8_t col = texturePixel(u,v);
 
-  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
+//  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
 
-/*  setPixel(p->x,p->y,
+  setPixel(p->x,p->y,
     p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
-*/
 }
 
 const int16_t test_coords[] =
@@ -93,7 +92,8 @@ const int16_t test_coords[] =
     350,270, 440,200,   490,220,  // 3, arbitrary
     150,300, 290,400,   450,400,  // 4, regular
     105,200, 120,200,   201,200,  // 5, horizontal line
-    300,200, 300,250,   300,220   // 6, vertical line
+    300,200, 300,250,   300,220,  // 6, vertical line
+    496,15,  613,131,   552,203
   };
 
 void draw()
@@ -105,7 +105,7 @@ S3L_DrawConfig conf;
 conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
 conf.mode = S3L_MODE_TRIANGLES;
 
-  for (int c = 0; c < 7; ++c)
+  for (int c = 0; c < 8; ++c)
   {
     int
       x0 = test_coords[6 * c],
@@ -127,14 +127,16 @@ x2 = cent + (x2 - cent) * sin(frame * 0.001) * 2;
 
   }
 
-int16_t rotX0 = 200 + sin(frame * 0.01) * 50;
-int16_t rotY0 = 200 + cos(frame * 0.01) * 50;
+float rotRate = 0.002;
 
-int16_t rotX1 = 200 + sin((frame + 500) * 0.01) * 50;
-int16_t rotY1 = 200 + cos((frame + 500) * 0.01) * 50;
+int16_t rotX0 = 200 + sin(frame * rotRate) * 100;
+int16_t rotY0 = 200 + cos(frame * rotRate) * 100;
 
-int16_t rotX2 = 200 + sin((frame + 300) * 0.01) * 50;
-int16_t rotY2 = 200 + cos((frame + 300) * 0.01) * 50;
+int16_t rotX1 = 200 + sin((frame + 1500) * rotRate) * 100;
+int16_t rotY1 = 200 + cos((frame + 1500) * rotRate) * 100;
+
+int16_t rotX2 = 200 + sin((frame + 500) * rotRate) * 100;
+int16_t rotY2 = 200 + cos((frame + 500) * rotRate) * 100;
 
 S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2,conf,0);
 
