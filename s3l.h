@@ -791,14 +791,14 @@ void S3L_drawTriangle(
                                              infinite substracting loop */
 
     #define stepSide(s)\
-      while (s##Err >= s##Dy)\
+      while (s##Err > s##Dy)\
       {\
         s##X += s##Inc;\
         s##Err -= s##ErrSub;\
       }\
       s##Err += s##ErrAdd;
 
-    initSide(r,t,r,1,1)
+    initSide(r,t,r,1,0)
     initSide(l,t,l,1,0)
 
     while (currentY < endY)   /* draw the triangle from top to bottom -- the
@@ -821,7 +821,7 @@ void S3L_drawTriangle(
         }
         else
         {
-          initSide(r,r,l,0,1);
+          initSide(r,r,l,0,0);
 
           S3L_Unit *tmp = barycentric1;
           barycentric1 = barycentric2;
@@ -845,7 +845,7 @@ void S3L_drawTriangle(
       S3L_Unit t1 = 0;
       S3L_Unit t2 = tMax;
 
-      for (S3L_ScreenCoord x = lX; x <= rX; ++x)
+      for (S3L_ScreenCoord x = lX; x < rX; ++x)
       {
         *barycentric0 = S3L_interpolateFrom0(rSideUnitPos,t1,tMax);
         *barycentric1 = S3L_interpolateFrom0(lSideUnitPos,t2,tMax);
