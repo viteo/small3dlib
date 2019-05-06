@@ -76,12 +76,13 @@ void drawPixel(S3L_PixelInfo *p)
 
   uint8_t col = texturePixel(u,v);
 
-//  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
-
+  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
+/*
   setPixel(p->x,p->y,
     p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
     p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
+*/
 }
 
 const int16_t test_coords[] =

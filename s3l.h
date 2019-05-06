@@ -121,12 +121,15 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                         it will overflow. Also other things
                                         may overflow, so rather don't do it. */
 
-#define S3L_LERP_QUALITY 3 /**< Quality (scaling) of SOME linear interpolations.
-                                0 will most likely be faster, but artifacts can
-                                occur, while higher values can fix this -- in
-                                theory all higher values will have the same 
-                                speed (it is a shift value), but it mustn't be
-                                too high to prevent overflow (3 seems okay). */
+#ifndef S3L_LERP_QUALITY
+  #define S3L_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
+                                  interpolations. 0 will most likely be faster,
+                                  but artifacts can occur for bigger tris,
+                                  while higher values can fix this -- in theory
+                                  all higher values will have the same speed
+                                  (it is a shift value), but it mustn't be too
+                                  high to prevent overflow. */
+#endif
 
 #define S3L_nonzero(value) ((value) != 0 ? (value) : 1) /**< prevents division
                                                              by zero */
@@ -852,26 +855,25 @@ void S3L_drawTriangle(
 
       // draw the horizontal line
 
-      S3L_Unit tMax = S3L_nonzero(rX - lX - 1); // prevent division by zero
-      S3L_Unit t1 = 0;
-      S3L_Unit t2 = tMax;
+      S3L_Unit rowLength = S3L_nonzero(rX - lX - 1); // prevent zero div
+
+      S3L_Unit b0 = 0;
+      S3L_Unit b1 = lSideUnitPos;
+
+      S3L_Unit b0Step = rSideUnitPos / rowLength;
+      S3L_Unit b1Step = lSideUnitPos / rowLength;
 
       for (S3L_ScreenCoord x = lX; x < rX; ++x)
       {
-        // TODO: try to do this with stepping and S3L_LERP_QUALITY
-        *barycentric0 =
-          S3L_interpolateFrom0(rSideUnitPos >> S3L_LERP_QUALITY,t1,tMax);
-
-        *barycentric1 =
-          S3L_interpolateFrom0(lSideUnitPos >> S3L_LERP_QUALITY,t2,tMax);
-
+        *barycentric0 = b0 >> S3L_LERP_QUALITY;
+        *barycentric1 = b1 >> S3L_LERP_QUALITY;
         *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 
         p.x = x;
         S3L_PIXEL_FUNCTION(&p);
 
-        ++t1;
-        --t2;
+        b0 += b0Step;
+        b1 -= b1Step;
       }
 
       lSideUnitPos += lSideUnitStep;
