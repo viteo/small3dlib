@@ -14,6 +14,71 @@
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 
+const int16_t test_coords[] =
+  {
+    100,100, 99,101,    101,101,  // 0, small triangle
+    190,50,  200,10,    400,80,   // 1, arbitrary
+    40,80,   60,50,     100,30,   // 2, arbitrary
+    350,270, 440,200,   490,220,  // 3, arbitrary
+    150,300, 290,400,   450,400,  // 4, regular
+    105,200, 120,200,   201,200,  // 5, horizontal line
+    300,200, 300,250,   300,220,  // 6, vertical line
+    496,15,  613,131,   552,203
+  };
+
+#define S S3L_FRACTIONS_PER_UNIT
+
+S3L_Unit ver[] =
+{
+   S/2, -S/2, -S/2,    // 0 front, bottom, right
+  -S/2, -S/2, -S/2,    // 1 front, bottom, left
+   S/2,  S/2, -S/2,    // 2 front, top,    right
+  -S/2,  S/2, -S/2,    // 3 front, top,    left
+   S/2, -S/2,  S/2,    // 4 back,  bottom, right
+  -S/2, -S/2,  S/2,    // 5 back,  bottom, left
+   S/2,  S/2,  S/2,    // 6 back,  top,    right
+  -S/2,  S/2,  S/2     // 7 back,  top,    left
+};
+
+S3L_Unit tex_coords[] =
+{
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16,
+   16,0,  0,0,  16,16
+};
+
+#undef S
+
+const S3L_Index tri[] =
+{
+  0, 3, 2, // front
+  0, 1, 3,
+  
+  4, 0, 2, // right
+  4, 2, 6,
+
+  5, 4, 6, // back
+  6, 7, 5,
+
+  7, 3, 1, // left
+  7, 1, 5,
+
+  3, 6, 2, // top
+  3, 7, 6,
+
+  4, 1, 0, // bottom
+  4, 5, 1
+};
+
 const uint8_t testTexture[] =
 {
   2,2,2,0,0,0,2,2,2,2,0,0,0,2,2,2,
@@ -70,72 +135,23 @@ uint8_t texturePixel(int32_t u, int32_t v)
 
 void drawPixel(S3L_PixelInfo *p)
 {
-  float b0 = p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT);
-  float b1 = p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT);
-  float b2 = p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT);
+  S3L_Unit u, v, *coords;
 
-  int32_t u = b0 * 0 + b1 * 0 + b2 * 16;
-  int32_t v = b0 * 0 + b1 * 16 + b2 * 16;
+  coords = tex_coords + p->triangleID * 6;
+
+  S3L_interpolateTexCoords(
+    coords[0],coords[1],  
+    coords[2],coords[3],
+    coords[4],coords[5],
+    p,
+    &u,&v);
 
   uint8_t col = texturePixel(u,v);
 
   setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
-/*
-  setPixel(p->x,p->y,
-    p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
-    p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,
-    p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
-*/
+
+//  setPixel(p->x,p->y,p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
 }
-
-const int16_t test_coords[] =
-  {
-    100,100, 99,101,    101,101,  // 0, small triangle
-    190,50,  200,10,    400,80,   // 1, arbitrary
-    40,80,   60,50,     100,30,   // 2, arbitrary
-    350,270, 440,200,   490,220,  // 3, arbitrary
-    150,300, 290,400,   450,400,  // 4, regular
-    105,200, 120,200,   201,200,  // 5, horizontal line
-    300,200, 300,250,   300,220,  // 6, vertical line
-    496,15,  613,131,   552,203
-  };
-
-#define S S3L_FRACTIONS_PER_UNIT
-
-S3L_Unit ver[] =
-{
-   S/2, -S/2, -S/2,    // 0 front, bottom, right
-  -S/2, -S/2, -S/2,    // 1 front, bottom, left
-   S/2,  S/2, -S/2,    // 2 front, top,    right
-  -S/2,  S/2, -S/2,    // 3 front, top,    left
-   S/2, -S/2,  S/2,    // 4 back,  bottom, right
-  -S/2, -S/2,  S/2,    // 5 back,  bottom, left
-   S/2,  S/2,  S/2,    // 6 back,  top,    right
-  -S/2,  S/2,  S/2     // 7 back,  top,    left
-};
-
-#undef S
-
-const S3L_Index tri[] =
-{
-  0, 3, 2, // front
-  0, 1, 3,
-  
-  4, 0, 2, // right
-  4, 2, 6,
-
-  5, 4, 6, // back
-  6, 7, 5,
-
-  7, 3, 1, // left
-  7, 1, 5,
-
-  3, 6, 2, // top
-  3, 7, 6,
-
-  4, 1, 0, // bottom
-  4, 5, 1
-};
 
 S3L_Camera camera;
 S3L_Transform3D modelTransform;
@@ -148,7 +164,7 @@ void draw()
 //  modelTransform.rotation.z = frame * 0.2;
 //  modelTransform.rotation.x = frame * 0.1;
 
-  S3L_drawModel(ver,tri,12,modelTransform,camera,conf);
+  S3L_drawModelIndexed(ver,tri,12,modelTransform,camera,conf);
 
 /*
 conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
