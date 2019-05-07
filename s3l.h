@@ -1,12 +1,12 @@
 /*
   WIP
 
-  Simple realtime 3D software rasterization library. It is fast, focused on
+  Simple realtime 3D software rasterization renderer. It is fast, focused on
   resource-limited computers, located in a single C header file, with no
-  dependencies, using only integer arithmetic.
+  dependencies, using only integer arithmetics.
 
   author: Miloslav Ciz
-  license: CC0 1.0
+  license: CC0 1.0 + additional waiver of all IP
 
   --------------------
 
@@ -516,6 +516,12 @@ typedef struct
   int backfaceCulling;
   int mode;
 } S3L_DrawConfig;
+
+void S3L_initDrawConfig(S3L_DrawConfig *config)
+{
+  config->backfaceCulling = 1;
+  config->mode = S3L_MODE_TRIANGLES;
+}
 
 void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
 

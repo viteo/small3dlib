@@ -45,6 +45,9 @@ void clearScreen()
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
 {
+  if (x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT)
+    return;
+
   uint32_t r = red & 0x000000FF;
   r = r << 24;
 
@@ -97,12 +100,57 @@ const int16_t test_coords[] =
     496,15,  613,131,   552,203
   };
 
+#define S S3L_FRACTIONS_PER_UNIT
+
+S3L_Unit ver[] =
+{
+   S/2, -S/2, -S/2,    // 0 front, bottom, right
+  -S/2, -S/2, -S/2,    // 1 front, bottom, left
+   S/2,  S/2, -S/2,    // 2 front, top,    right
+  -S/2,  S/2, -S/2,    // 3 front, top,    left
+   S/2, -S/2,  S/2,    // 4 back,  bottom, right
+  -S/2, -S/2,  S/2,    // 5 back,  bottom, left
+   S/2,  S/2,  S/2,    // 6 back,  top,    right
+  -S/2,  S/2,  S/2     // 7 back,  top,    left
+};
+
+#undef S
+
+const S3L_Index tri[] =
+{
+  0, 3, 2, // front
+  0, 1, 3,
+  
+  4, 0, 2, // right
+  4, 2, 6,
+
+  5, 4, 6, // back
+  6, 7, 5,
+
+  7, 3, 1, // left
+  7, 1, 5,
+
+  3, 6, 2, // top
+  3, 7, 6,
+
+  4, 1, 0, // bottom
+  4, 5, 1
+};
+
+S3L_Camera camera;
+S3L_Transform3D modelTransform;
+S3L_DrawConfig conf;
+
 void draw()
 {
   clearScreen();
 
-S3L_DrawConfig conf;
+//  modelTransform.rotation.z = frame * 0.2;
+//  modelTransform.rotation.x = frame * 0.1;
 
+  S3L_drawModel(ver,tri,12,modelTransform,camera,conf);
+
+/*
 conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
 conf.mode = S3L_MODE_TRIANGLES;
 
@@ -140,7 +188,7 @@ int16_t rotX2 = 200 + sin((frame + 500) * rotRate) * 100;
 int16_t rotY2 = 200 + cos((frame + 500) * rotRate) * 100;
 
 S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2,conf,0);
-
+  */
 }
 
 int main()
@@ -150,6 +198,16 @@ int main()
   SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
+
+  S3L_initCamera(&camera);
+  camera.resolutionX = SCREEN_WIDTH;
+  camera.resolutionY = SCREEN_HEIGHT;
+  camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
+  camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
+  camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
+
+  S3L_initTransoform3D(&modelTransform);
+  S3L_initDrawConfig(&conf);
 
   int running = 1;
 
