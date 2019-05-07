@@ -42,18 +42,18 @@ S3L_Unit ver[] =
 
 S3L_Unit tex_coords[] =
 {
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16,
-   16,0,  0,0,  16,16
+   1,1,  0,0,  1,0,
+   1,1,  0,1,  0,0,
+   1,0,  1,1,  0,1,
+   1,0,  0,1,  0,0,
+   0,0,  1,0,  1,1,
+   1,1,  0,1,  0,0,
+   0,1,  0,0,  1,0,
+   0,1,  1,0,  1,1,
+   1,1,  0,0,  1,0,
+   1,1,  0,1,  0,0,
+   0,1,  1,0,  1,1,
+   0,1,  0,0,  1,0
 };
 
 #undef S
@@ -140,9 +140,9 @@ void drawPixel(S3L_PixelInfo *p)
   coords = tex_coords + p->triangleID * 6;
 
   S3L_interpolateTexCoords(
-    coords[0],coords[1],  
-    coords[2],coords[3],
-    coords[4],coords[5],
+    coords[0] * 16,coords[1] * 16,
+    coords[2] * 16,coords[3] * 16,
+    coords[4] * 16,coords[5] * 16,
     p,
     &u,&v);
 
@@ -161,8 +161,8 @@ void draw()
 {
   clearScreen();
 
-//  modelTransform.rotation.z = frame * 0.2;
-//  modelTransform.rotation.x = frame * 0.1;
+  modelTransform.rotation.z = frame * 0.1;
+  modelTransform.rotation.x = frame * 0.3;
 
   S3L_drawModelIndexed(ver,tri,12,modelTransform,camera,conf);
 
@@ -219,8 +219,8 @@ int main()
   camera.resolutionX = SCREEN_WIDTH;
   camera.resolutionY = SCREEN_HEIGHT;
   camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
-  camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
-  camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
+//  camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
+//  camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
 
   S3L_initTransoform3D(&modelTransform);
   S3L_initDrawConfig(&conf);

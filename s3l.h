@@ -1011,7 +1011,9 @@ static inline void S3L_mapCameraToScreen(S3L_Vec4 point, S3L_Camera *camera,
 
 /*
   Helper function to interpolate texture coordinates based on barycentric
-  coordinates.
+  coordinates. If you're going for max performance, you may want to compute
+  these values yourself -- some specific cases may be possible to compute
+  faster.
 */
 
 void S3L_interpolateTexCoords(
