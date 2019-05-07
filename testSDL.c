@@ -26,58 +26,9 @@ const int16_t test_coords[] =
     496,15,  613,131,   552,203
   };
 
-#define S S3L_FRACTIONS_PER_UNIT
-
-S3L_Unit ver[] =
-{
-   S/2, -S/2, -S/2,    // 0 front, bottom, right
-  -S/2, -S/2, -S/2,    // 1 front, bottom, left
-   S/2,  S/2, -S/2,    // 2 front, top,    right
-  -S/2,  S/2, -S/2,    // 3 front, top,    left
-   S/2, -S/2,  S/2,    // 4 back,  bottom, right
-  -S/2, -S/2,  S/2,    // 5 back,  bottom, left
-   S/2,  S/2,  S/2,    // 6 back,  top,    right
-  -S/2,  S/2,  S/2     // 7 back,  top,    left
-};
-
-S3L_Unit tex_coords[] =
-{
-   1,1,  0,0,  1,0,
-   1,1,  0,1,  0,0,
-   1,0,  1,1,  0,1,
-   1,0,  0,1,  0,0,
-   0,0,  1,0,  1,1,
-   1,1,  0,1,  0,0,
-   0,1,  0,0,  1,0,
-   0,1,  1,0,  1,1,
-   1,1,  0,0,  1,0,
-   1,1,  0,1,  0,0,
-   0,1,  1,0,  1,1,
-   0,1,  0,0,  1,0
-};
-
-#undef S
-
-const S3L_Index tri[] =
-{
-  0, 3, 2, // front
-  0, 1, 3,
-  
-  4, 0, 2, // right
-  4, 2, 6,
-
-  5, 4, 6, // back
-  6, 7, 5,
-
-  7, 3, 1, // left
-  7, 1, 5,
-
-  3, 6, 2, // top
-  3, 7, 6,
-
-  4, 1, 0, // bottom
-  4, 5, 1
-};
+const S3L_Unit ver[] = { S3L_CUBE_VERTICES };
+const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
+const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS };
 
 const uint8_t testTexture[] =
 {

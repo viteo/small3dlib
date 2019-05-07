@@ -134,6 +134,58 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
 #define S3L_nonzero(value) ((value) != 0 ? (value) : 1) /**< prevents division
                                                              by zero */
 
+/** Predefined vertices of a cube to simply insert in an array. These come with
+    S3L_CUBE_TRIANGLES and S3L_CUBE_TEXCOORDS. */
+#define S3L_CUBE_VERTICES\
+ /* 0 front, bottom, right */\
+ S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
+ /* 1 front, bottom, left */\
+-S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
+ /* 2 front, top,    right */\
+ S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
+ /* 3 front, top,    left */\
+-S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
+ /* 4 back,  bottom, right */\
+ S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,\
+ /* 5 back,  bottom, left */\
+-S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,\
+ /* 6 back,  top,    right */\
+ S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,\
+ /* 7 back,  top,    left */\
+-S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2
+
+/** Predefined triangle indices of a cube, to be used with S3L_CUBE_VERTICES
+    and S3L_CUBE_TEXCOORDS. */
+#define S3L_CUBE_TRIANGLES\
+  0, 3, 2, /* front  */\
+  0, 1, 3,\
+  4, 0, 2, /* right  */\
+  4, 2, 6,\
+  5, 4, 6, /* back   */\
+  6, 7, 5,\
+  7, 3, 1, /* left   */\
+  7, 1, 5,\
+  3, 6, 2, /* top    */\
+  3, 7, 6,\
+  4, 1, 0, /* bottom */\
+  4, 5, 1
+
+/** Predefined texture coordinates of a cube, corresponding to triangles (NOT
+    vertices), to be used with S3L_CUBE_VERTICES and S3L_CUBE_TRIANGLES. */
+#define S3L_CUBE_TEXCOORDS\
+  1,1,  0,0,  1,0,\
+  1,1,  0,1,  0,0,\
+  1,0,  1,1,  0,1,\
+  1,0,  0,1,  0,0,\
+  0,0,  1,0,  1,1,\
+  1,1,  0,1,  0,0,\
+  0,1,  0,0,  1,0,\
+  0,1,  1,0,  1,1,\
+  1,1,  0,0,  1,0,\
+  1,1,  0,1,  0,0,\
+  0,1,  1,0,  1,1,\
+  0,1,  0,0,  1,0
+
 #define S3L_SIN_TABLE_LENGTH 128
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 {
