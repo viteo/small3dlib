@@ -584,6 +584,26 @@ void S3L_initDrawConfig(S3L_DrawConfig *config)
 
 void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
 
+/**
+  Interpolated between two values, v1 and v2, in the same ratio as t is to
+  tMax. Does NOT prevent zero division.
+*/
+static inline int16_t S3L_interpolate(int16_t v1, int16_t v2, int16_t t,
+  int16_t tMax)
+{
+  return v1 + ((v2 - v1) * t) / tMax;
+}
+
+/**
+  Like S3L_interpolate, but uses a parameter that goes from 0 to
+  S3L_FRACTIONS_PER_UNIT - 1, which can be faster.
+*/
+
+static inline int16_t S3L_interpolateByUnit(int16_t v1, int16_t v2, int16_t t)
+{
+  return v1 + ((v2 - v1) * t) / S3L_FRACTIONS_PER_UNIT;
+}
+
 typedef struct
 {
   int16_t steps;
@@ -599,6 +619,103 @@ typedef struct
   int16_t minorDiff; 
 } S3L_BresenhamState; ///< State of drawing a line with Bresenham algorithm.
 
+typedef struct
+{
+  S3L_ScreenCoord p0[2]; ///< 2D coordinates of the 1st point projection
+  S3L_ScreenCoord p1[2]; ///< 2D coordinates of the 2nd point projection
+
+  S3L_Unit a[3]; ///< 3D coordinates of the 1st projected point of the line
+  S3L_Unit b[3]; ///< 3D coordinates of the 2nd projected point of the line
+  S3L_Unit pointDifference[3]; ///< [bx - ax, by - ay, bz - cz]
+
+  S3L_ScreenCoord c[2]; /**< helper point to for a plane for the intersection 
+                             with line */
+
+  S3L_Unit fcx; ///< precomputed helper product
+  S3L_Unit fcy; ///< precomputed helper product
+
+  S3L_Unit focalLength; 
+} S3L_PerspectiveCorrectionState; ///< State for computing persp. correction.
+
+/** 
+  Initializes the state of perspective correction along a line. The correction
+  itself is then done using S3L_correctPerspective function, using the state.
+*/
+void S3L_initPerspectiveCorrectionState(
+  S3L_ScreenCoord x0,
+  S3L_ScreenCoord y0,
+  S3L_Unit depth0,
+  S3L_ScreenCoord x1,
+  S3L_ScreenCoord y1,
+  S3L_Unit depth1,
+  S3L_Unit focalLength,
+  S3L_PerspectiveCorrectionState *state)
+{
+  state->focalLength = focalLength;
+
+  state->p0[0] = x0;
+  state->p0[1] = y0;
+
+  state->p1[0] = x1;
+  state->p1[1] = y1;
+
+  state->a[0] = (x0 * (depth0 + focalLength)) / focalLength;
+  state->a[1] = (y0 * (depth0 + focalLength)) / focalLength;
+  state->a[2] = depth0;
+
+  state->b[0] = (x1 * (depth1 + focalLength)) / focalLength;
+  state->b[1] = (y1 * (depth1 + focalLength)) / focalLength;
+  state->b[2] = depth1;
+
+  state->pointDifference[0] = state->b[0] - state->a[0];
+  state->pointDifference[1] = state->b[1] - state->a[1];
+  state->pointDifference[2] = state->b[2] - state->a[2];
+
+  state->c[0] = x1 + y1 - y0;
+  state->c[1] = y1 - x1 + x0;
+
+  state->fcx = focalLength * state->c[0];
+  state->fcy = focalLength * state->c[1];
+}
+
+S3L_Unit S3L_correctPerspective(
+  S3L_Unit interpolationParameter, S3L_PerspectiveCorrectionState *state)
+{
+  S3L_Unit p[2]; // lin. interpolated position between the projections
+
+  // TODO: perhaps this could be interpolated faster by stepping?
+  p[0] =
+    S3L_interpolateByUnit(state->p0[0],state->p1[0],interpolationParameter);
+
+  p[1] =
+    S3L_interpolateByUnit(state->p0[1],state->p1[1],interpolationParameter);
+
+  S3L_Unit a, b, c, d; // plane coeficients
+
+  a = state->focalLength * p[1] - state->fcy;
+  b = state->fcx - state->focalLength * p[0];
+  c = p[0] * state->c[1] - p[1] * state->c[0];
+  d = state->focalLength * c;
+
+  a >>= 4; // TODO: this sometimes prevents overflow, but should be solved better!
+  b >>= 4;
+  c >>= 4;
+  d >>= 4;
+
+  return
+    (
+      - a * state->a[0] - b * state->a[1] - c * state->a[2] - d
+    )
+    /
+    (
+      (
+      a * state->pointDifference[0] +
+      b * state->pointDifference[1] +
+      c * state->pointDifference[2]
+      ) / S3L_FRACTIONS_PER_UNIT
+    );
+}
+
 /**
   Returns a value interpolated between the three triangle vertices based on
   barycentric coordinates.
@@ -613,16 +730,6 @@ static inline S3L_Unit S3L_interpolateBarycentric(
       (value1 * barycentric1) +
       (value2 * barycentric2)
     ) / S3L_FRACTIONS_PER_UNIT;
-}
-
-/**
-  Interpolated between two values, v1 and v2, in the same ratio as t is to
-  tMax. Does NOT prevent zero division.
-*/
-static inline int16_t S3L_interpolate(int16_t v1, int16_t v2, int16_t t,
-  int16_t tMax)
-{
-  return v1 + ((v2 - v1) * t) / tMax;
 }
 
 /**
