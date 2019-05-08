@@ -90,12 +90,17 @@ void drawPixel(S3L_PixelInfo *p)
 
   coords = tex_coords + p->triangleID * 6;
 
-  S3L_interpolateTexCoords(
-    coords[0] * 16,coords[1] * 16,
-    coords[2] * 16,coords[3] * 16,
-    coords[4] * 16,coords[5] * 16,
-    p,
-    &u,&v);
+  u = S3L_interpolateBarycentric(
+    coords[0] * 16,
+    coords[2] * 16,
+    coords[4] * 16,
+    p->barycentric0, p->barycentric1, p->barycentric2);
+
+  v = S3L_interpolateBarycentric(
+    coords[1] * 16,
+    coords[3] * 16,
+    coords[5] * 16,
+    p->barycentric0, p->barycentric1, p->barycentric2);
 
   uint8_t col = texturePixel(u,v);
 

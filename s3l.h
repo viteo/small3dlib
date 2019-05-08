@@ -1068,32 +1068,6 @@ static inline void S3L_mapCameraToScreen(S3L_Vec4 point, S3L_Camera *camera,
   // ^ S3L_FRACTIONS_PER_UNIT cancel out
 }
 
-/*
-  Helper function to interpolate texture coordinates based on barycentric
-  coordinates. If you're going for max performance, you may want to compute
-  these values yourself -- some specific cases may be possible to compute
-  faster.
-*/
-
-void S3L_interpolateTexCoords(
-  S3L_Unit u0,
-  S3L_Unit v0,
-  S3L_Unit u1,
-  S3L_Unit v1,
-  S3L_Unit u2,
-  S3L_Unit v2,
-  S3L_PixelInfo *p,
-  S3L_Unit *u,
-  S3L_Unit *v
-  )
-{
-  *u = (p->barycentric0 * u0 + p->barycentric1 * u1 + p->barycentric2 * u2) /
-       S3L_FRACTIONS_PER_UNIT;
-
-  *v = (p->barycentric0 * v0 + p->barycentric1 * v1 + p->barycentric2 * v2) /
-       S3L_FRACTIONS_PER_UNIT;
-}
-
 void S3L_drawModelIndexed(
   const S3L_Unit coords[],
   const S3L_Index triangleVertexIndices[],
