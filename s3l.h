@@ -115,6 +115,10 @@
   #define S3L_RESOLUTION_Y 480 //< Redefine to your screen y resolution.
 #endif
 
+#ifndef S3L_PERSPECTIVE_CORRECTION
+  #define S3L_PERSPECTIVE_CORRECTION 1
+#endif
+
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
 #define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
 
@@ -800,9 +804,9 @@ int S3L_bresenhamStep(S3L_BresenhamState *state)
 }
 
 void _S3L_drawFilledTriangle(
-  S3L_ScreenCoord x0, S3L_ScreenCoord y0,
-  S3L_ScreenCoord x1, S3L_ScreenCoord y1,
-  S3L_ScreenCoord x2, S3L_ScreenCoord y2,
+  S3L_ScreenCoord x0, S3L_ScreenCoord y0, S3L_Unit depth0,
+  S3L_ScreenCoord x1, S3L_ScreenCoord y1, S3L_Unit depth1,
+  S3L_ScreenCoord x2, S3L_ScreenCoord y2, S3L_Unit depth2,
   S3L_PixelInfo *p)
 {
   S3L_ScreenCoord
@@ -1042,9 +1046,9 @@ void _S3L_drawFilledTriangle(
 }
 
 void S3L_drawTriangle(
-  S3L_ScreenCoord x0, S3L_ScreenCoord y0,
-  S3L_ScreenCoord x1, S3L_ScreenCoord y1,
-  S3L_ScreenCoord x2, S3L_ScreenCoord y2,
+  S3L_ScreenCoord x0, S3L_ScreenCoord y0, S3L_Unit depth0,
+  S3L_ScreenCoord x1, S3L_ScreenCoord y1, S3L_Unit depth1,
+  S3L_ScreenCoord x2, S3L_ScreenCoord y2, S3L_Unit depth2,
   S3L_DrawConfig config,
   S3L_Index triangleID)
 {
@@ -1064,7 +1068,7 @@ void S3L_drawTriangle(
 
   if (config.mode == S3L_MODE_TRIANGLES)  // triangle mode
   {
-    _S3L_drawFilledTriangle(x0,y0,x1,y1,x2,y2,&p);
+    _S3L_drawFilledTriangle(x0,y0,depth0,x1,y1,depth1,x2,y2,depth2,&p);
   }
   else if (config.mode == S3L_MODE_LINES) // line mode
   {
@@ -1186,7 +1190,7 @@ void S3L_drawModelIndexed(
   S3L_Index triangleIndex = 0;
   S3L_Index coordIndex = 0;
 
-  S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2;
+  S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2, d0, d1, d2;
   S3L_Vec4 pointModel;
   S3L_Unit indexIndex;
 
@@ -1209,13 +1213,14 @@ void S3L_drawModelIndexed(
       pointModel.z = coords[indexIndex];\
       ++coordIndex;\
       S3L_vec4Xmat4(&pointModel,&mat1);\
+      d##n = pointModel.z;\
       S3L_mapCameraToScreen(pointModel,&camera,&sX##n,&sY##n);
 
     mapCoords(0)
     mapCoords(1)
     mapCoords(2)
 
-    S3L_drawTriangle(sX0,sY0,sX1,sY1,sX2,sY2,config,triangleIndex);
+    S3L_drawTriangle(sX0,sY0,d0,sX1,sY1,d1,sX2,sY2,d2,config,triangleIndex);
 
     ++triangleIndex;
   }
