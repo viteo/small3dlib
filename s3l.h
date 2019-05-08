@@ -107,6 +107,17 @@
 
 #include <stdint.h>
 
+#ifndef S3L_RESOLUTION_X
+  #define S3L_RESOLUTION_X 640 //< Redefine to your screen x resolution.
+#endif
+
+#ifndef S3L_RESOLUTION_Y
+  #define S3L_RESOLUTION_Y 480 //< Redefine to your screen y resolution.
+#endif
+
+#define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
+#define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
+
 typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                S3L_FRACTIONS_PER_UNIT in one spatial unit.
                                By dividing the unit into fractions we
@@ -515,16 +526,12 @@ static inline void S3L_initTransoform3D(S3L_Transform3D *t)
 
 typedef struct
 {
-  uint16_t resolutionX;
-  uint16_t resolutionY;
   S3L_Unit focalLength;       ///< Defines the field of view (FOV).
   S3L_Transform3D transform;
 } S3L_Camera;
 
 static inline void S3L_initCamera(S3L_Camera *c)
 {
-  c->resolutionX = 128;
-  c->resolutionY = 64;
   c->focalLength = S3L_FRACTIONS_PER_UNIT;
   S3L_initTransoform3D(&(c->transform));
 }
@@ -1053,11 +1060,11 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 static inline void S3L_mapCameraToScreen(S3L_Vec4 point, S3L_Camera *camera,
   S3L_ScreenCoord *screenX, S3L_ScreenCoord *screenY)
 {
-  uint16_t halfW = camera->resolutionX >> 1; // TODO: precompute earlier? 
-  uint16_t halfH = camera->resolutionY >> 1;
+  *screenX = 
+    S3L_HALF_RESOLUTION_X + (point.x * S3L_HALF_RESOLUTION_X) / point.z;
 
-  *screenX = halfW + (point.x * halfW) / point.z;
-  *screenY = halfH - (point.y * halfW) / point.z;
+  *screenY = 
+    S3L_HALF_RESOLUTION_Y - (point.y * S3L_HALF_RESOLUTION_X) / point.z;
   // ^ S3L_FRACTIONS_PER_UNIT cancel out
 }
 

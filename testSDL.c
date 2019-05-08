@@ -9,10 +9,10 @@
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
-#include "s3l.h"
+#define S3L_RESOLUTION_X 640
+#define S3L_RESOLUTION_Y 480
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#include "s3l.h"
 
 const int16_t test_coords[] =
   {
@@ -50,18 +50,18 @@ const uint8_t testTexture[] =
   2,2,2,0,0,0,2,2,2,2,0,0,0,2,2,2
 };
 
-uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
+uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
 
 uint32_t frame = 0;
 
 void clearScreen()
 {
-  memset(pixels,0,SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
+  memset(pixels,0,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
 }
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
 {
-  if (x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT)
+  if (x < 0 || x >= S3L_RESOLUTION_X || y < 0 || y >= S3L_RESOLUTION_Y)
     return;
 
   uint32_t r = red & 0x000000FF;
@@ -73,7 +73,7 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
   uint32_t b = blue & 0x000000FF;
   b = b << 8;
 
-  pixels[y * SCREEN_WIDTH + x] = r | g | b;
+  pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
 }
 
 uint8_t texturePixel(int32_t u, int32_t v)
@@ -160,15 +160,13 @@ S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2,conf,0);
 
 int main()
 {
-  SDL_Window *window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN); 
+  SDL_Window *window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
-  SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
+  SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
 
   S3L_initCamera(&camera);
-  camera.resolutionX = SCREEN_WIDTH;
-  camera.resolutionY = SCREEN_HEIGHT;
   camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
 //  camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
 //  camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
@@ -181,7 +179,7 @@ int main()
   while (running)
   {
     draw();
-    SDL_UpdateTexture(texture,NULL,pixels,SCREEN_WIDTH * sizeof(uint32_t));
+    SDL_UpdateTexture(texture,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
 
     while (SDL_PollEvent(&event))
     {
