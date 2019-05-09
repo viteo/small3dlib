@@ -599,10 +599,19 @@ static inline int16_t S3L_interpolate(int16_t v1, int16_t v2, int16_t t,
   Like S3L_interpolate, but uses a parameter that goes from 0 to
   S3L_FRACTIONS_PER_UNIT - 1, which can be faster.
 */
-
 static inline int16_t S3L_interpolateByUnit(int16_t v1, int16_t v2, int16_t t)
 {
   return v1 + ((v2 - v1) * t) / S3L_FRACTIONS_PER_UNIT;
+}
+
+// TODO: change parameters in interpolation functions to S3L_Unit
+
+/**
+  Same as S3L_interpolate but with v1 = 0. Should be faster.
+*/
+static inline int16_t S3L_interpolateByUnitFrom0(int16_t v2, int16_t t)
+{
+  return (v2 * t) / S3L_FRACTIONS_PER_UNIT;
 }
 
 typedef struct
@@ -703,18 +712,21 @@ S3L_Unit S3L_correctPerspective(
   c >>= 4;
   d >>= 4;
 
-  return
+  S3L_Unit result =
     (
       - a * state->a[0] - b * state->a[1] - c * state->a[2] - d
     )
     /
-    (
+    S3L_nonZero(
       (
-      a * state->pointDifference[0] +
-      b * state->pointDifference[1] +
-      c * state->pointDifference[2]
+        a * state->pointDifference[0] +
+        b * state->pointDifference[1] +
+        c * state->pointDifference[2]
       ) / S3L_FRACTIONS_PER_UNIT
     );
+
+  return result < 0 ? 0 :
+    (result > S3L_FRACTIONS_PER_UNIT ? S3L_FRACTIONS_PER_UNIT : result);
 }
 
 /**
@@ -820,6 +832,7 @@ void _S3L_drawFilledTriangle(
   S3L_PixelInfo *p)
 {
   S3L_ScreenCoord x0, y0, x1, y1, x2, y2;
+  S3L_Vec4 *pointTop, *pointLeft, *pointRight;
 
   S3L_mapProjectionPlaneToScreen(point0,&x0,&y0);
   S3L_mapProjectionPlaneToScreen(point1,&x1,&y1);
@@ -846,6 +859,7 @@ void _S3L_drawFilledTriangle(
     {\
       lPointX = x##a; lPointY = y##a;\
       rPointX = x##b; rPointY = y##b;\
+      pointLeft = &point##a; pointRight = &point##b;\
       barycentric0 = &(p->barycentric##b);\
       barycentric1 = &(p->barycentric##a);\
     }\
@@ -853,6 +867,7 @@ void _S3L_drawFilledTriangle(
     {\
       lPointX = x##b; lPointY = y##b;\
       rPointX = x##a; rPointY = y##a;\
+      pointLeft = &point##b; pointRight = &point##a;\
       barycentric0 = &(p->barycentric##a);\
       barycentric1 = &(p->barycentric##b);\
     }
@@ -863,6 +878,7 @@ void _S3L_drawFilledTriangle(
     {
       tPointX = x0;
       tPointY = y0;
+      pointTop = &point0;
       barycentric2 = &(p->barycentric0);
       handleLR(0,1,2)
     }
@@ -870,6 +886,7 @@ void _S3L_drawFilledTriangle(
     {
       tPointX = x2;
       tPointY = y2;
+      pointTop = &point2;
       barycentric2 = &(p->barycentric2);
       handleLR(2,0,1)
     }
@@ -880,6 +897,7 @@ void _S3L_drawFilledTriangle(
     {
       tPointX = x1;
       tPointY = y1;
+      pointTop = &point1;
       barycentric2 = &(p->barycentric1);
       handleLR(1,0,2)
     }
@@ -887,6 +905,7 @@ void _S3L_drawFilledTriangle(
     {
       tPointX = x2;
       tPointY = y2;
+      pointTop = &point2;
       barycentric2 = &(p->barycentric2);
       handleLR(2,0,1)
     }
@@ -988,6 +1007,36 @@ void _S3L_drawFilledTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
+#if S3L_PERSPECTIVE_CORRECTION == 1
+  S3L_PerspectiveCorrectionState lPC, rPC, rowPC;
+
+  S3L_Unit
+    lDepthFrom = pointTop->z,
+    lDepthTo   = pointLeft->z,
+    rDepthFrom = pointTop->z,
+    rDepthTo   = pointRight->z;
+
+  S3L_initPerspectiveCorrectionState(
+    pointTop->x,
+    pointTop->y,
+    pointTop->z,
+    pointLeft->x,
+    pointLeft->y,
+    pointLeft->z,
+    camera->focalLength,
+    &lPC);
+
+  S3L_initPerspectiveCorrectionState(
+    pointTop->x,
+    pointTop->y,
+    pointTop->z,
+    pointRight->x,
+    pointRight->y,
+    pointRight->z,
+    camera->focalLength,
+    &rPC);
+#endif
+
   while (currentY < endY)   /* draw the triangle from top to bottom -- the
                                bottom-most row is left out because, following
                                from the rasterization rules (see top of the
@@ -1007,6 +1056,21 @@ void _S3L_drawFilledTriangle(
                        - rSideUnitPos;
 
         rSideUnitStep *= -1;
+
+#if S3L_PERSPECTIVE_CORRECTION == 1
+        S3L_initPerspectiveCorrectionState(
+          pointLeft->x,
+          pointLeft->y,
+          pointLeft->z,
+          pointRight->x,
+          pointRight->y,
+          pointRight->z,
+          camera->focalLength,
+          &lPC);
+
+        lDepthFrom = pointLeft->z;
+        lDepthTo = pointRight->z;
+#endif
       }
       else
       {
@@ -1020,6 +1084,21 @@ void _S3L_drawFilledTriangle(
                        - lSideUnitPos;
 
         lSideUnitStep *= -1;
+
+#if S3L_PERSPECTIVE_CORRECTION == 1
+        S3L_initPerspectiveCorrectionState(
+          pointRight->x,
+          pointRight->y,
+          pointRight->z,
+          pointLeft->x,
+          pointLeft->y,
+          pointLeft->z,
+          camera->focalLength,
+          &rPC);
+
+        rDepthFrom = pointRight->z;
+        rDepthTo = pointLeft->z;
+#endif
       }
     }
 
@@ -1038,10 +1117,44 @@ void _S3L_drawFilledTriangle(
     S3L_Unit b0Step = rSideUnitPos / rowLength;
     S3L_Unit b1Step = lSideUnitPos / rowLength;
 
+#if S3L_PERSPECTIVE_CORRECTION == 1
+    S3L_Unit lDepth, rDepth, lT, rT;
+
+    lT = lSideUnitPos >> S3L_LERP_QUALITY;
+    rT = rSideUnitPos >> S3L_LERP_QUALITY;
+
+printf("%d %d\n",lDepth,rDepth);
+
+    S3L_initPerspectiveCorrectionState(
+      S3L_interpolateByUnit(pointTop->x,pointLeft->x,lT),
+      S3L_interpolateByUnit(pointTop->y,pointLeft->y,lT),
+      lDepth,
+      S3L_interpolateByUnit(pointTop->x,pointRight->x,rT),
+      S3L_interpolateByUnit(pointTop->y,pointRight->y,rT),
+      rDepth,
+      camera->focalLength,
+      &rowPC
+      );
+
+    lT = S3L_correctPerspective(lT,&lPC);
+    rT = S3L_correctPerspective(rT,&rPC);
+
+    lDepth = S3L_interpolateByUnit(lDepthFrom,lDepthTo,lT);
+    rDepth = S3L_interpolateByUnit(rDepthFrom,rDepthTo,rT);
+#endif
+
     for (S3L_ScreenCoord x = lX; x < rX; ++x)
     {
       *barycentric0 = b0 >> S3L_LERP_QUALITY;
       *barycentric1 = b1 >> S3L_LERP_QUALITY;
+
+#if S3L_PERSPECTIVE_CORRECTION == 1
+      S3L_Unit rowT = S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,x - lX,rX - lX);
+
+      *barycentric0 = S3L_interpolateByUnitFrom0(lT,rowT);
+      *barycentric1 = S3L_interpolateByUnitFrom0(rT,S3L_FRACTIONS_PER_UNIT - rowT);
+#endif
+
       *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 
       p->x = x;
