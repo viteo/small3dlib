@@ -146,9 +146,6 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                   high to prevent overflow. */
 #endif
 
-#define S3L_nonzero(value) ((value) != 0 ? (value) : 1) /**< prevents division
-                                                             by zero */
-
 /** Predefined vertices of a cube to simply insert in an array. These come with
     S3L_CUBE_TRIANGLES and S3L_CUBE_TEXCOORDS. */
 #define S3L_CUBE_VERTICES\
@@ -1014,7 +1011,7 @@ void _S3L_drawFilledTriangle(
 
     // draw the horizontal line
 
-    S3L_Unit rowLength = S3L_nonzero(rX - lX - 1); // prevent zero div
+    S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
     S3L_Unit b0 = 0;
     S3L_Unit b1 = lSideUnitPos;
