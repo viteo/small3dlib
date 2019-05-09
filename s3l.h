@@ -290,7 +290,7 @@ typedef struct
 } S3L_Vec4;
 
 #define S3L_writeVec4(v)\
-  printf("Vec4: %d %d %d %d\n",(v.x),(v.y),(v.z),(v.w))
+  printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
 
 static inline void S3L_initVec4(S3L_Vec4 *v)
 {
@@ -800,12 +800,31 @@ int S3L_bresenhamStep(S3L_BresenhamState *state)
   return state->steps >= 0;
 }
 
+static inline void S3L_mapProjectionPlaneToScreen(S3L_Vec4 point,
+  S3L_ScreenCoord *screenX, S3L_ScreenCoord *screenY)
+{
+  *screenX = 
+    S3L_HALF_RESOLUTION_X +
+    (point.x * S3L_HALF_RESOLUTION_X) / S3L_FRACTIONS_PER_UNIT;
+
+  *screenY = 
+    S3L_HALF_RESOLUTION_Y -
+    (point.y * S3L_HALF_RESOLUTION_X) / S3L_FRACTIONS_PER_UNIT;
+}
+
 void _S3L_drawFilledTriangle(
-  S3L_ScreenCoord x0, S3L_ScreenCoord y0, S3L_Unit depth0,
-  S3L_ScreenCoord x1, S3L_ScreenCoord y1, S3L_Unit depth1,
-  S3L_ScreenCoord x2, S3L_ScreenCoord y2, S3L_Unit depth2,
+  S3L_Vec4 point0,
+  S3L_Vec4 point1,
+  S3L_Vec4 point2,
+  const S3L_Camera *camera,
   S3L_PixelInfo *p)
 {
+  S3L_ScreenCoord x0, y0, x1, y1, x2, y2;
+
+  S3L_mapProjectionPlaneToScreen(point0,&x0,&y0);
+  S3L_mapProjectionPlaneToScreen(point1,&x1,&y1);
+  S3L_mapProjectionPlaneToScreen(point2,&x2,&y2);
+
   S3L_ScreenCoord
     tPointX, tPointY,     // top triangle point coords
     lPointX, lPointY,     // left triangle point coords
@@ -1042,20 +1061,29 @@ void _S3L_drawFilledTriangle(
   #undef stepSide 
 }
 
-void S3L_drawTriangle(
-  S3L_ScreenCoord x0, S3L_ScreenCoord y0, S3L_Unit depth0,
-  S3L_ScreenCoord x1, S3L_ScreenCoord y1, S3L_Unit depth1,
-  S3L_ScreenCoord x2, S3L_ScreenCoord y2, S3L_Unit depth2,
-  S3L_DrawConfig config,
+/**
+  Draws a triangle according to given config. The vertices are specified in
+  projection-plane space (NOT screen space!) -- they wll be mapped to screen
+  space by thies function. If perspective correction is enabled, each vertex
+  has to have a depth (Z position in camera space) specified in the Z
+  component.
+*/
+void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
+  const S3L_DrawConfig *config, const S3L_Camera *camera,
   S3L_Index triangleID)
 {
-  if (config.backfaceCulling != S3L_BACKFACE_CULLING_NONE)
-  {
-    int cw = // matrix determinant
-      x0 * y1 + y0 * x2 + x1 * y2 - y1 * x2 - y0 * x1 - x0 * y2 > 0;
 
-    if ((config.backfaceCulling == S3L_BACKFACE_CULLING_CW && !cw) ||
-        (config.backfaceCulling == S3L_BACKFACE_CULLING_CCW && cw))
+  if (config->backfaceCulling != S3L_BACKFACE_CULLING_NONE)
+  {
+
+    int32_t winding = // determines CW or CCW
+      (
+        (point1.y - point0.y) * (point2.x - point1.x) - 
+        (point1.x - point0.x) * (point2.y - point1.y)
+      ); 
+
+    if ((config->backfaceCulling == S3L_BACKFACE_CULLING_CW && winding < 0) ||
+        (config->backfaceCulling == S3L_BACKFACE_CULLING_CCW && winding >= 0))
       return;
   }
 
@@ -1063,11 +1091,23 @@ void S3L_drawTriangle(
   S3L_initPixelInfo(&p);
   p.triangleID = triangleID;
 
-  if (config.mode == S3L_MODE_TRIANGLES)  // triangle mode
+  if (config->mode == S3L_MODE_TRIANGLES)  // triangle mode
   {
-    _S3L_drawFilledTriangle(x0,y0,depth0,x1,y1,depth1,x2,y2,depth2,&p);
+    /* This function will perform the mapping to screen space itself, it needs
+       the original values, hence no conversion here. */
+    _S3L_drawFilledTriangle(point0,point1,point2,camera,&p);
+    return;
   }
-  else if (config.mode == S3L_MODE_LINES) // line mode
+
+  // map to screen space
+
+  S3L_ScreenCoord x0, y0, x1, y1, x2, y2;
+
+  S3L_mapProjectionPlaneToScreen(point0,&x0,&y0);
+  S3L_mapProjectionPlaneToScreen(point1,&x1,&y1);
+  S3L_mapProjectionPlaneToScreen(point2,&x2,&y2);
+
+  if (config->mode == S3L_MODE_LINES) // line mode
   {
     S3L_BresenhamState line;
     S3L_Unit lineLen;
@@ -1165,15 +1205,10 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
     m);
 }
 
-static inline void S3L_mapCameraToScreen(S3L_Vec4 point, S3L_Camera *camera,
-  S3L_ScreenCoord *screenX, S3L_ScreenCoord *screenY)
+static inline void S3L_zDivide(S3L_Vec4 *vector)
 {
-  *screenX = 
-    S3L_HALF_RESOLUTION_X + (point.x * S3L_HALF_RESOLUTION_X) / point.z;
-
-  *screenY = 
-    S3L_HALF_RESOLUTION_Y - (point.y * S3L_HALF_RESOLUTION_X) / point.z;
-  // ^ S3L_FRACTIONS_PER_UNIT cancel out
+  vector->x = (vector->x * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(vector->z);
+  vector->y = (vector->y * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(vector->z);
 }
 
 void S3L_drawModelIndexed(
@@ -1181,14 +1216,13 @@ void S3L_drawModelIndexed(
   const S3L_Index triangleVertexIndices[],
   uint16_t triangleCount,
   S3L_Transform3D modelTransform,
-  S3L_Camera camera,
-  S3L_DrawConfig config)
+  const S3L_Camera *camera,
+  const S3L_DrawConfig *config)
 {
   S3L_Index triangleIndex = 0;
   S3L_Index coordIndex = 0;
 
-  S3L_ScreenCoord sX0, sY0, sX1, sY1, sX2, sY2, d0, d1, d2;
-  S3L_Vec4 pointModel;
+  S3L_Vec4 pointModel, transformed0, transformed1, transformed2;
   S3L_Unit indexIndex;
 
   pointModel.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
@@ -1196,12 +1230,12 @@ void S3L_drawModelIndexed(
   S3L_Mat4 mat1, mat2;
 
   S3L_makeWorldMatrix(modelTransform,&mat1);
-  S3L_makeCameraMatrix(camera.transform,&mat2);
+  S3L_makeCameraMatrix(camera->transform,&mat2);
   S3L_mat4Xmat4(&mat1,&mat2);
 
   while (triangleIndex < triangleCount)
   {
-    #define mapCoords(n)\
+    #define project(n)\
       indexIndex = triangleVertexIndices[coordIndex] * 3;\
       pointModel.x = coords[indexIndex];\
       ++indexIndex; /* TODO: put into square brackets? */\
@@ -1210,14 +1244,17 @@ void S3L_drawModelIndexed(
       pointModel.z = coords[indexIndex];\
       ++coordIndex;\
       S3L_vec4Xmat4(&pointModel,&mat1);\
-      d##n = pointModel.z;\
-      S3L_mapCameraToScreen(pointModel,&camera,&sX##n,&sY##n);
+      transformed##n.x = pointModel.x;\
+      transformed##n.y = pointModel.y;\
+      transformed##n.z = pointModel.z;\
+      S3L_zDivide(&transformed##n);
 
-    mapCoords(0)
-    mapCoords(1)
-    mapCoords(2)
+    project(0)
+    project(1)
+    project(2)
 
-    S3L_drawTriangle(sX0,sY0,d0,sX1,sY1,d1,sX2,sY2,d2,config,triangleIndex);
+    S3L_drawTriangle(transformed0,transformed1,transformed2,config,camera,
+      triangleIndex);
 
     ++triangleIndex;
   }
