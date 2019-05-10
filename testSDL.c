@@ -119,8 +119,8 @@ void draw()
 
 //frame = 853;
 
-//  modelTransform.rotation.z = frame * 0.1;
-  modelTransform.rotation.x = 60;//frame * 0.3;
+  modelTransform.rotation.z = frame * 0.1;
+  modelTransform.rotation.x = frame * 0.3;
 
   S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
 //  S3L_drawModelIndexed(ver,tri + 3,1,modelTransform,&camera,&conf);

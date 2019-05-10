@@ -832,16 +832,16 @@ void _S3L_drawFilledTriangle(
   S3L_PixelInfo *p)
 {
   S3L_ScreenCoord x0, y0, x1, y1, x2, y2;
-  S3L_Vec4 *pointTop, *pointLeft, *pointRight;
+  S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; // points in projction plane space
 
   S3L_mapProjectionPlaneToScreen(point0,&x0,&y0);
   S3L_mapProjectionPlaneToScreen(point1,&x1,&y1);
   S3L_mapProjectionPlaneToScreen(point2,&x2,&y2);
 
   S3L_ScreenCoord
-    tPointX, tPointY,     // top triangle point coords
-    lPointX, lPointY,     // left triangle point coords
-    rPointX, rPointY;     // right triangle point coords
+    tPointSx, tPointSy,     // top point coords, in screen space
+    lPointSx, lPointSy,     // left point coords, in screen space
+    rPointSx, rPointSy;     // right point coords, in screen space
 
   S3L_Unit *barycentric0; // bar. coord that gets higher from L to R
   S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
@@ -849,90 +849,72 @@ void _S3L_drawFilledTriangle(
 
   // Sort the points.
 
-  #define handleLR(t,a,b)\
-    int16_t aDx = x##a - x##t;\
-    int16_t bDx = x##b - x##t;\
-    int16_t aDy = S3L_nonZero(y##a - y##t);\
-    int16_t bDy = S3L_nonZero(y##b - y##t);\
-    if ((aDx << 4) / aDy < (bDx << 4) / bDy)\
-    /*if (x##a <= x##b)*/\
+  #define assignPoints(t,a,b)\
     {\
-      lPointX = x##a; lPointY = y##a;\
-      rPointX = x##b; rPointY = y##b;\
-      pointLeft = &point##a; pointRight = &point##b;\
-      barycentric0 = &(p->barycentric##b);\
-      barycentric1 = &(p->barycentric##a);\
-    }\
-    else\
-    {\
-      lPointX = x##b; lPointY = y##b;\
-      rPointX = x##a; rPointY = y##a;\
-      pointLeft = &point##b; pointRight = &point##a;\
-      barycentric0 = &(p->barycentric##a);\
-      barycentric1 = &(p->barycentric##b);\
+      tPointSx = x##t;\
+      tPointSy = y##t;\
+      tPointPP = &point##t;\
+      barycentric2 = &(p->barycentric##t);\
+      int16_t aDx = x##a - x##t;\
+      int16_t bDx = x##b - x##t;\
+      int16_t aDy = S3L_nonZero(y##a - y##t);\
+      int16_t bDy = S3L_nonZero(y##b - y##t);\
+      if ((aDx << 4) / aDy < (bDx << 4) / bDy)\
+      /*if (x##a <= x##b)*/\
+      {\
+        lPointSx = x##a; lPointSy = y##a;\
+        rPointSx = x##b; rPointSy = y##b;\
+        lPointPP = &point##a; rPointPP = &point##b;\
+        barycentric0 = &(p->barycentric##b);\
+        barycentric1 = &(p->barycentric##a);\
+      }\
+      else\
+      {\
+        lPointSx = x##b; lPointSy = y##b;\
+        rPointSx = x##a; rPointSy = y##a;\
+        lPointPP = &point##b; rPointPP = &point##a;\
+        barycentric0 = &(p->barycentric##a);\
+        barycentric1 = &(p->barycentric##b);\
+      }\
     }
 
   if (y0 <= y1)
   {
     if (y0 <= y2)
-    {
-      tPointX = x0;
-      tPointY = y0;
-      pointTop = &point0;
-      barycentric2 = &(p->barycentric0);
-      handleLR(0,1,2)
-    }
+      assignPoints(0,1,2)
     else
-    {
-      tPointX = x2;
-      tPointY = y2;
-      pointTop = &point2;
-      barycentric2 = &(p->barycentric2);
-      handleLR(2,0,1)
-    }
+      assignPoints(2,0,1)
   }
   else
   {
     if (y1 <= y2)
-    {
-      tPointX = x1;
-      tPointY = y1;
-      pointTop = &point1;
-      barycentric2 = &(p->barycentric1);
-      handleLR(1,0,2)
-    }
+      assignPoints(1,0,2)
     else
-    {
-      tPointX = x2;
-      tPointY = y2;
-      pointTop = &point2;
-      barycentric2 = &(p->barycentric2);
-      handleLR(2,0,1)
-    }
+      assignPoints(2,0,1)
   }
 
   // Now draw the triangle line by line.
 
-  #undef handleLR
+  #undef assignPoints
 
   S3L_ScreenCoord splitY; // Y of the vertically middle point of the triangle
   S3L_ScreenCoord endY;   // bottom Y of the whole triangle
   int splitOnLeft;        // whether splitY happens on L or R side
 
-  if (rPointY <= lPointY)
+  if (rPointSy <= lPointSy)
   {
-    splitY = rPointY;
+    splitY = rPointSy;
     splitOnLeft = 0;
-    endY = lPointY;
+    endY = lPointSy;
   }
   else
   {
-    splitY = lPointY;
+    splitY = lPointSy;
     splitOnLeft = 1;
-    endY = rPointY;
+    endY = rPointSy;
   }
 
-  S3L_ScreenCoord currentY = tPointY;
+  S3L_ScreenCoord currentY = tPointSy;
 
   /* We'll be using an algorithm similar to Bresenham line algorithm. The
      specifics of this algorithm are among others:
@@ -956,7 +938,7 @@ void _S3L_drawFilledTriangle(
   int16_t
     /* triangle side:
     left     right */
-    lX,      rX,       // current x position
+    lX,      rX,       // current x position on the screen
     lDx,     rDx,      // dx (end point - start point)
     lDy,     rDy,      // dy (end point - start point)
     lInc,    rInc,     // direction in which to increment (1 or -1)
@@ -976,9 +958,9 @@ void _S3L_drawFilledTriangle(
              down - whether the side coordinate goes top-down or vice versa 
           */
   #define initSide(s,p1,p2,down)\
-    s##X = p1##PointX;\
-    s##Dx = p2##PointX - p1##PointX;\
-    s##Dy = p2##PointY - p1##PointY;\
+    s##X = p1##PointSx;\
+    s##Dx = p2##PointSx - p1##PointSx;\
+    s##Dy = p2##PointSy - p1##PointSy;\
     s##SideUnitStep = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)\
                       / (s##Dy != 0 ? s##Dy : 1);\
     s##SideUnitPos = 0;\
@@ -1007,34 +989,21 @@ void _S3L_drawFilledTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
+  #define initPC(f,t,pc)\
+    S3L_initPerspectiveCorrectionState(\
+      f##PointPP->x,\
+      f##PointPP->y,\
+      f##PointPP->z,\
+      t##PointPP->x,\
+      t##PointPP->y,\
+      t##PointPP->z,\
+      camera->focalLength,\
+      &pc##PC);
+
 #if S3L_PERSPECTIVE_CORRECTION == 1
   S3L_PerspectiveCorrectionState lPC, rPC, rowPC;
-
-  S3L_Unit
-    lDepthFrom = pointTop->z,
-    lDepthTo   = pointLeft->z,
-    rDepthFrom = pointTop->z,
-    rDepthTo   = pointRight->z;
-
-  S3L_initPerspectiveCorrectionState(
-    pointTop->x,
-    pointTop->y,
-    pointTop->z,
-    pointLeft->x,
-    pointLeft->y,
-    pointLeft->z,
-    camera->focalLength,
-    &lPC);
-
-  S3L_initPerspectiveCorrectionState(
-    pointTop->x,
-    pointTop->y,
-    pointTop->z,
-    pointRight->x,
-    pointRight->y,
-    pointRight->z,
-    camera->focalLength,
-    &rPC);
+  initPC(t,l,l)
+  initPC(t,r,r)
 #endif
 
   while (currentY < endY)   /* draw the triangle from top to bottom -- the
@@ -1058,18 +1027,7 @@ void _S3L_drawFilledTriangle(
         rSideUnitStep *= -1;
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-        S3L_initPerspectiveCorrectionState(
-          pointLeft->x,
-          pointLeft->y,
-          pointLeft->z,
-          pointRight->x,
-          pointRight->y,
-          pointRight->z,
-          camera->focalLength,
-          &lPC);
-
-        lDepthFrom = pointLeft->z;
-        lDepthTo = pointRight->z;
+        initPC(l,r,l)
 #endif
       }
       else
@@ -1086,18 +1044,7 @@ void _S3L_drawFilledTriangle(
         lSideUnitStep *= -1;
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-        S3L_initPerspectiveCorrectionState(
-          pointRight->x,
-          pointRight->y,
-          pointRight->z,
-          pointLeft->x,
-          pointLeft->y,
-          pointLeft->z,
-          camera->focalLength,
-          &rPC);
-
-        rDepthFrom = pointRight->z;
-        rDepthTo = pointLeft->z;
+        initPC(r,l,r)
 #endif
       }
     }
@@ -1120,27 +1067,24 @@ void _S3L_drawFilledTriangle(
 #if S3L_PERSPECTIVE_CORRECTION == 1
     S3L_Unit lDepth, rDepth, lT, rT;
 
-    lT = lSideUnitPos >> S3L_LERP_QUALITY;
-    rT = rSideUnitPos >> S3L_LERP_QUALITY;
+    lT = lSideUnitPos >> S3L_LERP_QUALITY;  // CHANGEEEE
+    rT = rSideUnitPos >> S3L_LERP_QUALITY;  // CHANGEEEE
 
-printf("%d %d\n",lDepth,rDepth);
+    rT = S3L_correctPerspective(rT,&rPC);
+
+    lDepth = S3L_interpolateByUnit(lPC.p0[2],lPC.p1[2],lT);
+    rDepth = S3L_interpolateByUnit(rPC.p0[2],rPC.p1[2],rT);
 
     S3L_initPerspectiveCorrectionState(
-      S3L_interpolateByUnit(pointTop->x,pointLeft->x,lT),
-      S3L_interpolateByUnit(pointTop->y,pointLeft->y,lT),
+      S3L_interpolateByUnit(lPC.a[0],lPC.b[0],lT),
+      S3L_interpolateByUnit(lPC.a[1],lPC.b[1],lT),
       lDepth,
-      S3L_interpolateByUnit(pointTop->x,pointRight->x,rT),
-      S3L_interpolateByUnit(pointTop->y,pointRight->y,rT),
+      S3L_interpolateByUnit(rPC.a[0],rPC.b[0],rT),
+      S3L_interpolateByUnit(rPC.a[1],rPC.b[1],rT),
       rDepth,
       camera->focalLength,
       &rowPC
       );
-
-    lT = S3L_correctPerspective(lT,&lPC);
-    rT = S3L_correctPerspective(rT,&rPC);
-
-    lDepth = S3L_interpolateByUnit(lDepthFrom,lDepthTo,lT);
-    rDepth = S3L_interpolateByUnit(rDepthFrom,rDepthTo,rT);
 #endif
 
     for (S3L_ScreenCoord x = lX; x < rX; ++x)
@@ -1170,6 +1114,7 @@ printf("%d %d\n",lDepth,rDepth);
     ++currentY;
   }
 
+  #undef initPC
   #undef initSide
   #undef stepSide 
 }
