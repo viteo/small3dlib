@@ -847,8 +847,6 @@ void _S3L_drawFilledTriangle(
   S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
   S3L_Unit *barycentric2; // bar. coord that gets higher from bottom up
 
-printf("-------\n");
-
   // Sort the points.
 
   #define assignPoints(t,a,b)\
@@ -1030,8 +1028,6 @@ printf("-------\n");
         initSide(l,l,r,0);
         manageSplit(0,2,r)
 
-printf("split L\n");
-
 #if S3L_PERSPECTIVE_CORRECTION == 1
         initPC(l,r,l)
         initPC(r,t,r)
@@ -1042,8 +1038,6 @@ printf("split L\n");
       {
         initSide(r,r,l,0);
         manageSplit(1,2,l)
-
-printf("split R\n");
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
         initPC(r,l,r)
@@ -1071,9 +1065,6 @@ printf("split R\n");
     lDepth = S3L_interpolateByUnit(lPC.a[2],lPC.b[2],lT);
     rDepth = S3L_interpolateByUnit(rPC.a[2],rPC.b[2],rT);
 
-printf("l: %d %d\n",lSideUnitPosScaled >> S3L_LERP_QUALITY,lT);
-printf("r: %d %d\n",rSideUnitPosScaled >> S3L_LERP_QUALITY,rT);
-
     S3L_initPerspectiveCorrectionState(
       S3L_interpolateByUnit(lPC.a[0],lPC.b[0],lT),
       S3L_interpolateByUnit(lPC.a[1],lPC.b[1],lT),
@@ -1094,14 +1085,14 @@ printf("r: %d %d\n",rSideUnitPosScaled >> S3L_LERP_QUALITY,rT);
 
     for (S3L_ScreenCoord x = lX; x < rX; ++x)
     {
+
 #if S3L_PERSPECTIVE_CORRECTION == 1
       S3L_Unit rowT =  
         S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
           x - lX,rowLength),&rowPC);
 
-      *barycentric0 = S3L_interpolateByUnitFrom0(lT,rowT);
-      *barycentric1 = S3L_FRACTIONS_PER_UNIT -
-        S3L_interpolateByUnitFrom0(S3L_FRACTIONS_PER_UNIT - rT,S3L_FRACTIONS_PER_UNIT - rowT);
+      *barycentric0 = S3L_interpolateByUnitFrom0(rT,rowT);
+      *barycentric1 = S3L_interpolateByUnit(lT,0,rowT);
 #else
       *barycentric0 = b0 >> S3L_LERP_QUALITY;
       *barycentric1 = b1 >> S3L_LERP_QUALITY;
