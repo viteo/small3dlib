@@ -116,7 +116,7 @@
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
-  #define S3L_PERSPECTIVE_CORRECTION 1
+  #define S3L_PERSPECTIVE_CORRECTION 0
 #endif
 
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
@@ -1013,18 +1013,18 @@ void _S3L_drawFilledTriangle(
   {
     if (currentY == splitY) // reached a vertical split of the triangle?
     {                       // then reinit one side
+      #define manageSplit(b0,b1,s)\
+        S3L_Unit *tmp = barycentric##b0;\
+        barycentric##b0 = barycentric##b1;\
+        barycentric##b1 = tmp;\
+        s##SideUnitPos =\
+          (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY) - s##SideUnitPos;\
+        s##SideUnitStep *= -1;
+
       if (splitOnLeft)
       {
         initSide(l,l,r,0);
-
-        S3L_Unit *tmp = barycentric0;
-        barycentric0 = barycentric2;
-        barycentric2 = tmp;
-
-        rSideUnitPos = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)
-                       - rSideUnitPos;
-
-        rSideUnitStep *= -1;
+        manageSplit(0,2,r)
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
         initPC(l,r,l)
@@ -1033,15 +1033,7 @@ void _S3L_drawFilledTriangle(
       else
       {
         initSide(r,r,l,0);
-
-        S3L_Unit *tmp = barycentric1;
-        barycentric1 = barycentric2;
-        barycentric2 = tmp;
-
-        lSideUnitPos = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)
-                       - lSideUnitPos;
-
-        lSideUnitStep *= -1;
+        manageSplit(1,2,l)
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
         initPC(r,l,r)
@@ -1114,6 +1106,7 @@ void _S3L_drawFilledTriangle(
     ++currentY;
   }
 
+  #undef manageSplit
   #undef initPC
   #undef initSide
   #undef stepSide 
