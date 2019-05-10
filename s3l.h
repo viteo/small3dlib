@@ -116,7 +116,7 @@
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
-  #define S3L_PERSPECTIVE_CORRECTION 0
+  #define S3L_PERSPECTIVE_CORRECTION 1
 #endif
 
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
@@ -847,6 +847,8 @@ void _S3L_drawFilledTriangle(
   S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
   S3L_Unit *barycentric2; // bar. coord that gets higher from bottom up
 
+printf("-------\n");
+
   // Sort the points.
 
   #define assignPoints(t,a,b)\
@@ -948,8 +950,8 @@ void _S3L_drawFilledTriangle(
     lErrSub, rErrSub;  // error value to substract when moving in x direction
 
   S3L_Unit
-    lSideUnitStep, rSideUnitStep,
-    lSideUnitPos,  rSideUnitPos;
+    lSideStep, rSideStep,
+    lSideUnitPosScaled,  rSideUnitPosScaled;
 
           /* init side for the algorithm, params:
              s - which side (l or r)
@@ -961,13 +963,13 @@ void _S3L_drawFilledTriangle(
     s##X = p1##PointSx;\
     s##Dx = p2##PointSx - p1##PointSx;\
     s##Dy = p2##PointSy - p1##PointSy;\
-    s##SideUnitStep = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)\
+    s##SideStep = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)\
                       / (s##Dy != 0 ? s##Dy : 1);\
-    s##SideUnitPos = 0;\
+    s##SideUnitPosScaled = 0;\
     if (!down)\
     {\
-      s##SideUnitPos = S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY;\
-      s##SideUnitStep *= -1;\
+      s##SideUnitPosScaled = S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY;\
+      s##SideStep *= -1;\
     }\
     s##Inc = s##Dx >= 0 ? 1 : -1;\
     if (s##Dx < 0)\
@@ -1002,6 +1004,8 @@ void _S3L_drawFilledTriangle(
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
   S3L_PerspectiveCorrectionState lPC, rPC, rowPC;
+  int8_t topPart = 1; // whether drawing top or bottom part of the triangle
+
   initPC(t,l,l)
   initPC(t,r,r)
 #endif
@@ -1017,17 +1021,21 @@ void _S3L_drawFilledTriangle(
         S3L_Unit *tmp = barycentric##b0;\
         barycentric##b0 = barycentric##b1;\
         barycentric##b1 = tmp;\
-        s##SideUnitPos =\
-          (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY) - s##SideUnitPos;\
-        s##SideUnitStep *= -1;
+        s##SideUnitPosScaled =\
+          (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY) - s##SideUnitPosScaled;\
+        s##SideStep *= -1;
 
       if (splitOnLeft)
       {
         initSide(l,l,r,0);
         manageSplit(0,2,r)
 
+printf("split L\n");
+
 #if S3L_PERSPECTIVE_CORRECTION == 1
         initPC(l,r,l)
+        initPC(r,t,r)
+        topPart = 0;
 #endif
       }
       else
@@ -1035,8 +1043,12 @@ void _S3L_drawFilledTriangle(
         initSide(r,r,l,0);
         manageSplit(1,2,l)
 
+printf("split R\n");
+
 #if S3L_PERSPECTIVE_CORRECTION == 1
         initPC(r,l,r)
+        initPC(l,t,l)
+        topPart = 0;
 #endif
       }
     }
@@ -1050,22 +1062,17 @@ void _S3L_drawFilledTriangle(
 
     S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
-    S3L_Unit b0 = 0;
-    S3L_Unit b1 = lSideUnitPos;
-
-    S3L_Unit b0Step = rSideUnitPos / rowLength;
-    S3L_Unit b1Step = lSideUnitPos / rowLength;
-
 #if S3L_PERSPECTIVE_CORRECTION == 1
     S3L_Unit lDepth, rDepth, lT, rT;
 
-    lT = lSideUnitPos >> S3L_LERP_QUALITY;  // CHANGEEEE
-    rT = rSideUnitPos >> S3L_LERP_QUALITY;  // CHANGEEEE
+    lT = S3L_correctPerspective(lSideUnitPosScaled >> S3L_LERP_QUALITY,&lPC);
+    rT = S3L_correctPerspective(rSideUnitPosScaled >> S3L_LERP_QUALITY,&rPC);
 
-    rT = S3L_correctPerspective(rT,&rPC);
+    lDepth = S3L_interpolateByUnit(lPC.a[2],lPC.b[2],lT);
+    rDepth = S3L_interpolateByUnit(rPC.a[2],rPC.b[2],rT);
 
-    lDepth = S3L_interpolateByUnit(lPC.p0[2],lPC.p1[2],lT);
-    rDepth = S3L_interpolateByUnit(rPC.p0[2],rPC.p1[2],rT);
+printf("l: %d %d\n",lSideUnitPosScaled >> S3L_LERP_QUALITY,lT);
+printf("r: %d %d\n",rSideUnitPosScaled >> S3L_LERP_QUALITY,rT);
 
     S3L_initPerspectiveCorrectionState(
       S3L_interpolateByUnit(lPC.a[0],lPC.b[0],lT),
@@ -1077,31 +1084,40 @@ void _S3L_drawFilledTriangle(
       camera->focalLength,
       &rowPC
       );
+#else
+    S3L_Unit b0 = 0;
+    S3L_Unit b1 = lSideUnitPosScaled;
+
+    S3L_Unit b0Step = rSideUnitPosScaled / rowLength;
+    S3L_Unit b1Step = lSideUnitPosScaled / rowLength;
 #endif
 
     for (S3L_ScreenCoord x = lX; x < rX; ++x)
     {
+#if S3L_PERSPECTIVE_CORRECTION == 1
+      S3L_Unit rowT =  
+        S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
+          x - lX,rowLength),&rowPC);
+
+      *barycentric0 = S3L_interpolateByUnitFrom0(lT,rowT);
+      *barycentric1 = S3L_FRACTIONS_PER_UNIT -
+        S3L_interpolateByUnitFrom0(S3L_FRACTIONS_PER_UNIT - rT,S3L_FRACTIONS_PER_UNIT - rowT);
+#else
       *barycentric0 = b0 >> S3L_LERP_QUALITY;
       *barycentric1 = b1 >> S3L_LERP_QUALITY;
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
-      S3L_Unit rowT = S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,x - lX,rX - lX);
-
-      *barycentric0 = S3L_interpolateByUnitFrom0(lT,rowT);
-      *barycentric1 = S3L_interpolateByUnitFrom0(rT,S3L_FRACTIONS_PER_UNIT - rowT);
+      b0 += b0Step;
+      b1 -= b1Step;
 #endif
 
       *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 
       p->x = x;
       S3L_PIXEL_FUNCTION(p);
-
-      b0 += b0Step;
-      b1 -= b1Step;
     }
 
-    lSideUnitPos += lSideUnitStep;
-    rSideUnitPos += rSideUnitStep;
+    lSideUnitPosScaled += lSideStep;
+    rSideUnitPosScaled += rSideStep;
 
     ++currentY;
   }
