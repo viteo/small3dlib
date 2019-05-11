@@ -1220,11 +1220,15 @@ void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
       lineLen = S3L_nonZero(line.steps);\
       do\
       {\
-        p.x = line.x; p.y = line.y;\
-        p.barycentric##p1 = S3L_interpolateFrom0(\
-          S3L_FRACTIONS_PER_UNIT,line.steps,lineLen);  \
-        p.barycentric##p2 = S3L_FRACTIONS_PER_UNIT - p.barycentric##p1;\
-        S3L_PIXEL_FUNCTION(&p);\
+        if (line.x >= 0 && line.x < S3L_RESOLUTION_X &&\
+            line.y >= 0 && line.y < S3L_RESOLUTION_Y)\
+        {\
+          p.x = line.x; p.y = line.y;\
+          p.barycentric##p1 = S3L_interpolateFrom0(\
+            S3L_FRACTIONS_PER_UNIT,line.steps,lineLen);  \
+          p.barycentric##p2 = S3L_FRACTIONS_PER_UNIT - p.barycentric##p1;\
+          S3L_PIXEL_FUNCTION(&p);\
+        }\
       } while (S3L_bresenhamStep(&line));
    
     drawLine(0,1)
@@ -1235,17 +1239,26 @@ void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
   }
   else                                    // point mode
   {
-    p.x = x0; p.y = y0; p.barycentric0 = S3L_FRACTIONS_PER_UNIT;
-    p.barycentric1 = 0; p.barycentric2 = 0;
-    S3L_PIXEL_FUNCTION(&p);
+    if (x0 >= 0 && x0 < S3L_RESOLUTION_X && y0 >= 0 && y0 < S3L_RESOLUTION_Y)
+    {
+      p.x = x0; p.y = y0; p.barycentric0 = S3L_FRACTIONS_PER_UNIT;
+      p.barycentric1 = 0; p.barycentric2 = 0;
+      S3L_PIXEL_FUNCTION(&p);
+    }
 
-    p.x = x1; p.y = y1; p.barycentric0 = 0;
-    p.barycentric1 = S3L_FRACTIONS_PER_UNIT; p.barycentric2 = 0;
-    S3L_PIXEL_FUNCTION(&p);
+    if (x1 >= 0 && x1 < S3L_RESOLUTION_X && y1 >= 0 && y1 < S3L_RESOLUTION_Y)
+    {
+      p.x = x1; p.y = y1; p.barycentric0 = 0;
+      p.barycentric1 = S3L_FRACTIONS_PER_UNIT; p.barycentric2 = 0;
+      S3L_PIXEL_FUNCTION(&p);
+    }
 
-    p.x = x2; p.y = y2; p.barycentric0 = 0;
-    p.barycentric1 = 0; p.barycentric2 = S3L_FRACTIONS_PER_UNIT;
-    S3L_PIXEL_FUNCTION(&p);
+    if (x2 >= 0 && x2 < S3L_RESOLUTION_X && y2 >= 0 && y2 < S3L_RESOLUTION_Y)
+    {
+      p.x = x2; p.y = y2; p.barycentric0 = 0;
+      p.barycentric1 = 0; p.barycentric2 = S3L_FRACTIONS_PER_UNIT;
+      S3L_PIXEL_FUNCTION(&p);
+    }
   }
 }
 
