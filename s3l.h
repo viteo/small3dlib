@@ -1022,6 +1022,13 @@ void _S3L_drawFilledTriangle(
   initPC(t,r,r)
 #endif
 
+  // clip to the screen in y dimension:
+
+  endY = S3L_min(endY,S3L_RESOLUTION_Y);
+
+  /* Clipping above the screen (y < 0) can't be easily done here, will be
+     handled inside the loop. */
+
   while (currentY < endY)   /* draw the triangle from top to bottom -- the
                                bottom-most row is left out because, following
                                from the rasterization rules (see top of the
@@ -1062,64 +1069,85 @@ void _S3L_drawFilledTriangle(
     stepSide(r)
     stepSide(l)
 
-    p->y = currentY;
-
-    // draw the horizontal line
-
-    S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
-
-#if S3L_PERSPECTIVE_CORRECTION == 1
-    S3L_Unit
-      lDepth, rDepth,
-      lT, rT; // perspective-corrected position along either side 
-
-    lT = S3L_correctPerspective(lSideUnitPosScaled >> S3L_LERP_QUALITY,&lPC);
-    rT = S3L_correctPerspective(rSideUnitPosScaled >> S3L_LERP_QUALITY,&rPC);
-
-    lDepth = S3L_interpolateByUnit(lPC.a[2],lPC.b[2],lT);
-    rDepth = S3L_interpolateByUnit(rPC.a[2],rPC.b[2],rT);
-
-    S3L_initPerspectiveCorrectionState(
-      S3L_interpolateByUnit(lPC.a[0],lPC.b[0],lT),
-      S3L_interpolateByUnit(lPC.a[1],lPC.b[1],lT),
-      lDepth,
-      S3L_interpolateByUnit(rPC.a[0],rPC.b[0],rT),
-      S3L_interpolateByUnit(rPC.a[1],rPC.b[1],rT),
-      rDepth,
-      camera->focalLength,
-      &rowPC
-      );
-#else
-    S3L_Unit b0 = 0;
-    S3L_Unit b1 = lSideUnitPosScaled;
-
-    S3L_Unit b0Step = rSideUnitPosScaled / rowLength;
-    S3L_Unit b1Step = lSideUnitPosScaled / rowLength;
-#endif
-
-    for (S3L_ScreenCoord x = lX; x < rX; ++x)
+    if (currentY >= 0) /* clipping of pixels whose y < 0 (can't be easily done
+                          outside the loop) */
     {
+      p->y = currentY;
+
+      // draw the horizontal line
+
+      S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-      S3L_Unit rowT =  
-        S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
-          x - lX,rowLength),&rowPC);
+      S3L_Unit
+        lDepth, rDepth,
+        lT, rT; // perspective-corrected position along either side 
 
-      *barycentric0 = S3L_interpolateByUnitFrom0(rT,rowT);
-      *barycentric1 = S3L_interpolateByUnit(lT,0,rowT);
+      lT = S3L_correctPerspective(lSideUnitPosScaled >> S3L_LERP_QUALITY,&lPC);
+      rT = S3L_correctPerspective(rSideUnitPosScaled >> S3L_LERP_QUALITY,&rPC);
+
+      lDepth = S3L_interpolateByUnit(lPC.a[2],lPC.b[2],lT);
+      rDepth = S3L_interpolateByUnit(rPC.a[2],rPC.b[2],rT);
+
+      S3L_initPerspectiveCorrectionState(
+        S3L_interpolateByUnit(lPC.a[0],lPC.b[0],lT),
+        S3L_interpolateByUnit(lPC.a[1],lPC.b[1],lT),
+        lDepth,
+        S3L_interpolateByUnit(rPC.a[0],rPC.b[0],rT),
+        S3L_interpolateByUnit(rPC.a[1],rPC.b[1],rT),
+        rDepth,
+        camera->focalLength,
+        &rowPC
+        );
 #else
-      *barycentric0 = b0 >> S3L_LERP_QUALITY;
-      *barycentric1 = b1 >> S3L_LERP_QUALITY;
+      S3L_Unit b0 = 0;
+      S3L_Unit b1 = lSideUnitPosScaled;
 
-      b0 += b0Step;
-      b1 -= b1Step;
+      S3L_Unit b0Step = rSideUnitPosScaled / rowLength;
+      S3L_Unit b1Step = lSideUnitPosScaled / rowLength;
 #endif
 
-      *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
+      // clip to the screen in x dimension:
 
-      p->x = x;
-      S3L_PIXEL_FUNCTION(p);
-    }
+      S3L_ScreenCoord rXClipped = S3L_min(rX,S3L_RESOLUTION_X),
+                      lXClipped = lX;
+
+      if (lXClipped < 0)
+      {
+        lXClipped = 0;
+
+#if S3L_PERSPECTIVE_CORRECTION != 1
+        b0 -= lX * b0Step;
+        b1 += lX * b1Step;
+#endif
+      }
+
+      // draw the row:
+
+      for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
+      {
+
+#if S3L_PERSPECTIVE_CORRECTION == 1
+        S3L_Unit rowT =  
+          S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
+            x - lX,rowLength),&rowPC);
+
+        *barycentric0 = S3L_interpolateByUnitFrom0(rT,rowT);
+        *barycentric1 = S3L_interpolateByUnit(lT,0,rowT);
+#else
+        *barycentric0 = b0 >> S3L_LERP_QUALITY;
+        *barycentric1 = b1 >> S3L_LERP_QUALITY;
+
+        b0 += b0Step;
+        b1 -= b1Step;
+#endif
+
+        *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
+
+        p->x = x;
+        S3L_PIXEL_FUNCTION(p);
+      }
+    }   // y clipping
 
     lSideUnitPosScaled += lSideStep;
     rSideUnitPosScaled += rSideStep;

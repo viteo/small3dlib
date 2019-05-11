@@ -132,8 +132,8 @@ void draw()
   modelTransform.rotation.z = frame * 0.1;
   modelTransform.rotation.x = frame * 0.3;
 
-//  modelTransform.translation.x = sin(frame >> 3) * 700;
-//  modelTransform.translation.y = sin(frame >> 4) * 600;
+  modelTransform.translation.x = sin(frame >> 7) * 700;
+  modelTransform.translation.y = sin(frame >> 8) * 600;
 
   S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
 
