@@ -34,6 +34,8 @@ const S3L_Unit ver[] = { S3L_CUBE_VERTICES };
 const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
 const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS };
 
+int8_t keys[256];
+
 const uint8_t testTexture[] =
 {
   2,2,2,0,0,0,2,2,2,2,0,0,0,2,2,2,
@@ -134,8 +136,8 @@ void draw()
   modelTransform.rotation.z = f * 0.1;
   modelTransform.rotation.x = f * 0.3;
 
-  modelTransform.translation.x = sin(f >> 7) * 700;
-  modelTransform.translation.y = sin(f >> 8) * 600;
+//  modelTransform.translation.x = sin(f >> 7) * 700;
+//  modelTransform.translation.y = sin(f >> 8) * 600;
 
   S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
 
@@ -203,6 +205,9 @@ int main()
 
   int running = 1;
 
+  for (int i = 0; i < 256; ++i)
+    keys[i] = 0;
+
   while (running)
   {
     draw();
@@ -216,10 +221,44 @@ int main()
           running = 0;
           break;
 
+        case SDL_KEYDOWN:
+          keys['a' + event.key.keysym.scancode - SDL_SCANCODE_A] = 1;
+          break;
+
+        case SDL_KEYUP:
+          keys['a' + event.key.keysym.scancode - SDL_SCANCODE_A] = 0;
+          break;
+
         default:
           break;
       }
     }
+
+    int step = 10;
+
+    if (keys['w'])
+      camera.transform.translation.z += step;
+
+    if (keys['s'])
+      camera.transform.translation.z -= step;
+
+    if (keys['a'])
+      camera.transform.translation.x -= step;
+
+    if (keys['d'])
+      camera.transform.translation.x += step;
+
+    if (keys['x'])
+      camera.transform.translation.y += step;
+
+    if (keys['c'])
+      camera.transform.translation.y -= step;
+
+    if (keys['q'])
+      camera.transform.rotation.y -= 1;
+
+    if (keys['e'])
+      camera.transform.rotation.y += 1;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,texture,NULL,NULL);

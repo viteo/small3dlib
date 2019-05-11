@@ -1175,6 +1175,9 @@ void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
   const S3L_DrawConfig *config, const S3L_Camera *camera,
   S3L_Index triangleID)
 {
+  if (point0.z <= 0 && point1.z <= 0 && point2.z <= 0)
+    return; // completely behind the camera
+
   if (config->backfaceCulling != S3L_BACKFACE_CULLING_NONE)
   {
     int32_t winding = // determines CW or CCW
@@ -1312,11 +1315,29 @@ void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
 
 void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 {
+/*
   S3L_makeTranslationMat(
     -1 * cameraTransform.translation.x,
     -1 * cameraTransform.translation.y,
     -1 * cameraTransform.translation.z,
     m);
+*/
+
+  S3L_makeTranslationMat(
+    -1 * cameraTransform.translation.x,
+    -1 * cameraTransform.translation.y,
+    -1 * cameraTransform.translation.z,
+    m);
+
+  S3L_Mat4 r;
+
+  S3L_makeRotationMatrix(
+    cameraTransform.rotation.x,
+    cameraTransform.rotation.y,
+    cameraTransform.rotation.z,
+    &r);
+
+  S3L_mat4Xmat4(m,&r);
 }
 
 static inline void S3L_zDivide(S3L_Vec4 *vector)
