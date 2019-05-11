@@ -150,6 +150,14 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                         it will overflow. Also other things
                                         may overflow, so rather don't do it. */
 
+#define S3L_PROJECTION_PLANE_HEIGHT\
+  ((S3L_RESOLUTION_Y * S3L_FRACTIONS_PER_UNIT * 2) / S3L_RESOLUTION_X)
+
+#ifndef S3L_NEAR
+  #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT) /**< Distance of the near clipping
+                                                 plane. */
+#endif
+
 #ifndef S3L_LERP_QUALITY
   #define S3L_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
                                   interpolations. 0 will most likely be faster,
@@ -1164,6 +1172,8 @@ void _S3L_drawFilledTriangle(
   #undef stepSide 
 }
 
+int a = 0;
+
 /**
   Draws a triangle according to given config. The vertices are specified in
   projection-plane space (NOT screen space!) -- they wll be mapped to screen
@@ -1175,7 +1185,17 @@ void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
   const S3L_DrawConfig *config, const S3L_Camera *camera,
   S3L_Index triangleID)
 {
-  if (point0.z <= 0 && point1.z <= 0 && point2.z <= 0)
+  #define clipTest(c,cmp,v)\
+    (point0.c cmp (v) && point1.c cmp (v) && point2.c cmp (v))
+
+  if ( // early clipping -- test if completely outside frustum
+
+      clipTest(z,<=,S3L_NEAR) ||
+      clipTest(x,<,-1 * S3L_FRACTIONS_PER_UNIT) ||
+      clipTest(x,>,S3L_FRACTIONS_PER_UNIT) ||
+      clipTest(y,<,-1 * S3L_PROJECTION_PLANE_HEIGHT / 2) ||
+      clipTest(y,>,S3L_PROJECTION_PLANE_HEIGHT / 2)
+    )
     return; // completely behind the camera
 
   if (config->backfaceCulling != S3L_BACKFACE_CULLING_NONE)
