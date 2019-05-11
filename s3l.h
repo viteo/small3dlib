@@ -1315,14 +1315,6 @@ void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
 
 void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 {
-/*
-  S3L_makeTranslationMat(
-    -1 * cameraTransform.translation.x,
-    -1 * cameraTransform.translation.y,
-    -1 * cameraTransform.translation.z,
-    m);
-*/
-
   S3L_makeTranslationMat(
     -1 * cameraTransform.translation.x,
     -1 * cameraTransform.translation.y,
@@ -1340,10 +1332,11 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
   S3L_mat4Xmat4(m,&r);
 }
 
-static inline void S3L_zDivide(S3L_Vec4 *vector)
+static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
+  S3L_Unit focalLength)
 {
-  vector->x = (vector->x * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(vector->z);
-  vector->y = (vector->y * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(vector->z);
+  vector->x = (vector->x * focalLength) / vector->z;
+  vector->y = (vector->y * focalLength) / vector->z;
 }
 
 void S3L_drawModelIndexed(
@@ -1382,7 +1375,7 @@ void S3L_drawModelIndexed(
       transformed##n.x = pointModel.x;\
       transformed##n.y = pointModel.y;\
       transformed##n.z = pointModel.z;\
-      S3L_zDivide(&transformed##n);
+      S3L_perspectiveDivide(&transformed##n,camera->focalLength);
 
     project(0)
     project(1)

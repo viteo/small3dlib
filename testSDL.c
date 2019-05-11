@@ -196,6 +196,7 @@ int main()
   SDL_Event event;
 
   S3L_initCamera(&camera);
+
   camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
 //  camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
 //  camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
