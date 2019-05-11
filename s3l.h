@@ -31,6 +31,9 @@
 
   CONVENTIONS:
 
+  This library should never draw pixels outside the specified screen
+  coordinates, so you don't have to check this!
+
   Angles are in S3L_Units, a full angle (2 pi) is S3L_FRACTIONS_PER_UNITs.
 
   We use row vectors.
