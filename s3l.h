@@ -198,19 +198,19 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
 
 /** Predefined texture coordinates of a cube, corresponding to triangles (NOT
     vertices), to be used with S3L_CUBE_VERTICES and S3L_CUBE_TRIANGLES. */
-#define S3L_CUBE_TEXCOORDS\
-  1,1,  0,0,  1,0,\
-  1,1,  0,1,  0,0,\
-  1,0,  1,1,  0,1,\
-  1,0,  0,1,  0,0,\
-  0,0,  1,0,  1,1,\
-  1,1,  0,1,  0,0,\
-  0,1,  0,0,  1,0,\
-  0,1,  1,0,  1,1,\
-  1,1,  0,0,  1,0,\
-  1,1,  0,1,  0,0,\
-  0,1,  1,0,  1,1,\
-  0,1,  0,0,  1,0
+#define S3L_CUBE_TEXCOORDS(m)\
+  m,m,  0,0,  m,0,\
+  m,m,  0,m,  0,0,\
+  m,0,  m,m,  0,m,\
+  m,0,  0,m,  0,0,\
+  0,0,  m,0,  m,m,\
+  m,m,  0,m,  0,0,\
+  0,m,  0,0,  m,0,\
+  0,m,  m,0,  m,m,\
+  m,m,  0,0,  m,0,\
+  m,m,  0,m,  0,0,\
+  0,m,  m,0,  m,m,\
+  0,m,  0,0,  m,0
 
 #define S3L_SIN_TABLE_LENGTH 128
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =

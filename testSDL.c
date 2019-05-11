@@ -32,7 +32,7 @@ const int16_t test_coords[] =
 
 const S3L_Unit ver[] = { S3L_CUBE_VERTICES };
 const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
-const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS };
+const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS(16) };
 
 int8_t keys[256];
 
@@ -103,15 +103,15 @@ void drawPixel(S3L_PixelInfo *p)
   coords = tex_coords + p->triangleID * 6;
 
   u = S3L_interpolateBarycentric(
-    coords[0] * 16,
-    coords[2] * 16,
-    coords[4] * 16,
+    coords[0],
+    coords[2],
+    coords[4],
     p->barycentric0, p->barycentric1, p->barycentric2);
 
   v = S3L_interpolateBarycentric(
-    coords[1] * 16,
-    coords[3] * 16,
-    coords[5] * 16,
+    coords[1],
+    coords[3],
+    coords[5],
     p->barycentric0, p->barycentric1, p->barycentric2);
 
   uint8_t col = texturePixel(u,v);
