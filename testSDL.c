@@ -12,7 +12,11 @@
 #define S3L_RESOLUTION_X 640
 #define S3L_RESOLUTION_Y 480
 
+#define S3L_PERSPECTIVE_CORRECTION 1
+
 #include "s3l.h"
+
+int32_t offScreenPixels = 0;
 
 const int16_t test_coords[] =
   {
@@ -86,6 +90,12 @@ uint8_t texturePixel(int32_t u, int32_t v)
 
 void drawPixel(S3L_PixelInfo *p)
 {
+  if (p->x < 0 || p ->x >= S3L_RESOLUTION_X || p->y < 0 || p->y >= S3L_RESOLUTION_Y)
+  {
+    offScreenPixels++;
+    return;
+  }
+
   S3L_Unit u, v, *coords;
 
   coords = tex_coords + p->triangleID * 6;
@@ -115,14 +125,21 @@ S3L_DrawConfig conf;
 
 void draw()
 {
-  clearScreen();
+  offScreenPixels = 0;
 
-//frame = 853;
+  clearScreen();
 
   modelTransform.rotation.z = frame * 0.1;
   modelTransform.rotation.x = frame * 0.3;
 
+//  modelTransform.translation.x = sin(frame >> 3) * 700;
+//  modelTransform.translation.y = sin(frame >> 4) * 600;
+
   S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
+
+  if (offScreenPixels > 0)
+    printf("offscreen pixels: %d\n",offScreenPixels);
+
 //  S3L_drawModelIndexed(ver,tri,1,modelTransform,&camera,&conf);
 
 /*

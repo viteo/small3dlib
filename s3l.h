@@ -116,7 +116,18 @@
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
-  #define S3L_PERSPECTIVE_CORRECTION 1
+  #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
+                                            correction (PC) to use. Remember
+                                            this is an expensive operation!
+                                            Possible values:
+
+                                            0: no PC, fastest but ugliest
+                                            1: full (per-pixel) PC, nicest but
+                                               extremely expensive!
+                                            2: triangle subdivided PC, a
+                                               compromise between quality and
+                                               speed (TODO, not implemented)
+                                            */
 #endif
 
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
@@ -831,23 +842,26 @@ void _S3L_drawFilledTriangle(
   const S3L_Camera *camera,
   S3L_PixelInfo *p)
 {
-  S3L_ScreenCoord x0, y0, x1, y1, x2, y2;
-  S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; // points in projction plane space
+  S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; /* points in projction plane space
+                                               (in Units, normalized by
+                                               S3L_FRACTIONS_PER_UNIT) */
+  S3L_ScreenCoord x0, y0, x1, y1, x2, y2;   /* points in screen space (pixel
+                                               coordinates) */
 
   S3L_mapProjectionPlaneToScreen(point0,&x0,&y0);
   S3L_mapProjectionPlaneToScreen(point1,&x1,&y1);
   S3L_mapProjectionPlaneToScreen(point2,&x2,&y2);
 
   S3L_ScreenCoord
-    tPointSx, tPointSy,     // top point coords, in screen space
-    lPointSx, lPointSy,     // left point coords, in screen space
-    rPointSx, rPointSy;     // right point coords, in screen space
+    tPointSx, tPointSy,   // top point coords, in screen space
+    lPointSx, lPointSy,   // left point coords, in screen space
+    rPointSx, rPointSy;   // right point coords, in screen space
 
   S3L_Unit *barycentric0; // bar. coord that gets higher from L to R
   S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
   S3L_Unit *barycentric2; // bar. coord that gets higher from bottom up
 
-  // Sort the points.
+  // sort the points:
 
   #define assignPoints(t,a,b)\
     {\
@@ -892,13 +906,14 @@ void _S3L_drawFilledTriangle(
       assignPoints(2,0,1)
   }
 
-  // Now draw the triangle line by line.
-
   #undef assignPoints
+
+  // now draw the triangle line by line:
 
   S3L_ScreenCoord splitY; // Y of the vertically middle point of the triangle
   S3L_ScreenCoord endY;   // bottom Y of the whole triangle
-  int splitOnLeft;        // whether splitY happens on L or R side
+  int splitOnLeft;        /* whether splitY is the y coord. of left or right 
+                             point */
 
   if (rPointSy <= lPointSy)
   {
@@ -947,15 +962,16 @@ void _S3L_drawFilledTriangle(
     lErrSub, rErrSub;  // error value to substract when moving in x direction
 
   S3L_Unit
-    lSideStep, rSideStep,
-    lSideUnitPosScaled,  rSideUnitPosScaled;
+    lSideStep, rSideStep, lSideUnitPosScaled, rSideUnitPosScaled;
+    /* ^ These are helper vars for faster linear iterpolation (we scale the
+       S3L_FRACTIONS_PER_UNIT up by shifting to the right by
+       S3L_LERP_QUALITY and simply increment by steps. */
 
-          /* init side for the algorithm, params:
-             s - which side (l or r)
-             p1 - point from (t, l or r)
-             p2 - point to (t, l or r)
-             down - whether the side coordinate goes top-down or vice versa 
-          */
+  /* init side for the algorithm, params:
+     s - which side (l or r)
+     p1 - point from (t, l or r)
+     p2 - point to (t, l or r)
+     down - whether the side coordinate goes top-down or vice versa */
   #define initSide(s,p1,p2,down)\
     s##X = p1##PointSx;\
     s##Dx = p2##PointSx - p1##PointSx;\
@@ -1012,7 +1028,7 @@ void _S3L_drawFilledTriangle(
                                source), it is to never be rasterized. */
   {
     if (currentY == splitY) // reached a vertical split of the triangle?
-    {                       // then reinit one side
+    {
       #define manageSplit(b0,b1,s)\
         S3L_Unit *tmp = barycentric##b0;\
         barycentric##b0 = barycentric##b1;\
@@ -1053,7 +1069,9 @@ void _S3L_drawFilledTriangle(
     S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-    S3L_Unit lDepth, rDepth, lT, rT;
+    S3L_Unit
+      lDepth, rDepth,
+      lT, rT; // perspective-corrected position along either side 
 
     lT = S3L_correctPerspective(lSideUnitPosScaled >> S3L_LERP_QUALITY,&lPC);
     rT = S3L_correctPerspective(rSideUnitPosScaled >> S3L_LERP_QUALITY,&rPC);
