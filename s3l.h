@@ -876,7 +876,7 @@ void _S3L_drawFilledTriangle(
       int16_t bDx = x##b - x##t;\
       int16_t aDy = S3L_nonZero(y##a - y##t);\
       int16_t bDy = S3L_nonZero(y##b - y##t);\
-      if ((aDx << 4) / aDy < (bDx << 4) / bDy)\
+      if ((aDx << 5) / aDy < (bDx << 5) / bDy)\
       {\
         lPointSx = x##a; lPointSy = y##a;\
         rPointSx = x##b; rPointSy = y##b;\
@@ -1175,10 +1175,8 @@ void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
   const S3L_DrawConfig *config, const S3L_Camera *camera,
   S3L_Index triangleID)
 {
-
   if (config->backfaceCulling != S3L_BACKFACE_CULLING_NONE)
   {
-
     int32_t winding = // determines CW or CCW
       (
         (point1.y - point0.y) * (point2.x - point1.x) - 

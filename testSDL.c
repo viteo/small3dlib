@@ -129,11 +129,13 @@ void draw()
 
   clearScreen();
 
-  modelTransform.rotation.z = frame * 0.1;
-  modelTransform.rotation.x = frame * 0.3;
+  uint32_t f = frame;
 
-  modelTransform.translation.x = sin(frame >> 7) * 700;
-  modelTransform.translation.y = sin(frame >> 8) * 600;
+  modelTransform.rotation.z = f * 0.1;
+  modelTransform.rotation.x = f * 0.3;
+
+  modelTransform.translation.x = sin(f >> 7) * 700;
+  modelTransform.translation.y = sin(f >> 8) * 600;
 
   S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
 
