@@ -860,7 +860,6 @@ void _S3L_drawFilledTriangle(
       int16_t aDy = S3L_nonZero(y##a - y##t);\
       int16_t bDy = S3L_nonZero(y##b - y##t);\
       if ((aDx << 4) / aDy < (bDx << 4) / bDy)\
-      /*if (x##a <= x##b)*/\
       {\
         lPointSx = x##a; lPointSy = y##a;\
         rPointSx = x##b; rPointSy = y##b;\
@@ -1002,7 +1001,6 @@ void _S3L_drawFilledTriangle(
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
   S3L_PerspectiveCorrectionState lPC, rPC, rowPC;
-  int8_t topPart = 1; // whether drawing top or bottom part of the triangle
 
   initPC(t,l,l)
   initPC(t,r,r)
@@ -1029,9 +1027,8 @@ void _S3L_drawFilledTriangle(
         manageSplit(0,2,r)
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-        initPC(l,r,l)
+        initPC(r,l,l)
         initPC(r,t,r)
-        topPart = 0;
 #endif
       }
       else
@@ -1040,9 +1037,8 @@ void _S3L_drawFilledTriangle(
         manageSplit(1,2,l)
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-        initPC(r,l,r)
+        initPC(l,r,r)
         initPC(l,t,l)
-        topPart = 0;
 #endif
       }
     }

@@ -123,7 +123,7 @@ void draw()
   modelTransform.rotation.x = frame * 0.3;
 
   S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
-//  S3L_drawModelIndexed(ver,tri + 3,1,modelTransform,&camera,&conf);
+//  S3L_drawModelIndexed(ver,tri,1,modelTransform,&camera,&conf);
 
 /*
 conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
