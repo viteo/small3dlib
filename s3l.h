@@ -378,17 +378,17 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 
 // general helper functions
 
-static inline int16_t S3L_abs(int16_t value)
+static inline S3L_Unit S3L_abs(S3L_Unit value)
 {
   return value >= 0 ? value : -1 * value;
 }
 
-static inline int16_t S3L_min(int16_t v1, int16_t v2)
+static inline S3L_Unit S3L_min(S3L_Unit v1, S3L_Unit v2)
 {
   return v1 >= v2 ? v2 : v1;
 }
 
-static inline int16_t S3L_max(int16_t v1, int16_t v2)
+static inline S3L_Unit S3L_max(S3L_Unit v1, S3L_Unit v2)
 {
   return v1 >= v2 ? v1 : v2;
 }
@@ -401,6 +401,36 @@ static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
 static inline S3L_Unit S3L_nonZero(S3L_Unit value)
 {
   return value != 0 ? value : 1;
+}
+
+/**
+  Interpolated between two values, v1 and v2, in the same ratio as t is to
+  tMax. Does NOT prevent zero division.
+*/
+static inline S3L_Unit S3L_interpolate(S3L_Unit v1, S3L_Unit v2, S3L_Unit t,
+  S3L_Unit tMax)
+{
+  return v1 + ((v2 - v1) * t) / tMax;
+}
+
+/**
+  Like S3L_interpolate, but uses a parameter that goes from 0 to
+  S3L_FRACTIONS_PER_UNIT - 1, which can be faster.
+*/
+static inline S3L_Unit S3L_interpolateByUnit(S3L_Unit v1, S3L_Unit v2,
+  S3L_Unit t)
+{
+  return v1 + ((v2 - v1) * t) / S3L_FRACTIONS_PER_UNIT;
+}
+
+// TODO: change parameters in interpolation functions to S3L_Unit
+
+/**
+  Same as S3L_interpolate but with v1 = 0. Should be faster.
+*/
+static inline S3L_Unit S3L_interpolateByUnitFrom0(S3L_Unit v2, S3L_Unit t)
+{
+  return (v2 * t) / S3L_FRACTIONS_PER_UNIT;
 }
 
 /**
@@ -606,35 +636,6 @@ void S3L_initDrawConfig(S3L_DrawConfig *config)
 }
 
 void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
-
-/**
-  Interpolated between two values, v1 and v2, in the same ratio as t is to
-  tMax. Does NOT prevent zero division.
-*/
-static inline int16_t S3L_interpolate(int16_t v1, int16_t v2, int16_t t,
-  int16_t tMax)
-{
-  return v1 + ((v2 - v1) * t) / tMax;
-}
-
-/**
-  Like S3L_interpolate, but uses a parameter that goes from 0 to
-  S3L_FRACTIONS_PER_UNIT - 1, which can be faster.
-*/
-static inline int16_t S3L_interpolateByUnit(int16_t v1, int16_t v2, int16_t t)
-{
-  return v1 + ((v2 - v1) * t) / S3L_FRACTIONS_PER_UNIT;
-}
-
-// TODO: change parameters in interpolation functions to S3L_Unit
-
-/**
-  Same as S3L_interpolate but with v1 = 0. Should be faster.
-*/
-static inline int16_t S3L_interpolateByUnitFrom0(int16_t v2, int16_t t)
-{
-  return (v2 * t) / S3L_FRACTIONS_PER_UNIT;
-}
 
 typedef struct
 {
