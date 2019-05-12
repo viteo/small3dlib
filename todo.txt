@@ -1,0 +1,43 @@
+features:
+
+- scene and model rendering strategies:
+  - random (no visibility checks)
+  - sorted:
+    - back-to-front (slower, better memory efficiency)
+    - front-to-back (faster, but needs 1bit stencil buffer)
+  - Z-buffer:
+    - full
+    - reduced (resolution and precision)
+
+- perspective correction modes:
+  - none                                 DONE
+  - full                                 DONE
+  - triangle subdivision (each triangle side will be subdivided after reaching
+    a defined length, which will be measured by Chebyshev or similarly fast
+    distance).
+  - also offer some approximation function?
+
+- predefined 3D shapes:
+  - cube                                 DONE
+  - sphere
+  - cylinder
+  - pyramid
+  - plane
+
+- Depth computation during rasterization -- this should be an optional thing,
+  specified with a define (S3L_COMPUTE_DEPTH), which may be turned on
+  automatically for some modes (e.g. Z-buffer). It should be computed by the
+  fast lerp and passed in the PixelInfo struct.
+- Python tool to convert obj to C array
+- helper functions for lighting/shading
+- Line and point drawing modes for triangles should maybe not overlap on
+  adjacent triangles (as filled triangles already do)?
+- create demos
+
+bugs:
+
+repeated:
+
+- valgrind (and similar) checks
+- optimize
+- write tests/benchmarks
