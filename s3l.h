@@ -508,9 +508,9 @@ void S3L_makeScaleMatrix(
 {
   #define M(x,y) (*m)[x][y]
 
-  M(0,0) = scaleX; M(2,0) = 0;     M(3,0) = 0; 
+  M(0,0) = scaleX; M(1,0) = 0;      M(2,0) = 0;     M(3,0) = 0; 
   M(0,1) = 0;      M(1,1) = scaleY; M(2,1) = 0; M(3,1) = 0; 
-  M(0,2) = 0;      M(1,2) = 0;     M(2,2) = scaleZ; M(3,2) = 0; 
+  M(0,2) = 0;      M(1,2) = 0;      M(2,2) = scaleZ; M(3,2) = 0; 
   M(0,3) = 0;      M(1,3) = 0;     M(2,3) = 0; M(3,3) = S3L_FRACTIONS_PER_UNIT; 
 
   #undef M
@@ -1374,7 +1374,7 @@ void S3L_drawModelIndexed(
   S3L_Index coordIndex = 0;
 
   S3L_Vec4 pointModel, transformed0, transformed1, transformed2;
-  S3L_Unit indexIndex;
+  S3L_Unit indexIndex = 0;
 
   pointModel.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
 
