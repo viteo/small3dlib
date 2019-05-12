@@ -1355,8 +1355,10 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   S3L_Unit focalLength)
 {
-  vector->x = (vector->x * focalLength) / vector->z;
-  vector->y = (vector->y * focalLength) / vector->z;
+  S3L_Unit divisor = S3L_nonZero(vector->z);
+
+  vector->x = (vector->x * focalLength) / divisor;
+  vector->y = (vector->y * focalLength) / divisor;
 }
 
 void S3L_drawModelIndexed(
