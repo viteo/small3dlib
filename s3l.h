@@ -323,7 +323,7 @@ typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
                                       transforms. The indexing is this:
                                       matrix[column][row]. */
 #define S3L_writeMat4(m)\
-  printfi"Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
+  printf("Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
    ,(m)[0][0],(m)[1][0],(m)[2][0],(m)[3][0],\
     (m)[0][1],(m)[1][1],(m)[2][1],(m)[3][1],\
     (m)[0][2],(m)[1][2],(m)[2][2],(m)[3][2],\
@@ -350,7 +350,6 @@ static inline void S3L_initMat4(S3L_Mat4 *m)
   Multiplies a vector by a matrix with normalization by S3L_FRACTIONS_PER_UNIT.
   Result is stored in the input vector.
 */
-
 void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
@@ -362,19 +361,39 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 
   // TODO: try alternative operation orders to optimize
 
-  #define dot(col)\
+  #define dotCol(col)\
     (vBackup.x * (*m)[col][0]) / S3L_FRACTIONS_PER_UNIT +\
     (vBackup.y * (*m)[col][1]) / S3L_FRACTIONS_PER_UNIT +\
     (vBackup.z * (*m)[col][2]) / S3L_FRACTIONS_PER_UNIT +\
     (vBackup.w * (*m)[col][3]) / S3L_FRACTIONS_PER_UNIT
 
-  v->x = dot(0);
-  v->y = dot(1);
-  v->z = dot(2);
-  v->w = dot(3);
+  v->x = dotCol(0);
+  v->y = dotCol(1);
+  v->z = dotCol(2);
+  v->w = dotCol(3);
 
-  #undef dot
 }
+
+/**
+  Same as S3L_vec4Xmat4 but faster, because this version doesn't compute the W
+  component of the result, which is usually not needed.
+*/
+void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
+{
+  S3L_Vec4 vBackup;
+
+  vBackup.x = v->x;  
+  vBackup.y = v->y;  
+  vBackup.z = v->z;  
+  vBackup.w = v->w;  
+
+  v->x = dotCol(0);
+  v->y = dotCol(1);
+  v->z = dotCol(2);
+  v->w = S3L_FRACTIONS_PER_UNIT;
+}
+
+#undef dotCol
 
 // general helper functions
 
@@ -1389,6 +1408,7 @@ void S3L_drawModelIndexed(
 
   S3L_makeWorldMatrix(modelTransform,&mat1);
   S3L_makeCameraMatrix(camera->transform,&mat2);
+
   S3L_mat4Xmat4(&mat1,&mat2);
 
   while (triangleIndex < triangleCount)
@@ -1401,7 +1421,7 @@ void S3L_drawModelIndexed(
       ++indexIndex;\
       pointModel.z = coords[indexIndex];\
       ++coordIndex;\
-      S3L_vec4Xmat4(&pointModel,&mat1);\
+      S3L_vec3Xmat4(&pointModel,&mat1);\
       transformed##n.x = pointModel.x;\
       transformed##n.y = pointModel.y;\
       transformed##n.z = pointModel.z;\
