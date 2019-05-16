@@ -382,6 +382,12 @@ void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
 
+  #define dotCol(col)\
+    (vBackup.x * (*m)[col][0]) / S3L_FRACTIONS_PER_UNIT +\
+    (vBackup.y * (*m)[col][1]) / S3L_FRACTIONS_PER_UNIT +\
+    (vBackup.z * (*m)[col][2]) / S3L_FRACTIONS_PER_UNIT +\
+    (*m)[col][3]
+
   vBackup.x = v->x;  
   vBackup.y = v->y;  
   vBackup.z = v->z;  
