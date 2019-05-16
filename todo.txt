@@ -33,6 +33,8 @@ features:
 - Line and point drawing modes for triangles should maybe not overlap on
   adjacent triangles (as filled triangles already do)?
 - create demos
+- drawModel: create an option that would use a cache to not transform the same
+  point twice
 
 bugs:
 
