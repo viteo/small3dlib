@@ -127,6 +127,18 @@ S3L_DrawConfig conf;
 
 void draw()
 {
+/*
+  if (frame % 128 == 0)
+  {
+    printf("frame: %d\n",frame);
+    printf("camera:\n");
+    printf("  translation: ");
+    S3L_writeVec4(camera.transform.translation);
+    printf("  rotation: ");
+    S3L_writeVec4(camera.transform.rotation);
+  }
+*/
+
   offScreenPixels = 0;
 
   clearScreen();
@@ -198,6 +210,7 @@ int main()
   S3L_initCamera(&camera);
 
   camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
+
 //  camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
 //  camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
 

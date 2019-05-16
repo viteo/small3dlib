@@ -323,7 +323,7 @@ typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
                                       transforms. The indexing is this:
                                       matrix[column][row]. */
 #define S3L_writeMat4(m)\
-  printf("Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
+  printfi"Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
    ,(m)[0][0],(m)[1][0],(m)[2][0],(m)[3][0],\
     (m)[0][1],(m)[1][1],(m)[2][1],(m)[3][1],\
     (m)[0][2],(m)[1][2],(m)[2][2],(m)[3][2],\
@@ -1356,7 +1356,14 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   S3L_Unit focalLength)
 {
-  S3L_Unit divisor = S3L_nonZero(vector->z);
+  S3L_Unit divisor = vector->z > 0 ? vector->z : (-1 * (vector->z - 1));
+  /* ^ This has two purposes:
+
+    1. Prevent division by zero.
+    2. Prevent a "rapid flip" of the vertex, e.g.: having a vertex
+       [100,0,0.1] z-divides it to [1000,0], but when it shift a short
+       distance to [100,0,-0.1], it z-divides to [-1000,0], rapidly flipping
+       from right to the left. */
 
   vector->x = (vector->x * focalLength) / divisor;
   vector->y = (vector->y * focalLength) / divisor;
@@ -1398,7 +1405,11 @@ void S3L_drawModelIndexed(
       transformed##n.x = pointModel.x;\
       transformed##n.y = pointModel.y;\
       transformed##n.z = pointModel.z;\
+      transformed##n.w = S3L_FRACTIONS_PER_UNIT;\
       S3L_perspectiveDivide(&transformed##n,camera->focalLength);
+
+    /* TODO: maybe create an option that would use a cache here to not
+             transform the same point twice? */
 
     project(0)
     project(1)
