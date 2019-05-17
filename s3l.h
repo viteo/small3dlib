@@ -158,14 +158,15 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                                  plane. */
 #endif
 
-#ifndef S3L_LERP_QUALITY
-  #define S3L_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
-                                  interpolations. 0 will most likely be faster,
-                                  but artifacts can occur for bigger tris,
-                                  while higher values can fix this -- in theory
-                                  all higher values will have the same speed
-                                  (it is a shift value), but it mustn't be too
-                                  high to prevent overflow. */
+#ifndef S3L_FAST_LERP_QUALITY
+  #define S3L_FAST_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
+                                       interpolations. 0 will most likely be
+                                       faster, but artifacts can occur for
+                                       bigger tris, while higher values can fix
+                                       this -- in theory all higher values will
+                                       have the same speed (it is a shift
+                                       value), but it mustn't be too high to
+                                       prevent overflow. */
 #endif
 
 /** Predefined vertices of a cube to simply insert in an array. These come with
@@ -382,6 +383,7 @@ void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
 
+  #undef dotCol
   #define dotCol(col)\
     (vBackup.x * (*m)[col][0]) / S3L_FRACTIONS_PER_UNIT +\
     (vBackup.y * (*m)[col][1]) / S3L_FRACTIONS_PER_UNIT +\
@@ -1002,7 +1004,7 @@ void _S3L_drawFilledTriangle(
     lSideStep, rSideStep, lSideUnitPosScaled, rSideUnitPosScaled;
     /* ^ These are helper vars for faster linear iterpolation (we scale the
        S3L_FRACTIONS_PER_UNIT up by shifting to the right by
-       S3L_LERP_QUALITY and simply increment by steps. */
+       S3L_FAST_LERP_QUALITY and simply increment by steps. */
 
   /* init side for the algorithm, params:
      s - which side (l or r)
@@ -1013,12 +1015,12 @@ void _S3L_drawFilledTriangle(
     s##X = p1##PointSx;\
     s##Dx = p2##PointSx - p1##PointSx;\
     s##Dy = p2##PointSy - p1##PointSy;\
-    s##SideStep = (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY)\
+    s##SideStep = (S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY)\
                       / (s##Dy != 0 ? s##Dy : 1);\
     s##SideUnitPosScaled = 0;\
     if (!down)\
     {\
-      s##SideUnitPosScaled = S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY;\
+      s##SideUnitPosScaled = S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY;\
       s##SideStep *= -1;\
     }\
     s##Inc = s##Dx >= 0 ? 1 : -1;\
@@ -1077,8 +1079,8 @@ void _S3L_drawFilledTriangle(
         S3L_Unit *tmp = barycentric##b0;\
         barycentric##b0 = barycentric##b1;\
         barycentric##b1 = tmp;\
-        s##SideUnitPosScaled =\
-          (S3L_FRACTIONS_PER_UNIT << S3L_LERP_QUALITY) - s##SideUnitPosScaled;\
+        s##SideUnitPosScaled = (S3L_FRACTIONS_PER_UNIT\
+           << S3L_FAST_LERP_QUALITY) - s##SideUnitPosScaled;\
         s##SideStep *= -1;
 
       if (splitOnLeft)
@@ -1120,8 +1122,11 @@ void _S3L_drawFilledTriangle(
         lDepth, rDepth,
         lT, rT; // perspective-corrected position along either side 
 
-      lT = S3L_correctPerspective(lSideUnitPosScaled >> S3L_LERP_QUALITY,&lPC);
-      rT = S3L_correctPerspective(rSideUnitPosScaled >> S3L_LERP_QUALITY,&rPC);
+      lT = S3L_correctPerspective(lSideUnitPosScaled >> S3L_FAST_LERP_QUALITY,
+             &lPC);
+
+      rT = S3L_correctPerspective(rSideUnitPosScaled >> S3L_FAST_LERP_QUALITY,
+             &rPC);
 
       lDepth = S3L_interpolateByUnit(lPC.a[2],lPC.b[2],lT);
       rDepth = S3L_interpolateByUnit(rPC.a[2],rPC.b[2],rT);
@@ -1172,8 +1177,8 @@ void _S3L_drawFilledTriangle(
         *barycentric0 = S3L_interpolateByUnitFrom0(rT,rowT);
         *barycentric1 = S3L_interpolateByUnit(lT,0,rowT);
 #else
-        *barycentric0 = b0 >> S3L_LERP_QUALITY;
-        *barycentric1 = b1 >> S3L_LERP_QUALITY;
+        *barycentric0 = b0 >> S3L_FAST_LERP_QUALITY;
+        *barycentric1 = b1 >> S3L_FAST_LERP_QUALITY;
 
         b0 += b0Step;
         b1 -= b1Step;
