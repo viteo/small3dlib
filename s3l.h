@@ -461,6 +461,15 @@ static inline S3L_Unit S3L_interpolateByUnitFrom0(S3L_Unit v2, S3L_Unit t)
 }
 
 /**
+  Same as S3L_interpolate but with v1 = 0. Should be faster.
+*/
+static inline S3L_Unit S3L_interpolateFrom0(S3L_Unit v2, S3L_Unit t,
+  S3L_Unit tMax)
+{
+  return (v2 * t) / tMax;
+}
+
+/**
   Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT. Result
   is stored in the first matrix.
 */
@@ -793,14 +802,6 @@ static inline S3L_Unit S3L_interpolateBarycentric(
       (value1 * barycentric1) +
       (value2 * barycentric2)
     ) / S3L_FRACTIONS_PER_UNIT;
-}
-
-/**
-  Same as S3L_interpolate but with v1 = 0. Should be faster.
-*/
-static inline int16_t S3L_interpolateFrom0(int16_t v2, int16_t t, int16_t tMax)
-{
-  return (v2 * t) / tMax;
 }
 
 void S3L_bresenhamInit(S3L_BresenhamState *state, int16_t x0, int16_t y0,
@@ -1174,8 +1175,11 @@ void _S3L_drawFilledTriangle(
           S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
             x - lX,rowLength),&rowPC);
 
-        *barycentric0 = S3L_interpolateByUnitFrom0(rT,rowT);
-        *barycentric1 = S3L_interpolateByUnit(lT,0,rowT);
+        *barycentric0 =
+          S3L_interpolateByUnitFrom0(rT,rowT);
+
+        *barycentric1 =
+          S3L_interpolateByUnitFrom0(lT,S3L_FRACTIONS_PER_UNIT - rowT);
 #else
         *barycentric0 = b0 >> S3L_FAST_LERP_QUALITY;
         *barycentric1 = b1 >> S3L_FAST_LERP_QUALITY;
