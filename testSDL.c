@@ -12,7 +12,7 @@
 #define S3L_RESOLUTION_X 640
 #define S3L_RESOLUTION_Y 480
 
-#define S3L_PERSPECTIVE_CORRECTION 0
+#define S3L_PERSPECTIVE_CORRECTION 1
 
 #include "s3l.h"
 
@@ -248,31 +248,45 @@ int main()
       }
     }
 
+    S3L_Vec4 camF, camR, camU;
     int step = 10;
+ 
+    S3L_rotationToDirections(
+      camera.transform.rotation,
+      step,
+      &camF,
+      &camR,
+      &camU);
 
     if (keys['w'])
-      camera.transform.translation.z += step;
+      S3L_vec3Add(&camera.transform.translation,camF);
 
     if (keys['s'])
-      camera.transform.translation.z -= step;
-
-    if (keys['a'])
-      camera.transform.translation.x -= step;
+      S3L_vec3Sub(&camera.transform.translation,camF);
 
     if (keys['d'])
-      camera.transform.translation.x += step;
+      S3L_vec3Add(&camera.transform.translation,camR);
+
+    if (keys['a'])
+      S3L_vec3Sub(&camera.transform.translation,camR);
 
     if (keys['x'])
-      camera.transform.translation.y += step;
+      camera.transform.translation.y += 10;
 
     if (keys['c'])
-      camera.transform.translation.y -= step;
+      camera.transform.translation.y -= 10;
 
     if (keys['q'])
       camera.transform.rotation.y -= 1;
 
     if (keys['e'])
       camera.transform.rotation.y += 1;
+
+    if (keys['r'])
+      camera.transform.rotation.x -= 1;
+
+    if (keys['t'])
+      camera.transform.rotation.x += 1;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,texture,NULL,NULL);

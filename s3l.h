@@ -238,6 +238,9 @@ typedef struct
 
 static inline void S3L_initVec4(S3L_Vec4 *v);
 
+static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
+static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
+
 #define S3L_writeVec4(v)\
   printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
 
@@ -252,6 +255,16 @@ typedef struct
 } S3L_Transform3D;
 
 static inline void S3L_initTransoform3D(S3L_Transform3D *t);
+
+/** Converts rotation transformation to three direction vectors of given length
+  (any one can be NULL, in which case it won't be computed).
+*/
+void S3L_rotationToDirections(
+  S3L_Vec4 rotation,
+  S3L_Unit length,
+  S3L_Vec4 *forw, 
+  S3L_Vec4 *right,
+  S3L_Vec4 *up);
 
 typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
                                       transforms. The indexing is this:
@@ -493,6 +506,20 @@ static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 void S3L_initVec4(S3L_Vec4 *v)
 {
   v->x = 0; v->y = 0; v->z = 0; v->w = S3L_FRACTIONS_PER_UNIT;
+}
+
+void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added)
+{
+  result->x += added.x;
+  result->y += added.y;
+  result->z += added.z;
+}
+
+void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted)
+{
+  result->x -= substracted.x;
+  result->y -= substracted.y;
+  result->z -= substracted.z;
 }
 
 void S3L_initMat4(S3L_Mat4 *m)
@@ -738,8 +765,44 @@ void S3L_initCamera(S3L_Camera *c)
   S3L_initTransoform3D(&(c->transform));
 }
 
-void S3L_initPixelInfo(S3L_PixelInfo *p)
+void S3L_rotationToDirections(
+  S3L_Vec4 rotation,
+  S3L_Unit length,
+  S3L_Vec4 *forw, 
+  S3L_Vec4 *right,
+  S3L_Vec4 *up)
 {
+  S3L_Mat4 m;
+
+  S3L_makeRotationMatrix(-1 * rotation.x,-1 * rotation.y,-1 * rotation.z,&m);
+
+  if (forw != 0)
+  {
+    forw->x = 0;
+    forw->y = 0;
+    forw->z = length;
+    S3L_vec3Xmat4(forw,*m);
+  }
+
+  if (right != 0)
+  {
+    right->x = length;
+    right->y = 0;
+    right->z = 0;
+    S3L_vec3Xmat4(right,*m);
+  }
+
+  if (up != 0)
+  {
+    up->x = 0;
+    up->y = length;
+    up->z = 0;
+    S3L_vec3Xmat4(up,*m);
+  }
+}
+
+void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
+{                                        // could be faster?
   p->x = 0;
   p->y = 0;
   p->barycentric0 = S3L_FRACTIONS_PER_UNIT;
