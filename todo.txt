@@ -38,6 +38,8 @@ features:
 
 bugs:
 
+- Why is persp. correction inaccurate near the camera?
+
 repeated:
 
 - valgrind (and similar) checks
