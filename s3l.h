@@ -1111,7 +1111,9 @@ void _S3L_drawFilledTriangle(
 
     if (currentY >= 0) /* clipping of pixels whose y < 0 (can't be easily done
                           outside the loop) */
-    {
+    {                     /* TODO: ^ This is bad though, a single large
+                             triangle outside he top of the screen will trigger
+                             a long loop. Try to FIX THIS! */
       p->y = currentY;
 
       // draw the horizontal line
