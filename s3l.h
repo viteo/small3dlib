@@ -1,3 +1,6 @@
+#ifndef S3L_H
+#define S3L_H
+
 /*
   WIP
 
@@ -105,9 +108,6 @@
       of the triangle and at the same time is also not the bottom-most corner.
 */
 
-#ifndef S3L_H
-#define S3L_H
-
 #include <stdint.h>
 
 #ifndef S3L_RESOLUTION_X
@@ -133,9 +133,6 @@
                                             */
 #endif
 
-#define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
-#define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
-
 typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                S3L_FRACTIONS_PER_UNIT in one spatial unit.
                                By dividing the unit into fractions we
@@ -149,9 +146,8 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                         have to modify a sin table otherwise
                                         it will overflow. Also other things
                                         may overflow, so rather don't do it. */
-
-#define S3L_PROJECTION_PLANE_HEIGHT\
-  ((S3L_RESOLUTION_Y * S3L_FRACTIONS_PER_UNIT * 2) / S3L_RESOLUTION_X)
+typedef int16_t S3L_ScreenCoord;
+typedef uint16_t S3L_Index;
 
 #ifndef S3L_NEAR
   #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT) /**< Distance of the near clipping
@@ -168,6 +164,12 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                        value), but it mustn't be too high to
                                        prevent overflow. */
 #endif
+
+#define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
+#define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
+
+#define S3L_PROJECTION_PLANE_HEIGHT\
+  ((S3L_RESOLUTION_Y * S3L_FRACTIONS_PER_UNIT * 2) / S3L_RESOLUTION_X)
 
 /** Predefined vertices of a cube to simply insert in an array. These come with
     S3L_CUBE_TRIANGLES and S3L_CUBE_TEXCOORDS. */
@@ -220,6 +222,198 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
   m,m,  0,m,  0,0,\
   0,m,  m,0,  m,m,\
   0,m,  0,0,  m,0
+
+/**
+  Vector that consists of four scalars and can represent homogenous
+  coordinates, but is generally also used as Vec3 and Vec2.
+*/
+
+typedef struct
+{
+  S3L_Unit x;
+  S3L_Unit y;
+  S3L_Unit z;
+  S3L_Unit w;
+} S3L_Vec4;
+
+static inline void S3L_initVec4(S3L_Vec4 *v);
+
+#define S3L_writeVec4(v)\
+  printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
+
+typedef struct
+{
+  S3L_Vec4 translation;
+  S3L_Vec4 rotation; /**< Euler angles. Rortation is applied in this order:
+                          1. z = around z (roll) CW looking along z+
+                          2. x = around x (pitch) CW looking along x+
+                          3. y = around y (yaw) CW looking along y+ */
+  S3L_Vec4 scale;
+} S3L_Transform3D;
+
+static inline void S3L_initTransoform3D(S3L_Transform3D *t);
+
+typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
+                                      transforms. The indexing is this:
+                                      matrix[column][row]. */
+#define S3L_writeMat4(m)\
+  printf("Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
+   ,(m)[0][0],(m)[1][0],(m)[2][0],(m)[3][0],\
+    (m)[0][1],(m)[1][1],(m)[2][1],(m)[3][1],\
+    (m)[0][2],(m)[1][2],(m)[2][2],(m)[3][2],\
+    (m)[0][3],(m)[1][3],(m)[2][3],(m)[3][3])
+
+/** Initializes a 4x4 matrix to identity. */
+static inline void S3L_initMat4(S3L_Mat4 *m);
+
+void S3L_makeTranslationMat(
+  S3L_Unit offsetX,
+  S3L_Unit offsetY,
+  S3L_Unit offsetZ,
+  S3L_Mat4 *m);
+
+/** Makes a scaling matrix. DON'T FORGET: scale of 1.0 is set with
+  S3L_FRACTIONS_PER_UNIT! */
+void S3L_makeScaleMatrix(
+  S3L_Unit scaleX,
+  S3L_Unit scaleY,
+  S3L_Unit scaleZ,
+  S3L_Mat4 *m);
+
+/** Makes a rotation matrix. For the rotation conventions (meaning, order,
+  units) see the specific structure comments. */
+void S3L_makeRotationMatrix(
+  S3L_Unit aroundX,
+  S3L_Unit aroundY,
+  S3L_Unit aroundZ,
+  S3L_Mat4 *m);
+
+void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m);
+void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m);
+
+/** Multiplies a vector by a matrix with normalization by
+  S3L_FRACTIONS_PER_UNIT. Result is stored in the input vector. */
+void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m);
+
+/** Same as S3L_vec4Xmat4 but faster, because this version doesn't compute the
+  W component of the result, which is usually not needed. */
+void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m);
+
+/** Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT.
+  Result is stored in the first matrix. */
+void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2);
+
+typedef struct
+{
+  S3L_Unit focalLength;   ///< Defines the field of view (FOV).
+  S3L_Transform3D transform;
+} S3L_Camera;
+
+static inline void S3L_initCamera(S3L_Camera *c);
+
+typedef struct
+{
+  S3L_ScreenCoord x;          ///< Screen X coordinate.
+  S3L_ScreenCoord y;          ///< Screen Y coordinate.
+
+  S3L_Unit barycentric0; /**< Barycentric coord 0 (corresponds to 1st vertex).
+                              Together with 1 and 2 coords these serve to
+                              locate the pixel on a triangle and interpolate
+                              values between it's three points. The sum of the
+                              three coordinates will always be exactly
+                              S3L_FRACTIONS_PER_UNIT. */
+  S3L_Unit barycentric1; ///< Baryc. coord 1 (corresponds to 2nd vertex).
+  S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
+  S3L_Index triangleID;
+} S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
+                              (fragment) to the user-defined drawing func. */
+
+static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
+
+#define S3L_BACKFACE_CULLING_NONE 0
+#define S3L_BACKFACE_CULLING_CW 1
+#define S3L_BACKFACE_CULLING_CCW 2
+
+#define S3L_MODE_TRIANGLES 0
+#define S3L_MODE_LINES 1
+#define S3L_MODE_POINTS 2
+
+typedef struct
+{
+  uint8_t backfaceCulling;
+  uint8_t mode;
+} S3L_DrawConfig;
+
+void S3L_initDrawConfig(S3L_DrawConfig *config);
+
+// general helper functions
+static inline S3L_Unit S3L_abs(S3L_Unit value);
+static inline S3L_Unit S3L_min(S3L_Unit v1, S3L_Unit v2);
+static inline S3L_Unit S3L_max(S3L_Unit v1, S3L_Unit v2);
+static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod);
+static inline S3L_Unit S3L_nonZero(S3L_Unit value);
+
+S3L_Unit S3L_sin(S3L_Unit x);
+static inline S3L_Unit S3L_cos(S3L_Unit x);
+
+/** Interpolated between two values, v1 and v2, in the same ratio as t is to
+  tMax. Does NOT prevent zero division. */
+static inline S3L_Unit S3L_interpolate(
+  S3L_Unit v1,
+  S3L_Unit v2,
+  S3L_Unit t,
+  S3L_Unit tMax);
+
+/** Same as S3L_interpolate but with v1 == 0. Should be faster. */
+static inline S3L_Unit S3L_interpolateFrom0(
+  S3L_Unit v2,
+  S3L_Unit t,
+  S3L_Unit tMax);
+
+/** Like S3L_interpolate, but uses a parameter that goes from 0 to
+  S3L_FRACTIONS_PER_UNIT - 1, which can be faster. */
+static inline S3L_Unit S3L_interpolateByUnit(
+  S3L_Unit v1,
+  S3L_Unit v2,
+  S3L_Unit t);
+
+/** Same as S3L_interpolateByUnit but with v1 == 0. Should be faster. */
+static inline S3L_Unit S3L_interpolateByUnitFrom0(
+  S3L_Unit v2,
+  S3L_Unit t);
+
+/** Returns a value interpolated between the three triangle vertices based on
+  barycentric coordinates. */
+static inline S3L_Unit S3L_interpolateBarycentric(
+  S3L_Unit value0,
+  S3L_Unit value1,
+  S3L_Unit value2,
+  S3L_Unit barycentric0,
+  S3L_Unit barycentric1,
+  S3L_Unit barycentric2);
+
+static inline void S3L_mapProjectionPlaneToScreen(
+  S3L_Vec4 point,
+  S3L_ScreenCoord *screenX,
+  S3L_ScreenCoord *screenY);
+
+/** Draws a triangle according to given config. The vertices are specified in
+  projection-plane space (NOT screen space!) -- they wll be mapped to screen
+  space by thies function. If perspective correction is enabled, each vertex
+  has to have a depth (Z position in camera space) specified in the Z
+  component. */
+void S3L_drawTriangle(
+  S3L_Vec4 point0,
+  S3L_Vec4 point1,
+  S3L_Vec4 point2,
+  const S3L_DrawConfig *config,
+  const S3L_Camera *camera,
+  S3L_Index triangleID);
+
+static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
+
+//=============================================================================
+// privates
 
 #define S3L_SIN_TABLE_LENGTH 128
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
@@ -296,44 +490,12 @@ static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 #define S3L_SIN_TABLE_UNIT_STEP\
   (S3L_FRACTIONS_PER_UNIT / (S3L_SIN_TABLE_LENGTH * 4))
 
-typedef int16_t S3L_ScreenCoord;
-typedef uint16_t S3L_Index;
-
-/**
-  Vector that consists of four scalars and can represent homogenous
-  coordinates, but is generally also used as Vec3 and Vec2.
-*/
-
-typedef struct
-{
-  S3L_Unit x;
-  S3L_Unit y;
-  S3L_Unit z;
-  S3L_Unit w;
-} S3L_Vec4;
-
-#define S3L_writeVec4(v)\
-  printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
-
-static inline void S3L_initVec4(S3L_Vec4 *v)
+void S3L_initVec4(S3L_Vec4 *v)
 {
   v->x = 0; v->y = 0; v->z = 0; v->w = S3L_FRACTIONS_PER_UNIT;
 }
 
-typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
-                                      transforms. The indexing is this:
-                                      matrix[column][row]. */
-#define S3L_writeMat4(m)\
-  printf("Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
-   ,(m)[0][0],(m)[1][0],(m)[2][0],(m)[3][0],\
-    (m)[0][1],(m)[1][1],(m)[2][1],(m)[3][1],\
-    (m)[0][2],(m)[1][2],(m)[2][2],(m)[3][2],\
-    (m)[0][3],(m)[1][3],(m)[2][3],(m)[3][3])
-
-/**
-  Initializes a 4x4 matrix to identity.
-*/
-static inline void S3L_initMat4(S3L_Mat4 *m)
+void S3L_initMat4(S3L_Mat4 *m)
 {
   #define M(x,y) (*m)[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
@@ -347,10 +509,6 @@ static inline void S3L_initMat4(S3L_Mat4 *m)
   #undef S
 }
 
-/**
-  Multiplies a vector by a matrix with normalization by S3L_FRACTIONS_PER_UNIT.
-  Result is stored in the input vector.
-*/
 void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
@@ -372,13 +530,8 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
   v->y = dotCol(1);
   v->z = dotCol(2);
   v->w = dotCol(3);
-
 }
 
-/**
-  Same as S3L_vec4Xmat4 but faster, because this version doesn't compute the W
-  component of the result, which is usually not needed.
-*/
 void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
@@ -403,76 +556,51 @@ void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 
 #undef dotCol
 
-// general helper functions
-
-static inline S3L_Unit S3L_abs(S3L_Unit value)
+S3L_Unit S3L_abs(S3L_Unit value)
 {
   return value >= 0 ? value : -1 * value;
 }
 
-static inline S3L_Unit S3L_min(S3L_Unit v1, S3L_Unit v2)
+S3L_Unit S3L_min(S3L_Unit v1, S3L_Unit v2)
 {
   return v1 >= v2 ? v2 : v1;
 }
 
-static inline S3L_Unit S3L_max(S3L_Unit v1, S3L_Unit v2)
+S3L_Unit S3L_max(S3L_Unit v1, S3L_Unit v2)
 {
   return v1 >= v2 ? v1 : v2;
 }
 
-static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
+S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
 {
   return value >= 0 ? (value % mod) : (mod + (value % mod) - 1);
 }
 
-static inline S3L_Unit S3L_nonZero(S3L_Unit value)
+S3L_Unit S3L_nonZero(S3L_Unit value)
 {
   return value != 0 ? value : 1;
 }
 
-/**
-  Interpolated between two values, v1 and v2, in the same ratio as t is to
-  tMax. Does NOT prevent zero division.
-*/
-static inline S3L_Unit S3L_interpolate(S3L_Unit v1, S3L_Unit v2, S3L_Unit t,
-  S3L_Unit tMax)
+S3L_Unit S3L_interpolate(S3L_Unit v1, S3L_Unit v2, S3L_Unit t, S3L_Unit tMax)
 {
   return v1 + ((v2 - v1) * t) / tMax;
 }
 
-/**
-  Like S3L_interpolate, but uses a parameter that goes from 0 to
-  S3L_FRACTIONS_PER_UNIT - 1, which can be faster.
-*/
-static inline S3L_Unit S3L_interpolateByUnit(S3L_Unit v1, S3L_Unit v2,
-  S3L_Unit t)
+S3L_Unit S3L_interpolateByUnit(S3L_Unit v1, S3L_Unit v2, S3L_Unit t)
 {
   return v1 + ((v2 - v1) * t) / S3L_FRACTIONS_PER_UNIT;
 }
 
-// TODO: change parameters in interpolation functions to S3L_Unit
-
-/**
-  Same as S3L_interpolate but with v1 = 0. Should be faster.
-*/
-static inline S3L_Unit S3L_interpolateByUnitFrom0(S3L_Unit v2, S3L_Unit t)
+S3L_Unit S3L_interpolateByUnitFrom0(S3L_Unit v2, S3L_Unit t)
 {
   return (v2 * t) / S3L_FRACTIONS_PER_UNIT;
 }
 
-/**
-  Same as S3L_interpolate but with v1 = 0. Should be faster.
-*/
-static inline S3L_Unit S3L_interpolateFrom0(S3L_Unit v2, S3L_Unit t,
-  S3L_Unit tMax)
+S3L_Unit S3L_interpolateFrom0(S3L_Unit v2, S3L_Unit t, S3L_Unit tMax)
 {
   return (v2 * t) / tMax;
 }
 
-/**
-  Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT. Result
-  is stored in the first matrix.
-*/
 void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2)
 {
   S3L_Mat4 mat1;
@@ -515,13 +643,16 @@ S3L_Unit S3L_sin(S3L_Unit x)
   return positive ? S3L_sinTable[x] : -1 * S3L_sinTable[x];
 }
 
-static inline S3L_Unit S3L_cos(S3L_Unit x)
+S3L_Unit S3L_cos(S3L_Unit x)
 {
   return S3L_sin(x - S3L_FRACTIONS_PER_UNIT / 4);
 }
 
 void S3L_makeTranslationMat(
-  S3L_Unit offsetX, S3L_Unit offsetY, S3L_Unit offsetZ, S3L_Mat4 *m)
+  S3L_Unit offsetX,
+  S3L_Unit offsetY,
+  S3L_Unit offsetZ,
+  S3L_Mat4 *m)
 {
   #define M(x,y) (*m)[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
@@ -535,12 +666,11 @@ void S3L_makeTranslationMat(
   #undef S
 }
 
-/**
-  Makes a scaling matrix. DON'T FORGET: scale of 1.0 is set with
-  S3L_FRACTIONS_PER_UNIT!
-*/
 void S3L_makeScaleMatrix(
-  S3L_Unit scaleX, S3L_Unit scaleY, S3L_Unit scaleZ, S3L_Mat4 *m)
+  S3L_Unit scaleX,
+  S3L_Unit scaleY,
+  S3L_Unit scaleZ,
+  S3L_Mat4 *m)
 {
   #define M(x,y) (*m)[x][y]
 
@@ -552,12 +682,11 @@ void S3L_makeScaleMatrix(
   #undef M
 }
 
-/**
-  Makes a rotation matrix. For the rotation conventions (meaning, order, units)
-  see the appropriate structure comments.
-*/
 void S3L_makeRotationMatrix(
-  S3L_Unit aroundX, S3L_Unit aroundY, S3L_Unit aroundZ, S3L_Mat4 *m)
+  S3L_Unit aroundX,
+  S3L_Unit aroundY,
+  S3L_Unit aroundZ,
+  S3L_Mat4 *m)
 {
   S3L_Unit sx = S3L_sin(aroundX);
   S3L_Unit sy = S3L_sin(aroundY);
@@ -594,17 +723,7 @@ void S3L_makeRotationMatrix(
   #undef S 
 }
 
-typedef struct
-{
-  S3L_Vec4 translation;
-  S3L_Vec4 rotation; /**< Euler angles. Rortation is applied in this order:
-                          1. z = around z (roll) CW looking along z+
-                          2. x = around x (pitch) CW looking along x+
-                          3. y = around y (yaw) CW looking along y+ */
-  S3L_Vec4 scale;
-} S3L_Transform3D;
-
-static inline void S3L_initTransoform3D(S3L_Transform3D *t)
+void S3L_initTransoform3D(S3L_Transform3D *t)
 {
   S3L_initVec4(&(t->translation));
   S3L_initVec4(&(t->rotation));
@@ -613,35 +732,13 @@ static inline void S3L_initTransoform3D(S3L_Transform3D *t)
   t->scale.z = S3L_FRACTIONS_PER_UNIT;
 }
 
-typedef struct
-{
-  S3L_Unit focalLength;       ///< Defines the field of view (FOV).
-  S3L_Transform3D transform;
-} S3L_Camera;
-
-static inline void S3L_initCamera(S3L_Camera *c)
+void S3L_initCamera(S3L_Camera *c)
 {
   c->focalLength = S3L_FRACTIONS_PER_UNIT;
   S3L_initTransoform3D(&(c->transform));
 }
 
-typedef struct
-{
-  S3L_ScreenCoord x;          ///< Screen X coordinate.
-  S3L_ScreenCoord y;          ///< Screen Y coordinate.
-
-  S3L_Unit barycentric0; /**< Barycentric coord 0 (corresponds to 1st vertex).
-                              Together with 1 and 2 coords these serve to
-                              locate the pixel on a triangle and interpolate
-                              values between it's three points. The sum of the
-                              three coordinates will always be exactly
-                              S3L_FRACTIONS_PER_UNIT. */
-  S3L_Unit barycentric1; ///< Baryc. coord 1 (corresponds to 2nd vertex).
-  S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
-  S3L_Index triangleID;
-} S3L_PixelInfo;
-
-static inline void S3L_initPixelInfo(S3L_PixelInfo *p)
+void S3L_initPixelInfo(S3L_PixelInfo *p)
 {
   p->x = 0;
   p->y = 0;
@@ -650,20 +747,6 @@ static inline void S3L_initPixelInfo(S3L_PixelInfo *p)
   p->barycentric2 = 0;
   p->triangleID = 0;
 }
-
-#define S3L_BACKFACE_CULLING_NONE 0
-#define S3L_BACKFACE_CULLING_CW 1
-#define S3L_BACKFACE_CULLING_CCW 2
-
-#define S3L_MODE_TRIANGLES 0
-#define S3L_MODE_LINES 1
-#define S3L_MODE_POINTS 2
-
-typedef struct
-{
-  int backfaceCulling;
-  int mode;
-} S3L_DrawConfig;
 
 void S3L_initDrawConfig(S3L_DrawConfig *config)
 {
@@ -788,13 +871,13 @@ S3L_Unit S3L_correctPerspective(
     (result > S3L_FRACTIONS_PER_UNIT ? S3L_FRACTIONS_PER_UNIT : result);
 }
 
-/**
-  Returns a value interpolated between the three triangle vertices based on
-  barycentric coordinates.
-*/
 static inline S3L_Unit S3L_interpolateBarycentric(
-  S3L_Unit value0, S3L_Unit value1, S3L_Unit value2,
-  S3L_Unit barycentric0, S3L_Unit barycentric1, S3L_Unit barycentric2)
+  S3L_Unit value0,
+  S3L_Unit value1,
+  S3L_Unit value2,
+  S3L_Unit barycentric0,
+  S3L_Unit barycentric1,
+  S3L_Unit barycentric2)
 {
   return
     (
@@ -863,8 +946,10 @@ int S3L_bresenhamStep(S3L_BresenhamState *state)
   return state->steps >= 0;
 }
 
-static inline void S3L_mapProjectionPlaneToScreen(S3L_Vec4 point,
-  S3L_ScreenCoord *screenX, S3L_ScreenCoord *screenY)
+void S3L_mapProjectionPlaneToScreen(
+  S3L_Vec4 point,
+  S3L_ScreenCoord *screenX,
+  S3L_ScreenCoord *screenY)
 {
   *screenX = 
     S3L_HALF_RESOLUTION_X +
@@ -1209,17 +1294,12 @@ void _S3L_drawFilledTriangle(
   #undef stepSide 
 }
 
-int a = 0;
-
-/**
-  Draws a triangle according to given config. The vertices are specified in
-  projection-plane space (NOT screen space!) -- they wll be mapped to screen
-  space by thies function. If perspective correction is enabled, each vertex
-  has to have a depth (Z position in camera space) specified in the Z
-  component.
-*/
-void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
-  const S3L_DrawConfig *config, const S3L_Camera *camera,
+void S3L_drawTriangle(
+  S3L_Vec4 point0,
+  S3L_Vec4 point1,
+  S3L_Vec4 point2,
+  const S3L_DrawConfig *config,
+  const S3L_Camera *camera,
   S3L_Index triangleID)
 {
   #define clipTest(c,cmp,v)\
@@ -1323,7 +1403,7 @@ void S3L_drawTriangle(S3L_Vec4 point0, S3L_Vec4 point1, S3L_Vec4 point2,
   }
 }
 
-static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
+void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
 {
   if (angle < S3L_SIN_TABLE_UNIT_STEP)
     return; // no visible rotation
