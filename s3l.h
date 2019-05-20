@@ -885,6 +885,18 @@ typedef struct
 
 typedef struct
 {
+  S3L_Unit valueScaled;
+  S3L_Unit stepScaled;
+} S3L_FastLerpState;
+
+#define S3L_getFastLerpValue(state)\
+  (state.valueScaled >> S3L_FAST_LERP_QUALITY)
+
+#define S3L_stepFastLerp(state)\
+  state.valueScaled += state.stepScaled
+
+typedef struct
+{
   S3L_ScreenCoord p0[2]; ///< 2D coordinates of the 1st point projection
   S3L_ScreenCoord p1[2]; ///< 2D coordinates of the 2nd point projection
 
@@ -1198,11 +1210,8 @@ void _S3L_drawFilledTriangle(
     lErrAdd, rErrAdd,  // error value to add in each Bresenham cycle
     lErrSub, rErrSub;  // error value to substract when moving in x direction
 
-  S3L_Unit
-    lSideStep, rSideStep, lSideUnitPosScaled, rSideUnitPosScaled;
-    /* ^ These are helper vars for faster linear iterpolation (we scale the
-       S3L_FRACTIONS_PER_UNIT up by shifting to the right by
-       S3L_FAST_LERP_QUALITY and simply increment by steps. */
+  S3L_FastLerpState
+    lSideFLS, rSideFLS;
 
   /* init side for the algorithm, params:
      s - which side (l or r)
@@ -1213,13 +1222,13 @@ void _S3L_drawFilledTriangle(
     s##X = p1##PointSx;\
     s##Dx = p2##PointSx - p1##PointSx;\
     s##Dy = p2##PointSy - p1##PointSy;\
-    s##SideStep = (S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY)\
+    s##SideFLS.stepScaled = (S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY)\
                       / (s##Dy != 0 ? s##Dy : 1);\
-    s##SideUnitPosScaled = 0;\
+    s##SideFLS.valueScaled = 0;\
     if (!down)\
     {\
-      s##SideUnitPosScaled = S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY;\
-      s##SideStep *= -1;\
+      s##SideFLS.valueScaled = S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY;\
+      s##SideFLS.stepScaled *= -1;\
     }\
     s##Inc = s##Dx >= 0 ? 1 : -1;\
     if (s##Dx < 0)\
@@ -1277,9 +1286,9 @@ void _S3L_drawFilledTriangle(
         S3L_Unit *tmp = barycentric##b0;\
         barycentric##b0 = barycentric##b1;\
         barycentric##b1 = tmp;\
-        s##SideUnitPosScaled = (S3L_FRACTIONS_PER_UNIT\
-           << S3L_FAST_LERP_QUALITY) - s##SideUnitPosScaled;\
-        s##SideStep *= -1;
+        s##SideFLS.valueScaled = (S3L_FRACTIONS_PER_UNIT\
+           << S3L_FAST_LERP_QUALITY) - s##SideFLS.valueScaled;\
+        s##SideFLS.stepScaled *= -1;
 
       if (splitOnLeft)
       {
@@ -1322,11 +1331,8 @@ void _S3L_drawFilledTriangle(
         lDepth, rDepth,
         lT, rT; // perspective-corrected position along either side 
 
-      lT = S3L_correctPerspective(lSideUnitPosScaled >> S3L_FAST_LERP_QUALITY,
-             &lPC);
-
-      rT = S3L_correctPerspective(rSideUnitPosScaled >> S3L_FAST_LERP_QUALITY,
-             &rPC);
+      lT = S3L_correctPerspective(S3L_getFastLerpValue(lSideFLS),&lPC);
+      rT = S3L_correctPerspective(S3L_getFastLerpValue(rSideFLS),&rPC);
 
       lDepth = S3L_interpolateByUnit(lPC.a[2],lPC.b[2],lT);
       rDepth = S3L_interpolateByUnit(rPC.a[2],rPC.b[2],rT);
@@ -1342,11 +1348,13 @@ void _S3L_drawFilledTriangle(
         &rowPC
         );
 #else
-      S3L_Unit b0 = 0;
-      S3L_Unit b1 = lSideUnitPosScaled;
+      S3L_FastLerpState b0FLS, b1FLS;
 
-      S3L_Unit b0Step = rSideUnitPosScaled / rowLength;
-      S3L_Unit b1Step = lSideUnitPosScaled / rowLength;
+      b0FLS.valueScaled = 0;
+      b1FLS.valueScaled = lSideFLS.valueScaled;
+
+      b0FLS.stepScaled = rSideFLS.valueScaled / rowLength;
+      b1FLS.stepScaled = -1 * lSideFLS.valueScaled / rowLength;
 #endif
 
       // clip to the screen in x dimension:
@@ -1359,8 +1367,8 @@ void _S3L_drawFilledTriangle(
         lXClipped = 0;
 
 #if S3L_PERSPECTIVE_CORRECTION != 1
-        b0 -= lX * b0Step;
-        b1 += lX * b1Step;
+        b0FLS.valueScaled -= lX * b0FLS.stepScaled;
+        b1FLS.valueScaled -= lX * b1FLS.stepScaled;
 #endif
       }
 
@@ -1380,11 +1388,11 @@ void _S3L_drawFilledTriangle(
         *barycentric1 =
           S3L_interpolateByUnitFrom0(lT,S3L_FRACTIONS_PER_UNIT - rowT);
 #else
-        *barycentric0 = b0 >> S3L_FAST_LERP_QUALITY;
-        *barycentric1 = b1 >> S3L_FAST_LERP_QUALITY;
+        *barycentric0 = S3L_getFastLerpValue(b0FLS);
+        *barycentric1 = S3L_getFastLerpValue(b1FLS);
 
-        b0 += b0Step;
-        b1 -= b1Step;
+        S3L_stepFastLerp(b0FLS);
+        S3L_stepFastLerp(b1FLS);
 #endif
 
         *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
@@ -1394,8 +1402,8 @@ void _S3L_drawFilledTriangle(
       }
     }   // y clipping
 
-    lSideUnitPosScaled += lSideStep;
-    rSideUnitPosScaled += rSideStep;
+    S3L_stepFastLerp(lSideFLS);
+    S3L_stepFastLerp(rSideFLS);
 
     ++currentY;
   }
