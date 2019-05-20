@@ -300,6 +300,12 @@ void S3L_makeRotationMatrixZXY(
   S3L_Unit aroundZ,
   S3L_Mat4 *m);
 
+void S3L_makeRotationMatrixYXZ(
+  S3L_Unit aroundX,
+  S3L_Unit aroundY,
+  S3L_Unit aroundZ,
+  S3L_Mat4 *m);
+
 void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m);
 void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m);
 
@@ -740,6 +746,47 @@ void S3L_makeRotationMatrixZXY(
   M(0,2) = (cx * sy) / S;
   M(1,2) = -1 * sx;
   M(2,2) = (cy * cx) / S;
+  M(3,2) = 0;
+
+  M(0,3) = 0;
+  M(1,3) = 0;
+  M(2,3) = 0;
+  M(3,3) = S3L_FRACTIONS_PER_UNIT;
+
+  #undef M
+  #undef S 
+}
+
+void S3L_makeRotationMatrixYXZ(
+  S3L_Unit aroundX,
+  S3L_Unit aroundY,
+  S3L_Unit aroundZ,
+  S3L_Mat4 *m)
+{
+  S3L_Unit sx = S3L_sin(aroundX);
+  S3L_Unit sy = S3L_sin(aroundY);
+  S3L_Unit sz = S3L_sin(aroundZ);
+
+  S3L_Unit cx = S3L_cos(aroundX);
+  S3L_Unit cy = S3L_cos(aroundY);
+  S3L_Unit cz = S3L_cos(aroundZ);
+
+  #define M(x,y) (*m)[x][y]
+  #define S S3L_FRACTIONS_PER_UNIT
+
+  M(0,0) = (cy * cz) / S - (sy * sx * sz) / (S * S);
+  M(1,0) = (cy * sz) / S + (sx * sy * cz) / (S * S);
+  M(2,0) = -1 * (cx * sy) / S;
+  M(3,0) = 0;
+
+  M(0,1) = -1 * (sz * cx) / S;
+  M(1,1) = (cz * cx) / S;
+  M(2,1) = sx;
+  M(3,1) = 0;
+
+  M(0,2) = (cz * sy) / S + (sz * sx * cy) / (S * S);
+  M(1,2) = (sz * sy) / S - (cz * sx * cy) / (S * S);
+  M(2,2) = (cx * cy) / S;
   M(3,2) = 0;
 
   M(0,3) = 0;
@@ -1524,7 +1571,7 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 
   S3L_Mat4 r;
 
-  S3L_makeRotationMatrixZXY(
+  S3L_makeRotationMatrixYXZ(
     cameraTransform.rotation.x,
     cameraTransform.rotation.y,
     cameraTransform.rotation.z,
