@@ -153,6 +153,10 @@ void draw()
 
   S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
 
+  modelTransform.translation.x += 2 * S3L_FRACTIONS_PER_UNIT;
+  S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
+  modelTransform.translation.x -= 2 * S3L_FRACTIONS_PER_UNIT;
+
   if (offScreenPixels > 0)
     printf("offscreen pixels: %d\n",offScreenPixels);
 
@@ -270,11 +274,11 @@ int main()
     if (keys['a'])
       S3L_vec3Sub(&camera.transform.translation,camR);
 
-    if (keys['x'])
-      camera.transform.translation.y += 10;
-
     if (keys['c'])
-      camera.transform.translation.y -= 10;
+      S3L_vec3Add(&camera.transform.translation,camU);
+
+    if (keys['x'])
+      S3L_vec3Sub(&camera.transform.translation,camU);
 
     if (keys['q'])
       camera.transform.rotation.y -= 1;
@@ -287,6 +291,12 @@ int main()
 
     if (keys['t'])
       camera.transform.rotation.x += 1;
+
+    if (keys['f'])
+      camera.transform.rotation.z -= 1;
+
+    if (keys['g'])
+      camera.transform.rotation.z += 1;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,texture,NULL,NULL);

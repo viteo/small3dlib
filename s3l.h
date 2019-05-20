@@ -293,9 +293,8 @@ void S3L_makeScaleMatrix(
   S3L_Unit scaleZ,
   S3L_Mat4 *m);
 
-/** Makes a rotation matrix. For the rotation conventions (meaning, order,
-  units) see the specific structure comments. */
-void S3L_makeRotationMatrix(
+/** Makes a matrixfor rotation in the ZXY order. */
+void S3L_makeRotationMatrixZXY(
   S3L_Unit aroundX,
   S3L_Unit aroundY,
   S3L_Unit aroundZ,
@@ -709,7 +708,7 @@ void S3L_makeScaleMatrix(
   #undef M
 }
 
-void S3L_makeRotationMatrix(
+void S3L_makeRotationMatrixZXY(
   S3L_Unit aroundX,
   S3L_Unit aroundY,
   S3L_Unit aroundZ,
@@ -774,7 +773,7 @@ void S3L_rotationToDirections(
 {
   S3L_Mat4 m;
 
-  S3L_makeRotationMatrix(-1 * rotation.x,-1 * rotation.y,-1 * rotation.z,&m);
+  S3L_makeRotationMatrixZXY(-1 * rotation.x,-1 * rotation.y,-1 * rotation.z,&m);
 
   if (forw != 0)
   {
@@ -1496,7 +1495,7 @@ void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
 
   S3L_Mat4 t;
 
-  S3L_makeRotationMatrix(
+  S3L_makeRotationMatrixZXY(
     worldTransform.rotation.x,
     worldTransform.rotation.y,
     worldTransform.rotation.z,
@@ -1523,7 +1522,7 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 
   S3L_Mat4 r;
 
-  S3L_makeRotationMatrix(
+  S3L_makeRotationMatrixZXY(
     cameraTransform.rotation.x,
     cameraTransform.rotation.y,
     cameraTransform.rotation.z,
