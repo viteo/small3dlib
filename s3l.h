@@ -312,7 +312,9 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m);
 void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m);
 
 /** Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT.
-  Result is stored in the first matrix. */
+  Result is stored in the first matrix. The result represents a transformation
+  that has the same effect as applying the transformation represented by m1 and
+  then m2 (in that order). */
 void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2);
 
 typedef struct
