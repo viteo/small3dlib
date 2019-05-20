@@ -35,6 +35,7 @@ features:
 - create demos
 - drawModel: create an option that would use a cache to not transform the same
   point twice
+- Change the rotations to use yaw-pitch-roll instead of extrinsic Euler angles?
 
 bugs:
 

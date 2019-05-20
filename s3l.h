@@ -41,8 +41,6 @@
 
   We use row vectors.
 
-  COORDINATE SYSTEMS:
-
   In 3D space, a left-handed coord. system is used. One spatial unit is split
   into S3L_FRACTIONS_PER_UNIT fractions (fixed point arithmetic).
 
@@ -68,6 +66,9 @@
         |____|____|
              |    
              |
+
+  Rotations use Euler angles and are generally in the extinsic Euler angles in
+  ZXY order (by Z, then by X, then by Y).
 
   Coordinates of pixels on screen start typically at the top left, from [0,0].
 
@@ -248,9 +249,9 @@ typedef struct
 {
   S3L_Vec4 translation;
   S3L_Vec4 rotation; /**< Euler angles. Rortation is applied in this order:
-                          1. z = around z (roll) CW looking along z+
-                          2. x = around x (pitch) CW looking along x+
-                          3. y = around y (yaw) CW looking along y+ */
+                          1. z = by z (roll) CW looking along z+
+                          2. x = by x (pitch) CW looking along x+
+                          3. y = by y (yaw) CW looking along y+ */
   S3L_Vec4 scale;
 } S3L_Transform3D;
 
@@ -295,15 +296,15 @@ void S3L_makeScaleMatrix(
 
 /** Makes a matrixfor rotation in the ZXY order. */
 void S3L_makeRotationMatrixZXY(
-  S3L_Unit aroundX,
-  S3L_Unit aroundY,
-  S3L_Unit aroundZ,
+  S3L_Unit byX,
+  S3L_Unit byY,
+  S3L_Unit byZ,
   S3L_Mat4 *m);
 
 void S3L_makeRotationMatrixYXZ(
-  S3L_Unit aroundX,
-  S3L_Unit aroundY,
-  S3L_Unit aroundZ,
+  S3L_Unit byX,
+  S3L_Unit byY,
+  S3L_Unit byZ,
   S3L_Mat4 *m);
 
 void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m);
@@ -717,18 +718,18 @@ void S3L_makeScaleMatrix(
 }
 
 void S3L_makeRotationMatrixZXY(
-  S3L_Unit aroundX,
-  S3L_Unit aroundY,
-  S3L_Unit aroundZ,
+  S3L_Unit byX,
+  S3L_Unit byY,
+  S3L_Unit byZ,
   S3L_Mat4 *m)
 {
-  S3L_Unit sx = S3L_sin(aroundX);
-  S3L_Unit sy = S3L_sin(aroundY);
-  S3L_Unit sz = S3L_sin(aroundZ);
+  S3L_Unit sx = S3L_sin(byX);
+  S3L_Unit sy = S3L_sin(byY);
+  S3L_Unit sz = S3L_sin(byZ);
 
-  S3L_Unit cx = S3L_cos(aroundX);
-  S3L_Unit cy = S3L_cos(aroundY);
-  S3L_Unit cz = S3L_cos(aroundZ);
+  S3L_Unit cx = S3L_cos(byX);
+  S3L_Unit cy = S3L_cos(byY);
+  S3L_Unit cz = S3L_cos(byZ);
 
   #define M(x,y) (*m)[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
@@ -758,18 +759,18 @@ void S3L_makeRotationMatrixZXY(
 }
 
 void S3L_makeRotationMatrixYXZ(
-  S3L_Unit aroundX,
-  S3L_Unit aroundY,
-  S3L_Unit aroundZ,
+  S3L_Unit byX,
+  S3L_Unit byY,
+  S3L_Unit byZ,
   S3L_Mat4 *m)
 {
-  S3L_Unit sx = S3L_sin(aroundX);
-  S3L_Unit sy = S3L_sin(aroundY);
-  S3L_Unit sz = S3L_sin(aroundZ);
+  S3L_Unit sx = S3L_sin(byX);
+  S3L_Unit sy = S3L_sin(byY);
+  S3L_Unit sz = S3L_sin(byZ);
 
-  S3L_Unit cx = S3L_cos(aroundX);
-  S3L_Unit cy = S3L_cos(aroundY);
-  S3L_Unit cz = S3L_cos(aroundZ);
+  S3L_Unit cx = S3L_cos(byX);
+  S3L_Unit cy = S3L_cos(byY);
+  S3L_Unit cz = S3L_cos(byZ);
 
   #define M(x,y) (*m)[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
