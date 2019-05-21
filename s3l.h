@@ -1421,6 +1421,10 @@ void _S3L_drawFilledTriangle(
 
         *barycentric1 =
           S3L_interpolateByUnitFrom0(lT,S3L_FRACTIONS_PER_UNIT - rowT);
+
+  #if S3L_COMPUTE_DEPTH
+        p->depth = S3L_interpolateByUnit(lDepth,rDepth,rowT);
+  #endif
 #else
         *barycentric0 = S3L_getFastLerpValue(b0FLS);
         *barycentric1 = S3L_getFastLerpValue(b1FLS);
