@@ -35,6 +35,9 @@ const S3L_Unit ver[] = { S3L_CUBE_VERTICES };
 const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
 const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS(16) };
 
+S3L_Model3D models[2];
+S3L_Scene scene;
+
 int8_t keys[256];
 
 const uint8_t testTexture[] =
@@ -126,7 +129,6 @@ setPixel(p->x,p->y,sss,sss,sss);
 //  setPixel(p->x,p->y,p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
 }
 
-S3L_Camera camera;
 S3L_Transform3D modelTransform;
 S3L_DrawConfig conf;
 
@@ -136,11 +138,11 @@ void draw()
   if (frame % 128 == 0)
   {
     printf("frame: %d\n",frame);
-    printf("camera:\n");
+    printf("scene.camera:\n");
     printf("  translation: ");
-    S3L_writeVec4(camera.transform.translation);
+    S3L_writeVec4(scene.camera.transform.translation);
     printf("  rotation: ");
-    S3L_writeVec4(camera.transform.rotation);
+    S3L_writeVec4(scene.camera.transform.rotation);
   }
 */
 
@@ -150,22 +152,26 @@ void draw()
 
   uint32_t f = frame;
 
-  modelTransform.rotation.z = f * 0.1;
-  modelTransform.rotation.x = f * 0.3;
+  scene.models[0].transform.rotation.z = f * 0.1;
+  scene.models[0].transform.rotation.x = f * 0.3;
 
 //  modelTransform.translation.x = sin(f >> 7) * 700;
 //  modelTransform.translation.y = sin(f >> 8) * 600;
 
-  S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
+/*
+  S3L_drawModelIndexed(ver,tri,12,modelTransform,&scene.camera,&conf);
 
   modelTransform.translation.x += 2 * S3L_FRACTIONS_PER_UNIT;
-  S3L_drawModelIndexed(ver,tri,12,modelTransform,&camera,&conf);
+  S3L_drawModelIndexed(ver,tri,12,modelTransform,&scene.camera,&conf);
   modelTransform.translation.x -= 2 * S3L_FRACTIONS_PER_UNIT;
+*/
+
+  S3L_drawScene(scene);
 
   if (offScreenPixels > 0)
     printf("offscreen pixels: %d\n",offScreenPixels);
 
-//  S3L_drawModelIndexed(ver,tri,1,modelTransform,&camera,&conf);
+//  S3L_drawModelIndexed(ver,tri,1,modelTransform,&scene.camera,&conf);
 
 /*
 conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
@@ -216,12 +222,25 @@ int main()
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
 
-  S3L_initCamera(&camera);
+  S3L_initCamera(&scene.camera);
 
-  camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
+  scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
+  scene.modelCount = 2;
+  scene.models = &models;
 
-//  camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
-//  camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
+  scene.models[0].vertices = ver;
+  scene.models[0].vertexCount = S3L_CUBE_VERTEX_COUNT; 
+  scene.models[0].triangles = tri;
+  scene.models[0].triangleCount = S3L_CUBE_TRIANGLE_COUNT;
+  S3L_initTransoform3D(&(scene.models[0].transform));
+  S3L_initDrawConfig(&(scene.models[0].config));
+  scene.models[0].transform.translation.x = S3L_FRACTIONS_PER_UNIT;
+
+  scene.models[1] = scene.models[0];
+  scene.models[1].transform.translation.x = -1 * S3L_FRACTIONS_PER_UNIT;
+
+//  scene.camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
+//  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
 
   S3L_initTransoform3D(&modelTransform);
   S3L_initDrawConfig(&conf);
@@ -261,47 +280,47 @@ int main()
     int step = 10;
  
     S3L_rotationToDirections(
-      camera.transform.rotation,
+      scene.camera.transform.rotation,
       step,
       &camF,
       &camR,
       &camU);
 
     if (keys['w'])
-      S3L_vec3Add(&camera.transform.translation,camF);
+      S3L_vec3Add(&scene.camera.transform.translation,camF);
 
     if (keys['s'])
-      S3L_vec3Sub(&camera.transform.translation,camF);
+      S3L_vec3Sub(&scene.camera.transform.translation,camF);
 
     if (keys['d'])
-      S3L_vec3Add(&camera.transform.translation,camR);
+      S3L_vec3Add(&scene.camera.transform.translation,camR);
 
     if (keys['a'])
-      S3L_vec3Sub(&camera.transform.translation,camR);
+      S3L_vec3Sub(&scene.camera.transform.translation,camR);
 
     if (keys['c'])
-      S3L_vec3Add(&camera.transform.translation,camU);
+      S3L_vec3Add(&scene.camera.transform.translation,camU);
 
     if (keys['x'])
-      S3L_vec3Sub(&camera.transform.translation,camU);
+      S3L_vec3Sub(&scene.camera.transform.translation,camU);
 
     if (keys['q'])
-      camera.transform.rotation.y -= 1;
+      scene.camera.transform.rotation.y -= 1;
 
     if (keys['e'])
-      camera.transform.rotation.y += 1;
+      scene.camera.transform.rotation.y += 1;
 
     if (keys['r'])
-      camera.transform.rotation.x -= 1;
+      scene.camera.transform.rotation.x -= 1;
 
     if (keys['t'])
-      camera.transform.rotation.x += 1;
+      scene.camera.transform.rotation.x += 1;
 
     if (keys['f'])
-      camera.transform.rotation.z -= 1;
+      scene.camera.transform.rotation.z -= 1;
 
     if (keys['g'])
-      camera.transform.rotation.z += 1;
+      scene.camera.transform.rotation.z += 1;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,texture,NULL,NULL);

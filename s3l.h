@@ -125,6 +125,38 @@
                                   on. */
 #endif
 
+#ifndef S3L_RENDER_STRATEGY
+#define S3L_RENDER_STRATEGY S3L_STRATEGY_Z_BUFFER /**< Strategy used for
+                                                       visibility
+                                                       determination -- see
+                                                       S3L_STRATEGY_*
+                                                       consts. */
+#endif
+
+#define S3L_STRATEGY_NONE 0          /**< No strategy -- can be sufficient in
+                                          some cases. */
+#define S3L_STRATEGY_Z_BUFFER 1      /**< Use z-buffer (depth buffer).
+                                          Accurate and fast, but requires a lot
+                                          of memory. */
+#define S3L_STRATEGY_BACK_TO_FRONT 2 /**< Sort and draw triangles from back to
+                                          front (painter's algorithm). Requires
+                                          less memory, but can be slower than
+                                          Z-buffer and can't handle
+                                          intersecting triangles. */
+#define S3L_STRATEGY_FRONT_TO_BACK 3 /**< Sort and draw triangles from front to
+                                          back (reverse painter's algorithm).
+                                          Requires a bit more memory than back
+                                          to front, but can also be faster
+                                          (doesn't draw over already drawn
+                                          pixels). */
+
+#ifndef S3L_MAX_TRIANGES_DRAWN
+#define S3L_MAX_TRIANGES_DRAWN 128   /**< Maximum number of triangles that can
+                                          be drawn in sorted modes. This
+                                          affects the size of a cache used for
+                                          triangle sorting. */
+#endif
+
 #ifndef S3L_PERSPECTIVE_CORRECTION
 #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
                                           correction (PC) to use. Remember
@@ -198,6 +230,8 @@ typedef uint16_t S3L_Index;
  /* 7 back,  top,    left */\
 -S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2
 
+#define S3L_CUBE_VERTEX_COUNT 8
+
 /** Predefined triangle indices of a cube, to be used with S3L_CUBE_VERTICES
     and S3L_CUBE_TEXCOORDS. */
 #define S3L_CUBE_TRIANGLES\
@@ -213,6 +247,8 @@ typedef uint16_t S3L_Index;
   3, 7, 6,\
   4, 1, 0, /* bottom */\
   4, 5, 1
+
+#define S3L_CUBE_TRIANGLE_COUNT 12
 
 /** Predefined texture coordinates of a cube, corresponding to triangles (NOT
     vertices), to be used with S3L_CUBE_VERTICES and S3L_CUBE_TRIANGLES. */
@@ -332,11 +368,36 @@ void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2);
 
 typedef struct
 {
-  S3L_Unit focalLength;   ///< Defines the field of view (FOV).
+  S3L_Unit focalLength;       ///< Defines the field of view (FOV).
   S3L_Transform3D transform;
 } S3L_Camera;
 
 static inline void S3L_initCamera(S3L_Camera *c);
+
+typedef struct
+{
+  uint8_t backfaceCulling;
+  uint8_t mode;
+} S3L_DrawConfig;
+
+void S3L_initDrawConfig(S3L_DrawConfig *config);
+
+typedef struct
+{
+  S3L_Unit *vertices;
+  S3L_Index vertexCount;
+  S3L_Index *triangles;
+  S3L_Index triangleCount;
+  S3L_Transform3D transform;
+  S3L_DrawConfig config;
+} S3L_Model3D;                ///< Represents a 3D model.
+
+typedef struct
+{
+  S3L_Model3D *models;
+  S3L_Index modelCount;
+  S3L_Camera camera;
+} S3L_Scene;                  ///< Represent the 3D scene to be rendered.
 
 typedef struct
 {
@@ -351,7 +412,8 @@ typedef struct
                               S3L_FRACTIONS_PER_UNIT. */
   S3L_Unit barycentric1; ///< Baryc. coord 1 (corresponds to 2nd vertex).
   S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
-  S3L_Index triangleID;
+  S3L_Index triangleID;  ///< Triangle index.
+  S3L_Index modelID;
   S3L_Unit depth;        ///< Depth (only if depth is turned on).
 } S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
                               (fragment) to the user-defined drawing func. */
@@ -365,14 +427,6 @@ static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
 #define S3L_MODE_TRIANGLES 0
 #define S3L_MODE_LINES 1
 #define S3L_MODE_POINTS 2
-
-typedef struct
-{
-  uint8_t backfaceCulling;
-  uint8_t mode;
-} S3L_DrawConfig;
-
-void S3L_initDrawConfig(S3L_DrawConfig *config);
 
 // general helper functions
 static inline S3L_Unit S3L_abs(S3L_Unit value);
@@ -1653,57 +1707,61 @@ static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   vector->y = (vector->y * focalLength) / divisor;
 }
 
-void S3L_drawModelIndexed(
-  const S3L_Unit coords[],
-  const S3L_Index triangleVertexIndices[],
-  uint16_t triangleCount,
-  S3L_Transform3D modelTransform,
-  const S3L_Camera *camera,
-  const S3L_DrawConfig *config)
+void S3L_drawScene(S3L_Scene scene)
 {
-  S3L_Index triangleIndex = 0;
-  S3L_Index coordIndex = 0;
-
-  S3L_Vec4 pointModel, transformed0, transformed1, transformed2;
-  S3L_Unit indexIndex = 0;
-
-  pointModel.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
-
-  S3L_Mat4 mat1, mat2;
-
-  S3L_makeWorldMatrix(modelTransform,&mat1);
-  S3L_makeCameraMatrix(camera->transform,&mat2);
-
-  S3L_mat4Xmat4(&mat1,&mat2);
-
-  while (triangleIndex < triangleCount)
+  for (S3L_Index modelIndex; modelIndex < scene.modelCount; ++modelIndex)
   {
-    #define project(n)\
-      indexIndex = triangleVertexIndices[coordIndex] * 3;\
-      pointModel.x = coords[indexIndex];\
-      ++indexIndex; /* TODO: put into square brackets? */\
-      pointModel.y = coords[indexIndex];\
-      ++indexIndex;\
-      pointModel.z = coords[indexIndex];\
-      ++coordIndex;\
-      S3L_vec3Xmat4(&pointModel,&mat1);\
-      transformed##n.x = pointModel.x;\
-      transformed##n.y = pointModel.y;\
-      transformed##n.z = pointModel.z;\
-      transformed##n.w = S3L_FRACTIONS_PER_UNIT;\
-      S3L_perspectiveDivide(&transformed##n,camera->focalLength);
+    S3L_Unit *vertices = scene.models[modelIndex].vertices;
+    S3L_Index *triangles = scene.models[modelIndex].triangles;
+ 
+    S3L_Index triangleIndex = 0;
+    S3L_Index coordIndex = 0;
 
-    /* TODO: maybe create an option that would use a cache here to not
-             transform the same point twice? */
+    S3L_Vec4 pointModel, transformed0, transformed1, transformed2;
+    S3L_Unit indexIndex = 0;
 
-    project(0)
-    project(1)
-    project(2)
+    pointModel.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
 
-    S3L_drawTriangle(transformed0,transformed1,transformed2,config,camera,
-      triangleIndex);
+    S3L_Mat4 mat1, mat2;
 
-    ++triangleIndex;
+    S3L_makeWorldMatrix(scene.models[modelIndex].transform,&mat1);
+    S3L_makeCameraMatrix(scene.camera.transform,&mat2);
+
+    S3L_mat4Xmat4(&mat1,&mat2);
+
+    S3L_Index triangleCount = scene.models[modelIndex].triangleCount;
+
+    while (triangleIndex < triangleCount)
+    {
+      #define project(n)\
+        indexIndex = triangles[coordIndex] * 3;\
+        pointModel.x = vertices[indexIndex];\
+        ++indexIndex; /* TODO: put into square brackets? */\
+        pointModel.y = vertices[indexIndex];\
+        ++indexIndex;\
+        pointModel.z = vertices[indexIndex];\
+        ++coordIndex;\
+        S3L_vec3Xmat4(&pointModel,&mat1);\
+        transformed##n.x = pointModel.x;\
+        transformed##n.y = pointModel.y;\
+        transformed##n.z = pointModel.z;\
+        transformed##n.w = S3L_FRACTIONS_PER_UNIT;\
+        S3L_perspectiveDivide(&transformed##n,scene.camera.focalLength);
+
+      /* TODO: maybe create an option that would use a cache here to not
+               transform the same point twice? */
+
+      project(0)
+      project(1)
+      project(2)
+
+      #undef project
+
+      S3L_drawTriangle(transformed0,transformed1,transformed2,
+        &(scene.models[modelIndex].config),&(scene.camera),triangleIndex);
+
+      ++triangleIndex;
+    }
   }
 }
 
