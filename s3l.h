@@ -443,6 +443,9 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 //=============================================================================
 // privates
 
+#define S3L_COMPUTE_LERP_DEPTH\
+  (S3L_COMPUTE_DEPTH && (S3L_PERSPECTIVE_CORRECTION != 1))
+
 #define S3L_SIN_TABLE_LENGTH 128
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 {
@@ -865,6 +868,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
   p->barycentric1 = 0;
   p->barycentric2 = 0;
   p->triangleID = 0;
+  p->depth = 0;
 }
 
 void S3L_initDrawConfig(S3L_DrawConfig *config)
@@ -1217,8 +1221,18 @@ void _S3L_drawFilledTriangle(
     lErrAdd, rErrAdd,  // error value to add in each Bresenham cycle
     lErrSub, rErrSub;  // error value to substract when moving in x direction
 
-  S3L_FastLerpState
-    lSideFLS, rSideFLS;
+  S3L_FastLerpState lSideFLS, rSideFLS;
+
+#if S3L_COMPUTE_LERP_DEPTH
+  S3L_FastLerpState lDepthFLS, rDepthFLS;
+
+  #define initDepthFLS(s,p1,p2)\
+    s##DepthFLS.valueScaled = p1##PointPP->z << S3L_FAST_LERP_QUALITY;\
+    s##DepthFLS.stepScaled = ((p2##PointPP->z << S3L_FAST_LERP_QUALITY) -\
+      s##DepthFLS.valueScaled) / (s##Dy != 0 ? s##Dy : 1); 
+#else
+  #define initDepthFLS(s,p1,p2) ;
+#endif
 
   /* init side for the algorithm, params:
      s - which side (l or r)
@@ -1229,6 +1243,7 @@ void _S3L_drawFilledTriangle(
     s##X = p1##PointSx;\
     s##Dx = p2##PointSx - p1##PointSx;\
     s##Dy = p2##PointSy - p1##PointSy;\
+    initDepthFLS(s,p1,p2)\
     s##SideFLS.stepScaled = (S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY)\
                       / (s##Dy != 0 ? s##Dy : 1);\
     s##SideFLS.valueScaled = 0;\
@@ -1357,6 +1372,14 @@ void _S3L_drawFilledTriangle(
 #else
       S3L_FastLerpState b0FLS, b1FLS;
 
+  #if S3L_COMPUTE_LERP_DEPTH
+      S3L_FastLerpState  depthFLS;
+
+      depthFLS.valueScaled = lDepthFLS.valueScaled;
+      depthFLS.stepScaled =
+        (rDepthFLS.valueScaled - lDepthFLS.valueScaled) / rowLength;
+  #endif
+
       b0FLS.valueScaled = 0;
       b1FLS.valueScaled = lSideFLS.valueScaled;
 
@@ -1376,6 +1399,10 @@ void _S3L_drawFilledTriangle(
 #if S3L_PERSPECTIVE_CORRECTION != 1
         b0FLS.valueScaled -= lX * b0FLS.stepScaled;
         b1FLS.valueScaled -= lX * b1FLS.stepScaled;
+
+  #if S3L_COMPUTE_LERP_DEPTH
+        depthFLS.valueScaled -= lX * depthFLS.stepScaled;
+  #endif
 #endif
       }
 
@@ -1400,6 +1427,11 @@ void _S3L_drawFilledTriangle(
 
         S3L_stepFastLerp(b0FLS);
         S3L_stepFastLerp(b1FLS);
+
+  #if S3L_COMPUTE_LERP_DEPTH
+        p->depth = S3L_getFastLerpValue(depthFLS);
+        S3L_stepFastLerp(depthFLS);
+  #endif
 #endif
 
         *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
@@ -1411,6 +1443,11 @@ void _S3L_drawFilledTriangle(
 
     S3L_stepFastLerp(lSideFLS);
     S3L_stepFastLerp(rSideFLS);
+
+#if S3L_COMPUTE_LERP_DEPTH
+    S3L_stepFastLerp(lDepthFLS);
+    S3L_stepFastLerp(rDepthFLS);
+#endif
 
     ++currentY;
   }
