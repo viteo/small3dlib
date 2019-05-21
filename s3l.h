@@ -867,7 +867,7 @@ void S3L_initDrawConfig(S3L_DrawConfig *config)
 }
 
 void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
-
+                       // TODO: ^ should be inline?
 typedef struct
 {
   int16_t steps;
