@@ -112,26 +112,32 @@
 #include <stdint.h>
 
 #ifndef S3L_RESOLUTION_X
-  #define S3L_RESOLUTION_X 640 //< Redefine to your screen x resolution.
+#define S3L_RESOLUTION_X 640 ///< Redefine to your screen x resolution.
 #endif
 
 #ifndef S3L_RESOLUTION_Y
-  #define S3L_RESOLUTION_Y 480 //< Redefine to your screen y resolution.
+#define S3L_RESOLUTION_Y 480 ///< Redefine to your screen y resolution.
+#endif
+
+#ifndef S3L_COMPUTE_DEPTH
+#define S3L_COMPUTE_DEPTH 0  /**< Whether to compute depth for each pixel
+                                  (fragment). Some other options may turn this
+                                  on. */
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
-  #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
-                                            correction (PC) to use. Remember
-                                            this is an expensive operation!
-                                            Possible values:
+#define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
+                                          correction (PC) to use. Remember
+                                          this is an expensive operation!
+                                          Possible values:
 
-                                            0: no PC, fastest but ugliest
-                                            1: full (per-pixel) PC, nicest but
-                                               extremely expensive!
-                                            2: triangle subdivided PC, a
-                                               compromise between quality and
-                                               speed (TODO, not implemented)
-                                            */
+                                          0: no PC, fastest but ugliest
+                                          1: full (per-pixel) PC, nicest but
+                                             extremely expensive!
+                                          2: triangle subdivided PC, a
+                                             compromise between quality and
+                                             speed (TODO, not implemented)
+                                          */
 #endif
 
 typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
@@ -151,19 +157,19 @@ typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
 
 #ifndef S3L_NEAR
-  #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT) /**< Distance of the near clipping
-                                                 plane. */
+#define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 4) /**< Distance of the near
+                                                   clipping plane. */
 #endif
 
 #ifndef S3L_FAST_LERP_QUALITY
-  #define S3L_FAST_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
-                                       interpolations. 0 will most likely be
-                                       faster, but artifacts can occur for
-                                       bigger tris, while higher values can fix
-                                       this -- in theory all higher values will
-                                       have the same speed (it is a shift
-                                       value), but it mustn't be too high to
-                                       prevent overflow. */
+#define S3L_FAST_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
+                                     interpolations. 0 will most likely be
+                                     faster, but artifacts can occur for
+                                     bigger tris, while higher values can fix
+                                     this -- in theory all higher values will
+                                     have the same speed (it is a shift
+                                     value), but it mustn't be too high to
+                                     prevent overflow. */
 #endif
 
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
@@ -346,6 +352,7 @@ typedef struct
   S3L_Unit barycentric1; ///< Baryc. coord 1 (corresponds to 2nd vertex).
   S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
   S3L_Index triangleID;
+  S3L_Unit depth;        ///< Depth (only if depth is turned on).
 } S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
                               (fragment) to the user-defined drawing func. */
 
