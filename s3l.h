@@ -125,31 +125,6 @@
                                   on. */
 #endif
 
-#ifndef S3L_RENDER_STRATEGY
-#define S3L_RENDER_STRATEGY S3L_STRATEGY_Z_BUFFER /**< Strategy used for
-                                                       visibility
-                                                       determination -- see
-                                                       S3L_STRATEGY_*
-                                                       consts. */
-#endif
-
-#define S3L_STRATEGY_NONE 0          /**< No strategy -- can be sufficient in
-                                          some cases. */
-#define S3L_STRATEGY_Z_BUFFER 1      /**< Use z-buffer (depth buffer).
-                                          Accurate and fast, but requires a lot
-                                          of memory. */
-#define S3L_STRATEGY_BACK_TO_FRONT 2 /**< Sort and draw triangles from back to
-                                          front (painter's algorithm). Requires
-                                          less memory, but can be slower than
-                                          Z-buffer and can't handle
-                                          intersecting triangles. */
-#define S3L_STRATEGY_FRONT_TO_BACK 3 /**< Sort and draw triangles from front to
-                                          back (reverse painter's algorithm).
-                                          Requires a bit more memory than back
-                                          to front, but can also be faster
-                                          (doesn't draw over already drawn
-                                          pixels). */
-
 #ifndef S3L_MAX_TRIANGES_DRAWN
 #define S3L_MAX_TRIANGES_DRAWN 128   /**< Maximum number of triangles that can
                                           be drawn in sorted modes. This
@@ -187,6 +162,20 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
                                         may overflow, so rather don't do it. */
 typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
+
+#ifndef S3L_USE_Z_BUFFER
+#define S3L_USE_Z_BUFFER 1   /**< Whether to use z-buffer (depth buffer) for
+                                  visibility determination. This is accurate
+                                  and can be fast, but requires a lot of
+                                  memory. */
+#endif
+
+#define S3L_MAX_DEPTH 2147483647
+
+#if S3L_USE_Z_BUFFER
+#define S3L_COMPUTE_DEPTH 1
+S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+#endif
 
 #ifndef S3L_NEAR
 #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 4) /**< Distance of the near
@@ -491,6 +480,8 @@ void S3L_drawTriangle(
   const S3L_DrawConfig *config,
   const S3L_Camera *camera,
   S3L_Index triangleID);
+
+void S3L_zBufferClear();
 
 static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 
@@ -1149,6 +1140,30 @@ void S3L_mapProjectionPlaneToScreen(
     (point.y * S3L_HALF_RESOLUTION_X) / S3L_FRACTIONS_PER_UNIT;
 }
 
+static inline int8_t S3L_zTest(
+  S3L_ScreenCoord x,
+  S3L_ScreenCoord y,
+  S3L_Unit depth)
+{
+  uint32_t index = y * S3L_RESOLUTION_X + x;
+
+  if (depth < S3L_zBuffer[index])
+  {
+    S3L_zBuffer[index] = depth;
+    return 1;
+  }
+
+  return 0;
+}
+
+void S3L_zBufferClear()
+{
+#if S3L_USE_Z_BUFFER
+  for (uint32_t i = 0; i < S3L_RESOLUTION_X * S3L_RESOLUTION_Y; ++i)
+    S3L_zBuffer[i] = S3L_MAX_DEPTH;
+#endif
+}
+
 void _S3L_drawFilledTriangle(
   S3L_Vec4 point0,
   S3L_Vec4 point1,
@@ -1464,37 +1479,44 @@ void _S3L_drawFilledTriangle(
 
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
+        p->x = x;
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
         S3L_Unit rowT =  
           S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
             x - lX,rowLength),&rowPC);
+#endif
 
+#if S3L_COMPUTE_DEPTH
+  #if S3L_PERSPECTIVE_CORRECTION == 1
+        p->depth = S3L_interpolateByUnit(lDepth,rDepth,rowT);
+  #else
+        p->depth = S3L_getFastLerpValue(depthFLS);
+        S3L_stepFastLerp(depthFLS);
+  #endif
+#endif
+
+#if S3L_USE_Z_BUFFER
+        if (!S3L_zTest(p->x,p->y,p->depth))
+          continue;
+#endif
+
+#if S3L_PERSPECTIVE_CORRECTION == 1
         *barycentric0 =
           S3L_interpolateByUnitFrom0(rT,rowT);
 
         *barycentric1 =
           S3L_interpolateByUnitFrom0(lT,S3L_FRACTIONS_PER_UNIT - rowT);
-
-  #if S3L_COMPUTE_DEPTH
-        p->depth = S3L_interpolateByUnit(lDepth,rDepth,rowT);
-  #endif
 #else
         *barycentric0 = S3L_getFastLerpValue(b0FLS);
         *barycentric1 = S3L_getFastLerpValue(b1FLS);
 
         S3L_stepFastLerp(b0FLS);
         S3L_stepFastLerp(b1FLS);
-
-  #if S3L_COMPUTE_LERP_DEPTH
-        p->depth = S3L_getFastLerpValue(depthFLS);
-        S3L_stepFastLerp(depthFLS);
-  #endif
 #endif
 
         *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 
-        p->x = x;
         S3L_PIXEL_FUNCTION(p);
       }
     }   // y clipping

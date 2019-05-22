@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define S3L_USE_Z_BUFFER 1
+
 #define S3L_PIXEL_FUNCTION drawPixel
 
 #define S3L_RESOLUTION_X 640
@@ -134,17 +136,7 @@ S3L_DrawConfig conf;
 
 void draw()
 {
-/*
-  if (frame % 128 == 0)
-  {
-    printf("frame: %d\n",frame);
-    printf("scene.camera:\n");
-    printf("  translation: ");
-    S3L_writeVec4(scene.camera.transform.translation);
-    printf("  rotation: ");
-    S3L_writeVec4(scene.camera.transform.rotation);
-  }
-*/
+  S3L_zBufferClear();
 
   offScreenPixels = 0;
 
@@ -155,63 +147,10 @@ void draw()
   scene.models[0].transform.rotation.z = f * 0.1;
   scene.models[0].transform.rotation.x = f * 0.3;
 
-//  modelTransform.translation.x = sin(f >> 7) * 700;
-//  modelTransform.translation.y = sin(f >> 8) * 600;
-
-/*
-  S3L_drawModelIndexed(ver,tri,12,modelTransform,&scene.camera,&conf);
-
-  modelTransform.translation.x += 2 * S3L_FRACTIONS_PER_UNIT;
-  S3L_drawModelIndexed(ver,tri,12,modelTransform,&scene.camera,&conf);
-  modelTransform.translation.x -= 2 * S3L_FRACTIONS_PER_UNIT;
-*/
-
   S3L_drawScene(scene);
 
   if (offScreenPixels > 0)
     printf("offscreen pixels: %d\n",offScreenPixels);
-
-//  S3L_drawModelIndexed(ver,tri,1,modelTransform,&scene.camera,&conf);
-
-/*
-conf.backfaceCulling = S3L_BACKFACE_CULLING_NONE;
-conf.mode = S3L_MODE_TRIANGLES;
-
-  for (int c = 0; c < 8; ++c)
-  {
-    int
-      x0 = test_coords[6 * c],
-      y0 = test_coords[6 * c + 1],
-      x1 = test_coords[6 * c + 2],
-      y1 = test_coords[6 * c + 3],
-      x2 = test_coords[6 * c + 4],
-      y2 = test_coords[6 * c + 5];
-
-int cent = (x0 + x1 + x2) / 3.0;
-x2 = cent + (x2 - cent) * sin(frame * 0.001) * 2;
-//x2 = cent + (x2 - cent) * sin(600 * 0.001) * 2;
-
-    S3L_drawTriangle(x0,y0,x1,y1,x2,y2,conf,0);
-
-    setPixel(x0,y0,255,0,0);
-    setPixel(x1,y1,255,0,0);
-    setPixel(x2,y2,255,0,0);
-
-  }
-
-float rotRate = 0.002;
-
-int16_t rotX0 = 200 + sin(frame * rotRate) * 100;
-int16_t rotY0 = 200 + cos(frame * rotRate) * 100;
-
-int16_t rotX1 = 200 + sin((frame + 1500) * rotRate) * 100;
-int16_t rotY1 = 200 + cos((frame + 1500) * rotRate) * 100;
-
-int16_t rotX2 = 200 + sin((frame + 500) * rotRate) * 100;
-int16_t rotY2 = 200 + cos((frame + 500) * rotRate) * 100;
-
-S3L_drawTriangle(rotX0,rotY0,rotX1,rotY1,rotX2,rotY2,conf,0);
-  */
 }
 
 int main()
