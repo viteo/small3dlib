@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define S3L_USE_Z_BUFFER 1
+#define S3L_Z_BUFFER S3L_Z_BUFFER_BYTE
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
@@ -126,7 +126,9 @@ void drawPixel(S3L_PixelInfo *p)
 
 uint8_t sss = (p->depth / 5000.0) * 255  ;
 
-setPixel(p->x,p->y,sss,sss,sss);
+//setPixel(p->x,p->y,sss,sss,sss);
+
+setPixel(p->x,p->y,p->modelID * 64,p->modelID * 128,255);
 
 //  setPixel(p->x,p->y,p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
 }
@@ -176,7 +178,7 @@ int main()
   scene.models[0].transform.translation.x = S3L_FRACTIONS_PER_UNIT;
 
   scene.models[1] = scene.models[0];
-  scene.models[1].transform.translation.x = -1 * S3L_FRACTIONS_PER_UNIT;
+  scene.models[1].transform.translation.x = 0.5 * S3L_FRACTIONS_PER_UNIT;
 
 //  scene.camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
 //  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;

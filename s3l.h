@@ -163,18 +163,36 @@ typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
 typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
 
-#ifndef S3L_USE_Z_BUFFER
-#define S3L_USE_Z_BUFFER 1   /**< Whether to use z-buffer (depth buffer) for
-                                  visibility determination. This is accurate
-                                  and can be fast, but requires a lot of
-                                  memory. */
+#define S3L_Z_BUFFER_NONE 0 /**< Don't use z-buffer. This saves a lot of
+                                 memory, but visibility checking won't be
+                                 pixel-accurate and has to mostly be done by
+                                 other means (typically sorting). */
+#define S3L_Z_BUFFER_FULL 1 /**< Use full z-buffer (of S3L_Units) for
+                                 visibiltiy determination. This is the most
+                                 accurate option (and also a fast one), but 
+                                 requires a big amount of memory. */
+#define S3L_Z_BUFFER_BYTE 2 /**< Use reduced-size z-buffer (of bytes). This is
+                                 fast and somewhat accurate, but inaccuracies
+                                 can occur and a considerable amount of memory
+                                 is needed. */
+
+#ifndef S3L_Z_BUFFER
+#define S3L_Z_BUFFER S3L_Z_BUFFER_NONE  /**< What type of z-buffer (depth
+                                             buffer) to use for visibility
+                                             determination. See
+                                             S3L_Z_BUFFER_*. */
 #endif
 
-#define S3L_MAX_DEPTH 2147483647
-
-#if S3L_USE_Z_BUFFER
-#define S3L_COMPUTE_DEPTH 1
-S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+#if S3L_Z_BUFFER == S3L_Z_BUFFER_FULL
+  #define S3L_COMPUTE_DEPTH 1
+  #define S3L_MAX_DEPTH 2147483647
+  S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+  #define S3L_zBufferFormat(depth) (depth)
+#elif S3L_Z_BUFFER == S3L_Z_BUFFER_BYTE
+  #define S3L_COMPUTE_DEPTH 1
+  #define S3L_MAX_DEPTH 255
+  uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+  #define S3L_zBufferFormat(depth) (((depth) >> 5) & 0x000000FF)
 #endif
 
 #ifndef S3L_NEAR
@@ -479,6 +497,7 @@ void S3L_drawTriangle(
   S3L_Vec4 point2,
   const S3L_DrawConfig *config,
   const S3L_Camera *camera,
+  S3L_Index modelID,
   S3L_Index triangleID);
 
 void S3L_zBufferClear();
@@ -1145,7 +1164,10 @@ static inline int8_t S3L_zTest(
   S3L_ScreenCoord y,
   S3L_Unit depth)
 {
+#if S3L_Z_BUFFER
   uint32_t index = y * S3L_RESOLUTION_X + x;
+
+  depth = S3L_zBufferFormat(depth);
 
   if (depth < S3L_zBuffer[index])
   {
@@ -1154,11 +1176,12 @@ static inline int8_t S3L_zTest(
   }
 
   return 0;
+#endif
 }
 
 void S3L_zBufferClear()
 {
-#if S3L_USE_Z_BUFFER
+#if S3L_Z_BUFFER
   for (uint32_t i = 0; i < S3L_RESOLUTION_X * S3L_RESOLUTION_Y; ++i)
     S3L_zBuffer[i] = S3L_MAX_DEPTH;
 #endif
@@ -1496,7 +1519,7 @@ void _S3L_drawFilledTriangle(
   #endif
 #endif
 
-#if S3L_USE_Z_BUFFER
+#if S3L_Z_BUFFER
         if (!S3L_zTest(p->x,p->y,p->depth))
           continue;
 #endif
@@ -1544,6 +1567,7 @@ void S3L_drawTriangle(
   S3L_Vec4 point2,
   const S3L_DrawConfig *config,
   const S3L_Camera *camera,
+  S3L_Index modelID,
   S3L_Index triangleID)
 {
   #define clipTest(c,cmp,v)\
@@ -1574,6 +1598,7 @@ void S3L_drawTriangle(
 
   S3L_PixelInfo p;
   S3L_initPixelInfo(&p);
+  p.modelID = modelID;
   p.triangleID = triangleID;
 
   if (config->mode == S3L_MODE_TRIANGLES)  // triangle mode
@@ -1780,7 +1805,8 @@ void S3L_drawScene(S3L_Scene scene)
       #undef project
 
       S3L_drawTriangle(transformed0,transformed1,transformed2,
-        &(scene.models[modelIndex].config),&(scene.camera),triangleIndex);
+        &(scene.models[modelIndex].config),&(scene.camera),modelIndex,
+        triangleIndex);
 
       ++triangleIndex;
     }
