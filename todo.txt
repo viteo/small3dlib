@@ -6,19 +6,20 @@ features:
     - back-to-front (slower, better memory efficiency)
     - front-to-back (faster, but needs 1bit stencil buffer)
   - Z-buffer:
-    - full
-    - reduced (resolution and precision)
+    - full                                  DONE
+    - reduced (resolution and precision)    DONE
+    - more reduced (4-bit)
 
 - perspective correction modes:
-  - none                                 DONE
-  - full                                 DONE
+  - none                                    DONE
+  - full                                    DONE
   - triangle subdivision (each triangle side will be subdivided after reaching
     a defined length, which will be measured by Chebyshev or similarly fast
     distance).
   - also offer some approximation function?
 
 - predefined 3D shapes:
-  - cube                                 DONE
+  - cube                                    DONE
   - sphere
   - cylinder
   - pyramid
