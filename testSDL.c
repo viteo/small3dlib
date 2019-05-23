@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define S3L_Z_BUFFER S3L_Z_BUFFER_BYTE
+#define S3L_Z_BUFFER S3L_Z_BUFFER_FULL
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
@@ -122,13 +122,13 @@ void drawPixel(S3L_PixelInfo *p)
 
   uint8_t col = texturePixel(u,v);
 
-//  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
+  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
 
 uint8_t sss = (p->depth / 5000.0) * 255  ;
 
 //setPixel(p->x,p->y,sss,sss,sss);
 
-setPixel(p->x,p->y,p->modelID * 64,p->modelID * 128,255);
+//setPixel(p->x,p->y,p->modelID * 64,p->modelID * 128,255);
 
 //  setPixel(p->x,p->y,p->barycentric0 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric1 / ((float) S3L_FRACTIONS_PER_UNIT) * 255,p->barycentric2 / ((float) S3L_FRACTIONS_PER_UNIT) * 255);
 }

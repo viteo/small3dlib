@@ -1570,32 +1570,6 @@ void S3L_drawTriangle(
   S3L_Index modelID,
   S3L_Index triangleID)
 {
-  #define clipTest(c,cmp,v)\
-    (point0.c cmp (v) && point1.c cmp (v) && point2.c cmp (v))
-
-  if ( // early clipping -- test if completely outside frustum
-
-      clipTest(z,<=,S3L_NEAR) ||
-      clipTest(x,<,-1 * S3L_FRACTIONS_PER_UNIT) ||
-      clipTest(x,>,S3L_FRACTIONS_PER_UNIT) ||
-      clipTest(y,<,-1 * S3L_PROJECTION_PLANE_HEIGHT / 2) ||
-      clipTest(y,>,S3L_PROJECTION_PLANE_HEIGHT / 2)
-    )
-    return; // completely behind the camera
-
-  if (config->backfaceCulling != S3L_BACKFACE_CULLING_NONE)
-  {
-    int32_t winding = // determines CW or CCW
-      (
-        (point1.y - point0.y) * (point2.x - point1.x) - 
-        (point1.x - point0.x) * (point2.y - point1.y)
-      ); 
-
-    if ((config->backfaceCulling == S3L_BACKFACE_CULLING_CW && winding < 0) ||
-        (config->backfaceCulling == S3L_BACKFACE_CULLING_CCW && winding >= 0))
-      return;
-  }
-
   S3L_PixelInfo p;
   S3L_initPixelInfo(&p);
   p.modelID = modelID;
@@ -1754,6 +1728,45 @@ static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   vector->y = (vector->y * focalLength) / divisor;
 }
 
+/**
+  Checks if given triangle (in Projection Plane space) is at least partially
+  visible, i.e. returns false if the triangle is either completely outside
+  the frustum (left, right, top, bottom, near) or is invisible due to
+  backface culling.
+*/
+static inline int8_t S3L_triangleIsVisible(
+  S3L_Vec4 p0,
+  S3L_Vec4 p1,
+  S3L_Vec4 p2,
+  uint8_t backfaceCulling)
+{
+  #define clipTest(c,cmp,v)\
+    (p0.c cmp (v) && p1.c cmp (v) && p2.c cmp (v))
+
+  if ( // completely outside frustum?
+      clipTest(z,<=,S3L_NEAR) ||
+      clipTest(x,<,-1 * S3L_FRACTIONS_PER_UNIT) ||
+      clipTest(x,>,S3L_FRACTIONS_PER_UNIT) ||
+      clipTest(y,<,-1 * S3L_PROJECTION_PLANE_HEIGHT / 2) ||
+      clipTest(y,>,S3L_PROJECTION_PLANE_HEIGHT / 2)
+    )
+    return 0;
+
+  #undef clipTest
+
+  if (backfaceCulling != S3L_BACKFACE_CULLING_NONE)
+  {
+    int32_t winding = // determines CW or CCW
+      (p1.y - p0.y) * (p2.x - p1.x) - (p1.x - p0.x) * (p2.y - p1.y); 
+
+    if ((backfaceCulling == S3L_BACKFACE_CULLING_CW && winding < 0) ||
+        (backfaceCulling == S3L_BACKFACE_CULLING_CCW && winding >= 0))
+      return 0;
+  }
+
+  return 1;
+}
+
 void S3L_drawScene(S3L_Scene scene)
 {
   for (S3L_Index modelIndex; modelIndex < scene.modelCount; ++modelIndex)
@@ -1804,9 +1817,14 @@ void S3L_drawScene(S3L_Scene scene)
 
       #undef project
 
-      S3L_drawTriangle(transformed0,transformed1,transformed2,
-        &(scene.models[modelIndex].config),&(scene.camera),modelIndex,
-        triangleIndex);
+      S3L_DrawConfig *config = &(scene.models[modelIndex].config);
+  
+      if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
+         config->backfaceCulling))
+      {
+        S3L_drawTriangle(transformed0,transformed1,transformed2,config,
+           &(scene.camera),modelIndex,triangleIndex);
+      }
 
       ++triangleIndex;
     }
