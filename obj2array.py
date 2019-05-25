@@ -1,7 +1,8 @@
 # Python tool to convert a 3D model from the text obj format to C arrays to be
 # used with small3dlib.
 #
-# Usage:
+#
+#
 #
 # TODO
 #
@@ -10,14 +11,44 @@
 
 import sys
 
-fileName = sys.argv[1]
+def printHelp():
+  print("Convert 3D model in OBJ format (text, triangulated) to C array for small3dlib.")
+  print("usage:\n")
+  print("  python obj2array.py [-c -sX -uY -vZ -n] file\n")
+  print("  -c     compact format (off by default)")
+  print("  -n     use direct instead of indexed UV coords (off by default)  ")
+  print("  -sX    scale the model by X (default: 512)")
+  print("  -uY    scale the U texture coord by Y (default: 512)")
+  print("  -vZ    scale the V texture coord by Z (default: 512)")
+  print("");
+  print("by Miloslav \"drummyfish\" Ciz")
+  print("released under CC0 1.0")
 
+if len(sys.argv) < 2:
+  printHelp()
+  quit()
+
+fileName = ""
 VERTEX_SCALE = 512
 U_SCALE = 512
 V_SCALE = 512
 NAME = "model"
-COMPACT = True
-INDEXED_UVS = False
+COMPACT = False
+INDEXED_UVS = True
+
+for s in sys.argv:
+  if s == "-c":
+    COMPACT = True
+  elif s == "-n":
+    INDEXED_UVS = False
+  elif s[:2] == "-s":
+    VERTEX_SCALE = int(s[2:])
+  elif s[:2] == "-u":
+    U_SCALE = int(s[2:])
+  elif s[:2] == "-v":
+    V_SCALE = int(s[2:])
+  else:
+    fileName = s
 
 objFile = open(fileName)
 
