@@ -1,12 +1,7 @@
 # Python tool to convert a 3D model from the text obj format to C arrays to be
 # used with small3dlib.
 #
-#
-#
-#
-# TODO
-#
-# by drummfish
+# by drummyfish
 # released under CC0 1.0.
 
 import sys
@@ -16,7 +11,8 @@ def printHelp():
   print("usage:\n")
   print("  python obj2array.py [-c -sX -uY -vZ -n] file\n")
   print("  -c     compact format (off by default)")
-  print("  -n     use direct instead of indexed UV coords (off by default)  ")
+  print("  -t     use direct instead of indexed UV coords (off by default)")
+  print("  -nS    use the name S for the model (defaut: \"model\")")
   print("  -sX    scale the model by X (default: 512)")
   print("  -uY    scale the U texture coord by Y (default: 512)")
   print("  -vZ    scale the V texture coord by Z (default: 512)")
@@ -28,7 +24,7 @@ if len(sys.argv) < 2:
   printHelp()
   quit()
 
-fileName = ""
+FILENAME = ""
 VERTEX_SCALE = 512
 U_SCALE = 512
 V_SCALE = 512
@@ -39,7 +35,7 @@ INDEXED_UVS = True
 for s in sys.argv:
   if s == "-c":
     COMPACT = True
-  elif s == "-n":
+  elif s == "-t":
     INDEXED_UVS = False
   elif s[:2] == "-s":
     VERTEX_SCALE = int(s[2:])
@@ -47,10 +43,12 @@ for s in sys.argv:
     U_SCALE = int(s[2:])
   elif s[:2] == "-v":
     V_SCALE = int(s[2:])
+  elif s[:2] == "-n":
+    NAME = s[2:]
   else:
-    fileName = s
+    FILENAME = s
 
-objFile = open(fileName)
+objFile = open(FILENAME)
 
 vertices = []
 uvs = []
@@ -165,3 +163,17 @@ else:
 
   print(arrayString(NAME + "TriangleUVs",uvs2,6,[U_SCALE,V_SCALE],5,False))
 
+print("S3L_Model " + NAME + " = ")
+
+if COMPACT:
+  print("{.vertices=" +
+    NAME + "Verices,.vertexCount=" + str(len(vertices)) +
+    ",.triangles=" + NAME + "\nTriangles,.triangleCount=" +
+    str(len(triangles)) + "};");
+else:
+  print("{")
+  print("  .vertices = " + NAME + "Vertices,") 
+  print("  .vertexCount = " + str(len(vertices)) + ",")
+  print("  .triangles = " + NAME + "Triangles,")
+  print("  .triangleCount = " + str(len(triangles)))
+  print("};")
