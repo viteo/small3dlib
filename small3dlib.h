@@ -185,16 +185,29 @@ typedef uint16_t S3L_Index;
                                              S3L_Z_BUFFER_*. */
 #endif
 
-#if S3L_Z_BUFFER == S3L_Z_BUFFER_FULL
-  #define S3L_COMPUTE_DEPTH 1
-  #define S3L_MAX_DEPTH 2147483647
-  S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
-  #define S3L_zBufferFormat(depth) (depth)
-#elif S3L_Z_BUFFER == S3L_Z_BUFFER_BYTE
-  #define S3L_COMPUTE_DEPTH 1
-  #define S3L_MAX_DEPTH 255
-  uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
-  #define S3L_zBufferFormat(depth) (((depth) >> 5) & 0x000000FF)
+#define S3L_SORT_NONE 0          /**< Don't sort triangles. This is fastest. */
+#define S3L_SORT_BACK_TO_FRONT 1 /**< Sort triangles from back to front. This
+                                      can in most cases solve visibility
+                                      without requiring almost any extra
+                                      memory compared to z-buffer. */
+#define S3L_SORT_FRONT_TO_BACK 2 /**< Sort triangles front to back AND use
+                                      a 1bit stencil buffer to not draw over
+                                      already drawn triangles. This prevents
+                                      overwriting already computed pixels, but
+                                      requires a little but extra memory (the
+                                      stencil buffer). */
+#ifndef S3L_SORT
+#define S3L_SORT S3L_SORT_NONE /**< Defines how to sort triangles before
+                                    drawing a frame. This can be used to solve
+                                    visibility in case z-buffer is not used, to
+                                    prevent overwrting already rasterized
+                                    pixels, implement transparency etc. Note
+                                    that for simplicity and performance a
+                                    relatively simple sorting is used which
+                                    doesn't work completely correctly, so
+                                    mistakes can occur (even the best sorting
+                                    wouldn't be able to solve e.g. intersecting
+                                    triangles). */
 #endif
 
 #ifndef S3L_NEAR
@@ -508,6 +521,18 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 
 //=============================================================================
 // privates
+
+#if S3L_Z_BUFFER == S3L_Z_BUFFER_FULL
+  #define S3L_COMPUTE_DEPTH 1
+  #define S3L_MAX_DEPTH 2147483647
+  S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+  #define S3L_zBufferFormat(depth) (depth)
+#elif S3L_Z_BUFFER == S3L_Z_BUFFER_BYTE
+  #define S3L_COMPUTE_DEPTH 1
+  #define S3L_MAX_DEPTH 255
+  uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+  #define S3L_zBufferFormat(depth) (((depth) >> 5) & 0x000000FF)
+#endif
 
 #define S3L_COMPUTE_LERP_DEPTH\
   (S3L_COMPUTE_DEPTH && (S3L_PERSPECTIVE_CORRECTION != 1))

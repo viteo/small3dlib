@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define S3L_Z_BUFFER S3L_Z_BUFFER_FULL
+#define S3L_Z_BUFFER 0
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
@@ -15,7 +15,7 @@
 #define S3L_RESOLUTION_Y 480
 
 #define S3L_COMPUTE_DEPTH 1
-#define S3L_PERSPECTIVE_CORRECTION 1
+#define S3L_PERSPECTIVE_CORRECTION 0
 
 #include "small3dlib.h"
 

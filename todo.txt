@@ -1,14 +1,17 @@
 features:
 
-- scene and model rendering strategies:
-  - random (no visibility checks)
-  - sorted:
-    - back-to-front (slower, better memory efficiency)
-    - front-to-back (faster, but needs 1bit stencil buffer)
-  - Z-buffer:
-    - full                                  DONE
-    - reduced (resolution and precision)    DONE
-    - more reduced (4-bit)
+- scene and model rendering strategies, that can be optionally selected and 
+  will configure other constants (e.g. a "low memory sort strategy" will turn
+  z-buffer off and turn back-to-front sorting on).
+
+- triangle sorting:
+  - back-to-front (slower, better memory efficiency)
+  - front-to-back (faster, but needs 1bit stencil buffer)
+
+- Z-buffer:
+  - full                                  DONE
+  - reduced (resolution and precision)    DONE
+  - more reduced (4-bit)
 
 - perspective correction modes:
   - none                                    DONE
