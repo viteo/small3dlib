@@ -17,7 +17,7 @@
 #define S3L_COMPUTE_DEPTH 1
 #define S3L_PERSPECTIVE_CORRECTION 1
 
-#include "s3l.h"
+#include "small3dlib.h"
 
 #include "house.h"
 
@@ -106,7 +106,8 @@ void drawPixel(S3L_PixelInfo *p)
     return;
   }
 
-  S3L_Unit u, v, *coords;
+  S3L_Unit u, v;
+  const S3L_Unit *coords;
 
   coords = tex_coords + p->triangleID * 6;
 /*
@@ -128,7 +129,7 @@ void drawPixel(S3L_PixelInfo *p)
 
 uint8_t sss = (p->depth / 5000.0) * 255  ;
 
-setPixel(p->x,p->y,sss,sss,128);
+setPixel(p->x,p->y,sss, (p->triangleID * 37) % 255 ,128);
 
 //setPixel(p->x,p->y,p->modelID * 64,p->modelID * 128,255);
 
@@ -169,7 +170,7 @@ int main()
 
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
   scene.modelCount = 2;
-  scene.models = &models;
+  scene.models = models;
 
   scene.models[0].vertices = ver;
   scene.models[0].vertexCount = S3L_CUBE_VERTEX_COUNT; 
@@ -181,9 +182,12 @@ int main()
 
 //  scene.models[1] = scene.models[0];
 //  scene.models[1].transform.translation.x = 0.5 * S3L_FRACTIONS_PER_UNIT;
+
   scene.models[1] = house;
   S3L_initTransoform3D(&(scene.models[1].transform));
   S3L_initDrawConfig(&(scene.models[1].config));
+  scene.models[1].transform.translation.y = -1 * S3L_FRACTIONS_PER_UNIT;
+  scene.models[1].transform.translation.z = 4 * S3L_FRACTIONS_PER_UNIT;
 
 //  scene.camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
 //  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;

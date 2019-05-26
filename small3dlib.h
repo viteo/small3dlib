@@ -393,9 +393,9 @@ void S3L_initDrawConfig(S3L_DrawConfig *config);
 
 typedef struct
 {
-  S3L_Unit *vertices;
+  const S3L_Unit *vertices;
   S3L_Index vertexCount;
-  S3L_Index *triangles;
+  const S3L_Index *triangles;
   S3L_Index triangleCount;
   S3L_Transform3D transform;
   S3L_DrawConfig config;
@@ -906,7 +906,7 @@ void S3L_rotationToDirections(
     forw->x = 0;
     forw->y = 0;
     forw->z = length;
-    S3L_vec3Xmat4(forw,*m);
+    S3L_vec3Xmat4(forw,&m);
   }
 
   if (right != 0)
@@ -914,7 +914,7 @@ void S3L_rotationToDirections(
     right->x = length;
     right->y = 0;
     right->z = 0;
-    S3L_vec3Xmat4(right,*m);
+    S3L_vec3Xmat4(right,&m);
   }
 
   if (up != 0)
@@ -922,7 +922,7 @@ void S3L_rotationToDirections(
     up->x = 0;
     up->y = length;
     up->z = 0;
-    S3L_vec3Xmat4(up,*m);
+    S3L_vec3Xmat4(up,&m);
   }
 }
 
@@ -1773,8 +1773,8 @@ void S3L_drawScene(S3L_Scene scene)
 {
   for (S3L_Index modelIndex; modelIndex < scene.modelCount; ++modelIndex)
   {
-    S3L_Unit *vertices = scene.models[modelIndex].vertices;
-    S3L_Index *triangles = scene.models[modelIndex].triangles;
+    const S3L_Unit *vertices = scene.models[modelIndex].vertices;
+    const S3L_Index *triangles = scene.models[modelIndex].triangles;
  
     S3L_Index triangleIndex = 0;
     S3L_Index coordIndex = 0;
