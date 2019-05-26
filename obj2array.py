@@ -12,6 +12,7 @@ def printHelp():
   print("  python obj2array.py [-c -sX -uY -vZ -n] file\n")
   print("  -c     compact format (off by default)")
   print("  -t     use direct instead of indexed UV coords (off by default)")
+  print("  -h     include header guards (for model per file)")
   print("  -nS    use the name S for the model (defaut: \"model\")")
   print("  -sX    scale the model by X (default: 512)")
   print("  -uY    scale the U texture coord by Y (default: 512)")
@@ -29,6 +30,7 @@ VERTEX_SCALE = 512
 U_SCALE = 512
 V_SCALE = 512
 NAME = "model"
+GUARDS = False
 COMPACT = False
 INDEXED_UVS = True
 
@@ -37,6 +39,8 @@ for s in sys.argv:
     COMPACT = True
   elif s == "-t":
     INDEXED_UVS = False
+  elif s == "-h":
+    GUARDS = True
   elif s[:2] == "-s":
     VERTEX_SCALE = int(s[2:])
   elif s[:2] == "-u":
@@ -85,8 +89,8 @@ for line in objFile:
 
 # print the result:
 
-def arrayString(name, array, components, scales, align, short):
-  result = name + " = [\n"
+def arrayString(name, array, components, scales, align, short, dataType):
+  result = "const " + dataType + " " + name + "[] = {\n"
 
   if COMPACT:
     lineLen = 0
@@ -122,7 +126,7 @@ def arrayString(name, array, components, scales, align, short):
         lineLen += len(item)
         n += 1
 
-    result += "]\n"
+    result += "};\n"
 
   else: # non-compact
     n = 0
@@ -138,18 +142,22 @@ def arrayString(name, array, components, scales, align, short):
       result += line
       n += 1
 
-    result += "]; // " + name + "\n"
+    result += "}; // " + name + "\n"
 
   return result
 
 result = ""
 
-print(arrayString(NAME + "Vertices",vertices,3,[VERTEX_SCALE],5,False))
-print(arrayString(NAME + "TriangleIndices",triangles,3,[1],5,True))
+if GUARDS:
+  print("#ifndef " + NAME.upper() + "_H")
+  print("#define " + NAME.upper() + "_H\n")
+
+print(arrayString(NAME + "Vertices",vertices,3,[VERTEX_SCALE],5,False,"S3L_Unit"))
+print(arrayString(NAME + "TriangleIndices",triangles,3,[1],5,True,"S3L_Index"))
 
 if INDEXED_UVS:
-  print(arrayString(NAME + "UVs",vertices,2,[U_SCALE,V_SCALE],5,False))
-  print(arrayString(NAME + "UVIndices",triangleUVs,3,[1],5,True))
+  print(arrayString(NAME + "UVs",vertices,2,[U_SCALE,V_SCALE],5,False,"S3L_Unit"))
+  print(arrayString(NAME + "UVIndices",triangleUVs,3,[1],5,True,"S3L_Index"))
 else:
   uvs2 = []
   for item in triangleUVs:
@@ -161,19 +169,22 @@ else:
       uvs[item[2]][0],
       uvs[item[2]][1]])
 
-  print(arrayString(NAME + "TriangleUVs",uvs2,6,[U_SCALE,V_SCALE],5,False))
+  print(arrayString(NAME + "TriangleUVs",uvs2,6,[U_SCALE,V_SCALE],5,False,"S3L_Unit"))
 
-print("S3L_Model " + NAME + " = ")
+print("S3L_Model3D " + NAME + " = ")
 
 if COMPACT:
   print("{.vertices=" +
-    NAME + "Verices,.vertexCount=" + str(len(vertices)) +
-    ",.triangles=" + NAME + "\nTriangles,.triangleCount=" +
+    NAME + "Vertices,.vertexCount=" + str(len(vertices)) +
+    ",.triangles=" + NAME + "TriangleIndices,\n.triangleCount=" +
     str(len(triangles)) + "};");
 else:
   print("{")
   print("  .vertices = " + NAME + "Vertices,") 
   print("  .vertexCount = " + str(len(vertices)) + ",")
-  print("  .triangles = " + NAME + "Triangles,")
+  print("  .triangles = " + NAME + "TriangleIndices,")
   print("  .triangleCount = " + str(len(triangles)))
   print("};")
+
+if GUARDS:
+  print("\n#endif // guard")

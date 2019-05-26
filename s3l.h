@@ -72,6 +72,8 @@
 
   Coordinates of pixels on screen start typically at the top left, from [0,0].
 
+  There is NO subpixel accuracy (screen coordinates are only integer).
+
   Triangle rasterization rules are these (mostly same as OpenGL, D3D etc.):
 
   - Let's define:
