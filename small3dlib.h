@@ -127,13 +127,6 @@
                                   on. */
 #endif
 
-#ifndef S3L_MAX_TRIANGES_DRAWN
-#define S3L_MAX_TRIANGES_DRAWN 128   /**< Maximum number of triangles that can
-                                          be drawn in sorted modes. This
-                                          affects the size of a cache used for
-                                          triangle sorting. */
-#endif
-
 #ifndef S3L_PERSPECTIVE_CORRECTION
 #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
                                           correction (PC) to use. Remember
@@ -190,12 +183,7 @@ typedef uint16_t S3L_Index;
                                       can in most cases solve visibility
                                       without requiring almost any extra
                                       memory compared to z-buffer. */
-#define S3L_SORT_FRONT_TO_BACK 2 /**< Sort triangles front to back AND use
-                                      a 1bit stencil buffer to not draw over
-                                      already drawn triangles. This prevents
-                                      overwriting already computed pixels, but
-                                      requires a little but extra memory (the
-                                      stencil buffer). */
+#define S3L_SORT_FRONT_TO_BACK 2 /**< TODO */
 #ifndef S3L_SORT
 #define S3L_SORT S3L_SORT_NONE /**< Defines how to sort triangles before
                                     drawing a frame. This can be used to solve
@@ -208,6 +196,13 @@ typedef uint16_t S3L_Index;
                                     mistakes can occur (even the best sorting
                                     wouldn't be able to solve e.g. intersecting
                                     triangles). */
+#endif
+
+#ifndef S3L_MAX_TRIANGES_DRAWN
+#define S3L_MAX_TRIANGES_DRAWN 128   /**< Maximum number of triangles that can
+                                          be drawn in sorted modes. This
+                                          affects the size of a cache used for
+                                          triangle sorting. */
 #endif
 
 #ifndef S3L_NEAR
@@ -1202,8 +1197,9 @@ static inline int8_t S3L_zTest(
     return 1;
   }
 
-  return 0;
 #endif
+
+  return 0;
 }
 
 void S3L_zBufferClear()
@@ -1794,64 +1790,69 @@ static inline int8_t S3L_triangleIsVisible(
   return 1;
 }
 
+static inline void _S3L_drawModelTriangle(
+  S3L_Scene scene,
+  S3L_Index modelIndex,
+  S3L_Index triangleIndex,
+  S3L_Mat4 *transformMatrix,
+  S3L_Camera *camera)
+{
+  S3L_Vec4 modelVertex, transformed0, transformed1, transformed2;
+  S3L_Index vertexIndex;
+  S3L_Model3D model;
+
+  model = scene.models[modelIndex];
+
+  modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
+
+  #define project(n)\
+    vertexIndex = model.triangles[triangleIndex * 3 + n] * 3;\
+    modelVertex.x = model.vertices[vertexIndex];\
+    modelVertex.y = model.vertices[vertexIndex + 1];\
+    modelVertex.z = model.vertices[vertexIndex + 2];\
+    S3L_vec3Xmat4(&modelVertex,transformMatrix);\
+    transformed##n.x = modelVertex.x;\
+    transformed##n.y = modelVertex.y;\
+    transformed##n.z = modelVertex.z;\
+    transformed##n.w = S3L_FRACTIONS_PER_UNIT;\
+    S3L_perspectiveDivide(&transformed##n,camera->focalLength);
+
+  /* TODO: maybe create an option that would use a cache here to not
+           transform the same point twice? */
+
+  project(0)
+  project(1)
+  project(2)
+
+  #undef project
+
+  if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
+     model.config.backfaceCulling))
+  {
+    S3L_drawTriangle(transformed0,transformed1,transformed2,&(model.config),
+       camera,modelIndex,triangleIndex);
+  } 
+}
+
 void S3L_drawScene(S3L_Scene scene)
 {
+  S3L_Mat4 matFinal, matCamera;
+
+  S3L_makeCameraMatrix(scene.camera.transform,&matCamera);
+
   for (S3L_Index modelIndex; modelIndex < scene.modelCount; ++modelIndex)
   {
-    const S3L_Unit *vertices = scene.models[modelIndex].vertices;
-    const S3L_Index *triangles = scene.models[modelIndex].triangles;
- 
-    S3L_Index triangleIndex = 0;
-    S3L_Index coordIndex = 0;
-
-    S3L_Vec4 pointModel, transformed0, transformed1, transformed2;
-    S3L_Unit indexIndex = 0;
-
-    pointModel.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
-
-    S3L_Mat4 mat1, mat2;
-
-    S3L_makeWorldMatrix(scene.models[modelIndex].transform,&mat1);
-    S3L_makeCameraMatrix(scene.camera.transform,&mat2);
-
-    S3L_mat4Xmat4(&mat1,&mat2);
+    S3L_makeWorldMatrix(scene.models[modelIndex].transform,&matFinal);
+    S3L_mat4Xmat4(&matFinal,&matCamera);
 
     S3L_Index triangleCount = scene.models[modelIndex].triangleCount;
 
+    S3L_Index triangleIndex = 0;
+
     while (triangleIndex < triangleCount)
     {
-      #define project(n)\
-        indexIndex = triangles[coordIndex] * 3;\
-        pointModel.x = vertices[indexIndex];\
-        ++indexIndex; /* TODO: put into square brackets? */\
-        pointModel.y = vertices[indexIndex];\
-        ++indexIndex;\
-        pointModel.z = vertices[indexIndex];\
-        ++coordIndex;\
-        S3L_vec3Xmat4(&pointModel,&mat1);\
-        transformed##n.x = pointModel.x;\
-        transformed##n.y = pointModel.y;\
-        transformed##n.z = pointModel.z;\
-        transformed##n.w = S3L_FRACTIONS_PER_UNIT;\
-        S3L_perspectiveDivide(&transformed##n,scene.camera.focalLength);
-
-      /* TODO: maybe create an option that would use a cache here to not
-               transform the same point twice? */
-
-      project(0)
-      project(1)
-      project(2)
-
-      #undef project
-
-      S3L_DrawConfig *config = &(scene.models[modelIndex].config);
-  
-      if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
-         config->backfaceCulling))
-      {
-        S3L_drawTriangle(transformed0,transformed1,transformed2,config,
-           &(scene.camera),modelIndex,triangleIndex);
-      }
+      _S3L_drawModelTriangle(
+        scene,modelIndex,triangleIndex,&matFinal,&(scene.camera));
 
       ++triangleIndex;
     }
