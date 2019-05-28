@@ -1790,6 +1790,7 @@ static inline int8_t S3L_triangleIsVisible(
   return 1;
 }
 
+#if S3L_SORT != S3L_SORT_NONE
 typedef struct
 {
   uint8_t modelIndex;
@@ -1797,30 +1798,36 @@ typedef struct
   uint16_t sortValue;
 } S3L_TriangleToSort;
 
-#if S3L_SORT != S3L_SORT_NONE
 S3L_TriangleToSort S3L_sortArray[S3L_MAX_TRIANGES_DRAWN];
 uint16_t S3L_sortArrayLength;
 #endif
 
+void _S3L_projectVertex(
+  const S3L_Model3D *model,
+  S3L_Index triangleIndex,
+  uint8_t vertex,
+  S3L_Mat4 *projectionMatrix, 
+  S3L_Vec4 *result,
+  S3L_Unit focalLength)
+{
+  S3L_Index vertexIndex = model->triangles[triangleIndex * 3 + vertex] * 3;
+
+  result->x = model->vertices[vertexIndex];
+  result->y = model->vertices[vertexIndex + 1];
+  result->z = model->vertices[vertexIndex + 2];
+  result->w = S3L_FRACTIONS_PER_UNIT; // for translation 
+ 
+  S3L_vec3Xmat4(result,projectionMatrix);
+  
+  S3L_perspectiveDivide(result,focalLength);
+}
+
 void S3L_drawScene(S3L_Scene scene)
 {
   S3L_Mat4 matFinal, matCamera;
-  S3L_Vec4 modelVertex, transformed0, transformed1, transformed2;
-  S3L_Index vertexIndex;
-  S3L_Model3D *model;
+  S3L_Vec4 transformed0, transformed1, transformed2;
+  const S3L_Model3D *model;
   S3L_Index modelIndex, triangleIndex;
-
-  #define project(n)\
-    vertexIndex = model->triangles[triangleIndex * 3 + n] * 3;\
-    modelVertex.x = model->vertices[vertexIndex];\
-    modelVertex.y = model->vertices[vertexIndex + 1];\
-    modelVertex.z = model->vertices[vertexIndex + 2];\
-    S3L_vec3Xmat4(&modelVertex,&matFinal);\
-    transformed##n.x = modelVertex.x;\
-    transformed##n.y = modelVertex.y;\
-    transformed##n.z = modelVertex.z;\
-    transformed##n.w = S3L_FRACTIONS_PER_UNIT;\
-    S3L_perspectiveDivide(&transformed##n,scene.camera.focalLength);
 
   S3L_makeCameraMatrix(scene.camera.transform,&matCamera);
 
@@ -1846,14 +1853,17 @@ void S3L_drawScene(S3L_Scene scene)
     {
       model = &(scene.models[modelIndex]);
 
-      modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translat.
-
       /* TODO: maybe create an option that would use a cache here to not
                transform the same point twice? */
 
-      project(0)
-      project(1)
-      project(2)
+      _S3L_projectVertex(model,triangleIndex,0,&matFinal,
+        &transformed0,scene.camera.focalLength);
+
+      _S3L_projectVertex(model,triangleIndex,1,&matFinal,
+        &transformed1,scene.camera.focalLength);
+
+      _S3L_projectVertex(model,triangleIndex,2,&matFinal,
+        &transformed2,scene.camera.focalLength);
 
       if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
          model->config.backfaceCulling))
@@ -1876,7 +1886,6 @@ void S3L_drawScene(S3L_Scene scene)
   }
 
 #if S3L_SORT != S3L_SORT_NONE
-
   // TODO: sort
 
   for (S3L_Index i = 0; i < S3L_sortArrayLength; ++i)
@@ -1885,7 +1894,6 @@ void S3L_drawScene(S3L_Scene scene)
     triangleIndex = S3L_sortArray[i].triangleIndex;
 
     model = &(scene.models[modelIndex]);
-    modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translat.
 
     if (modelIndex != previousModel)
     {
@@ -1894,17 +1902,19 @@ void S3L_drawScene(S3L_Scene scene)
       previousModel = modelIndex;
     }
     
-    project(0)
-    project(1)
-    project(2)
+    _S3L_projectVertex(model,triangleIndex,0,&matFinal,
+      &transformed0,scene.camera.focalLength);
+
+    _S3L_projectVertex(model,triangleIndex,1,&matFinal,
+      &transformed1,scene.camera.focalLength);
+
+    _S3L_projectVertex(model,triangleIndex,2,&matFinal,
+      &transformed2,scene.camera.focalLength);
 
     S3L_drawTriangle(transformed0,transformed1,transformed2,
       &(model->config),&(scene.camera),modelIndex,triangleIndex);
   }
-
 #endif
-
-  #undef project
 }
 
 #endif
