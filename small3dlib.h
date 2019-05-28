@@ -1891,17 +1891,33 @@ void S3L_drawScene(S3L_Scene scene)
   }
 
 #if S3L_SORT != S3L_SORT_NONE
-  // TODO: CHANGE BUBBLE SORT TO SOMETHING FASTER!
-  for (int16_t i = S3L_sortArrayLength - 2; i >= 0; --i)
-    for (S3L_Index j = 0; j <= i; ++j)
+
+  #if S3L_SORT == S3L_SORT_BACK_TO_FRONT
+    #define cmp <
+  #else
+    #define cmp >
+  #endif
+
+  /* Sort the triangles. We use insertion sort, because it has many advantages,
+  especially for smaller arrays (better than bubble sort, in-place, stable,
+  simple, ...). */
+
+  for (int16_t i = 1; i < S3L_sortArrayLength; ++i)
+  {
+    S3L_TriangleToSort tmp = S3L_sortArray[i];
+ 
+    int16_t j = i - 1;
+
+    while (j >= 0 && S3L_sortArray[j].sortValue cmp tmp.sortValue)
     {
-      if (S3L_sortArray[j].sortValue < S3L_sortArray[j + 1].sortValue)
-      {
-        S3L_TriangleToSort tmp = S3L_sortArray[j];
-        S3L_sortArray[j] = S3L_sortArray[j + 1];
-        S3L_sortArray[j + 1] = tmp;
-      }
+      S3L_sortArray[j + 1] = S3L_sortArray[j];
+      j--;
     }
+
+    S3L_sortArray[j + 1] = tmp;
+  }
+
+  #undef cmp
 
   for (S3L_Index i = 0; i < S3L_sortArrayLength; ++i)
   {
