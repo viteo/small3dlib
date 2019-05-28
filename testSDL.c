@@ -9,7 +9,9 @@
 
 #define S3L_Z_BUFFER 0
 
-#define S3L_SORT S3L_SORT_BACK_TO_FRONT
+#define S3L_STENCIL_BUFFER 1
+
+#define S3L_SORT S3L_SORT_FRONT_TO_BACK
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
@@ -143,7 +145,7 @@ S3L_DrawConfig conf;
 
 void draw()
 {
-  S3L_zBufferClear();
+  S3L_newFrame();
 
   offScreenPixels = 0;
 

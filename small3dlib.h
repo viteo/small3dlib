@@ -178,12 +178,25 @@ typedef uint16_t S3L_Index;
                                              S3L_Z_BUFFER_*. */
 #endif
 
+#ifndef S3L_STENCIL_BUFFER
+#define S3L_STENCIL_BUFFER 0 /**< Whether to use stencil buffer for drawing --
+                                  with this pixels that have already been
+                                  rasterized will be discarded. This is mostly
+                                  for front-to-back sorted drawing. */
+#endif
+
 #define S3L_SORT_NONE 0          /**< Don't sort triangles. This is fastest. */
 #define S3L_SORT_BACK_TO_FRONT 1 /**< Sort triangles from back to front. This
                                       can in most cases solve visibility
                                       without requiring almost any extra
                                       memory compared to z-buffer. */
-#define S3L_SORT_FRONT_TO_BACK 2 /**< TODO */
+#define S3L_SORT_FRONT_TO_BACK 2 /**< Sort triangles from front to back. This
+                                      can be faster than back to front, because
+                                      we prevent computing pixels that will be
+                                      overwritten by nearer ones, but we need
+                                      a 1b stencil buffer for this (enable
+                                      S3L_STENCIL_BUFFER), so a bit more memory
+                                      is needed. */
 #ifndef S3L_SORT
 #define S3L_SORT S3L_SORT_NONE /**< Defines how to sort triangles before
                                     drawing a frame. This can be used to solve
@@ -510,7 +523,12 @@ void S3L_drawTriangle(
   S3L_Index modelID,
   S3L_Index triangleID);
 
+/** This should be called before rendering each frame. The function clears
+  buffers and does potentially other things needed for the frame. */
+void S3L_newFrame();
+
 void S3L_zBufferClear();
+void S3L_stencilBufferClear();
 
 static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 
@@ -527,6 +545,50 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
   #define S3L_MAX_DEPTH 255
   uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
   #define S3L_zBufferFormat(depth) (((depth) >> 5) & 0x000000FF)
+#endif
+
+#if S3L_Z_BUFFER
+static inline int8_t S3L_zTest(
+  S3L_ScreenCoord x,
+  S3L_ScreenCoord y,
+  S3L_Unit depth)
+{
+  uint32_t index = y * S3L_RESOLUTION_X + x;
+
+  depth = S3L_zBufferFormat(depth);
+
+  if (depth < S3L_zBuffer[index])
+  {
+    S3L_zBuffer[index] = depth;
+    return 1;
+  }
+
+  return 0;
+}
+#endif
+
+#if S3L_STENCIL_BUFFER
+  #define S3L_STENCIL_BUFFER_SIZE\
+    ((S3L_RESOLUTION_X * S3L_RESOLUTION_Y - 1) / 8 + 1)
+  uint8_t S3L_stencilBuffer[S3L_STENCIL_BUFFER_SIZE];
+
+static inline int8_t S3L_stencilTest(
+  S3L_ScreenCoord x,
+  S3L_ScreenCoord y)
+{
+  uint32_t index = y * S3L_RESOLUTION_X + x;
+  uint32_t bit = (index & 0x00000007);
+  index = index >> 3;
+
+  uint8_t val = S3L_stencilBuffer[index];
+
+  if ((val >> bit) & 0x1)
+    return 0;
+  
+  S3L_stencilBuffer[index] = val | (0x1 << bit);
+
+  return 1;
+}
 #endif
 
 #define S3L_COMPUTE_LERP_DEPTH\
@@ -1181,33 +1243,26 @@ void S3L_mapProjectionPlaneToScreen(
     (point.y * S3L_HALF_RESOLUTION_X) / S3L_FRACTIONS_PER_UNIT;
 }
 
-static inline int8_t S3L_zTest(
-  S3L_ScreenCoord x,
-  S3L_ScreenCoord y,
-  S3L_Unit depth)
-{
-#if S3L_Z_BUFFER
-  uint32_t index = y * S3L_RESOLUTION_X + x;
-
-  depth = S3L_zBufferFormat(depth);
-
-  if (depth < S3L_zBuffer[index])
-  {
-    S3L_zBuffer[index] = depth;
-    return 1;
-  }
-
-#endif
-
-  return 0;
-}
-
 void S3L_zBufferClear()
 {
 #if S3L_Z_BUFFER
   for (uint32_t i = 0; i < S3L_RESOLUTION_X * S3L_RESOLUTION_Y; ++i)
     S3L_zBuffer[i] = S3L_MAX_DEPTH;
 #endif
+}
+
+void S3L_stencilBufferClear()
+{
+#if S3L_STENCIL_BUFFER
+  for (uint32_t i = 0; i < S3L_STENCIL_BUFFER_SIZE; ++i)
+    S3L_stencilBuffer[i] = 0;
+#endif
+}
+
+void S3L_newFrame()
+{
+  S3L_zBufferClear();
+  S3L_stencilBufferClear();
 }
 
 void _S3L_drawFilledTriangle(
@@ -1525,6 +1580,10 @@ void _S3L_drawFilledTriangle(
 
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
+#if S3L_STENCIL_BUFFER
+        if (!S3L_stencilTest(x,p->y))
+          continue;
+#endif
         p->x = x;
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
