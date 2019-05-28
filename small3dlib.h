@@ -122,9 +122,17 @@
 #endif
 
 #ifndef S3L_COMPUTE_DEPTH
-#define S3L_COMPUTE_DEPTH 0  /**< Whether to compute depth for each pixel
-                                  (fragment). Some other options may turn this
-                                  on. */
+#define S3L_COMPUTE_DEPTH 0 /**< Whether to compute depth for each pixel
+                                 (fragment). Some other options may turn this
+                                 on. */
+#endif
+
+#ifndef S3L_NEAR_CLAMPING
+#define S3L_NEAR_CLAMPING 0 /**< Whether to use depth clamping for the near
+                                 plane. Only works with S3L_COMPUTE_DEPTH
+                                 enabled! This may be a bit slower, but can
+                                 prevent errorneous rendering in specific cases
+                                 and is closer to traditional 3D engines. */
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
@@ -1598,6 +1606,11 @@ void _S3L_drawFilledTriangle(
   #else
         p->depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
+  #endif
+
+  #if S3L_NEAR_CLAMPING
+        if (p->depth < S3L_NEAR)
+          continue;
   #endif
 #endif
 

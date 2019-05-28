@@ -19,26 +19,14 @@
 #define S3L_RESOLUTION_Y 480
 
 #define S3L_COMPUTE_DEPTH 1
-#define S3L_PERSPECTIVE_CORRECTION 0
+#define S3L_PERSPECTIVE_CORRECTION 1
+#define S3L_NEAR_CLAMPING 1
 
 #include "small3dlib.h"
 
 #include "house.h"
 
 int32_t offScreenPixels = 0;
-
-const int16_t test_coords[] =
-  {
-    100,100, 99,101,    101,101,  // 0, small triangle
-    190,50,  200,10,    400,80,   // 1, arbitrary
-    40,80,   60,50,     100,30,   // 2, arbitrary
-    350,270, 440,200,   490,220,  // 3, arbitrary
-    150,300, 290,400,   450,400,  // 4, regular
-    105,200, 120,200,   201,200,  // 5, horizontal line
-    300,200, 300,250,   300,220,  // 6, vertical line
-    496,15,  613,131,   552,203
-  };
-
 const S3L_Unit ver[] = { S3L_CUBE_VERTICES };
 const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
 const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS(16) };
@@ -114,6 +102,18 @@ void drawPixel(S3L_PixelInfo *p)
   const S3L_Unit *coords;
 
   coords = tex_coords + p->triangleID * 6;
+
+  u = S3L_interpolateBarycentric(
+    0,
+    0,
+    15,
+    p->barycentric0, p->barycentric1, p->barycentric2);
+
+  v = S3L_interpolateBarycentric(
+    0,
+    15,
+    0,
+    p->barycentric0, p->barycentric1, p->barycentric2);
 /*
   u = S3L_interpolateBarycentric(
     coords[0],
@@ -127,13 +127,12 @@ void drawPixel(S3L_PixelInfo *p)
     coords[5],
     p->barycentric0, p->barycentric1, p->barycentric2);
 */
-//  uint8_t col = texturePixel(u,v);
+  uint8_t col = texturePixel(u,v);
+  uint8_t dep = (p->depth / 5000.0) * 255;
 
-//  setPixel(p->x,p->y,col * 120,20,(2 - col) * 120);
+  setPixel(p->x,p->y,col * 120,dep,(2 - col) * 120);
 
-uint8_t sss = (p->depth / 5000.0) * 255  ;
-
-setPixel(p->x,p->y,sss, (p->triangleID * 37) % 255 ,128);
+//setPixel(p->x,p->y,sss, (p->triangleID * 37) % 255 ,128);
 
 //setPixel(p->x,p->y,p->modelID * 64,p->modelID * 128,255);
 
