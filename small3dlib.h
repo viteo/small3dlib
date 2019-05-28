@@ -1807,14 +1807,14 @@ void S3L_drawScene(S3L_Scene scene)
   S3L_Mat4 matFinal, matCamera;
   S3L_Vec4 modelVertex, transformed0, transformed1, transformed2;
   S3L_Index vertexIndex;
-  S3L_Model3D model;
+  S3L_Model3D *model;
   S3L_Index modelIndex, triangleIndex;
 
   #define project(n)\
-    vertexIndex = model.triangles[triangleIndex * 3 + n] * 3;\
-    modelVertex.x = model.vertices[vertexIndex];\
-    modelVertex.y = model.vertices[vertexIndex + 1];\
-    modelVertex.z = model.vertices[vertexIndex + 2];\
+    vertexIndex = model->triangles[triangleIndex * 3 + n] * 3;\
+    modelVertex.x = model->vertices[vertexIndex];\
+    modelVertex.y = model->vertices[vertexIndex + 1];\
+    modelVertex.z = model->vertices[vertexIndex + 2];\
     S3L_vec3Xmat4(&modelVertex,&matFinal);\
     transformed##n.x = modelVertex.x;\
     transformed##n.y = modelVertex.y;\
@@ -1844,7 +1844,7 @@ void S3L_drawScene(S3L_Scene scene)
 
     while (triangleIndex < triangleCount)
     {
-      model = scene.models[modelIndex];
+      model = &(scene.models[modelIndex]);
 
       modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translat.
 
@@ -1856,12 +1856,12 @@ void S3L_drawScene(S3L_Scene scene)
       project(2)
 
       if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
-         model.config.backfaceCulling))
+         model->config.backfaceCulling))
       {
 #if S3L_SORT == S3L_SORT_NONE
         // without sorting draw right away
         S3L_drawTriangle(transformed0,transformed1,transformed2,
-          &(model.config),&(scene.camera),modelIndex,triangleIndex);
+          &(model->config),&(scene.camera),modelIndex,triangleIndex);
 #else
         // with sorting add to a sort list
         S3L_sortArray[S3L_sortArrayLength].modelIndex = modelIndex;
@@ -1884,12 +1884,12 @@ void S3L_drawScene(S3L_Scene scene)
     modelIndex = S3L_sortArray[i].modelIndex;
     triangleIndex = S3L_sortArray[i].triangleIndex;
 
-    model = scene.models[modelIndex];
+    model = &(scene.models[modelIndex]);
     modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translat.
 
     if (modelIndex != previousModel)
     {
-      S3L_makeWorldMatrix(model.transform,&matFinal);
+      S3L_makeWorldMatrix(model->transform,&matFinal);
       S3L_mat4Xmat4(&matFinal,&matCamera);
       previousModel = modelIndex;
     }
@@ -1899,7 +1899,7 @@ void S3L_drawScene(S3L_Scene scene)
     project(2)
 
     S3L_drawTriangle(transformed0,transformed1,transformed2,
-      &(model.config),&(scene.camera),modelIndex,triangleIndex);
+      &(model->config),&(scene.camera),modelIndex,triangleIndex);
   }
 
 #endif
