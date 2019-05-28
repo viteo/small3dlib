@@ -1878,6 +1878,11 @@ void S3L_drawScene(S3L_Scene scene)
         S3L_sortArray[S3L_sortArrayLength].triangleIndex = triangleIndex;
         S3L_sortArray[S3L_sortArrayLength].sortValue = 
           (transformed0.z + transformed1.z + transformed2.z) >> 2;
+        /* ^ As a simple approximation we sort by the triangle center point,
+           which is a mean coordinate -- we don't actually have to divide by 3
+           (or anything), that is unnecessary for sorting! We shift by 2 just
+           as a fast operation to prevent overflow of the sum ver uint_16t. */
+
         S3L_sortArrayLength++;
 #endif
       }
@@ -1912,6 +1917,11 @@ void S3L_drawScene(S3L_Scene scene)
       S3L_mat4Xmat4(&matFinal,&matCamera);
       previousModel = modelIndex;
     }
+
+    /* Here we project the points again, which is redundant and slow as they've
+       already been projected above, but saving the projected points would
+       require a lot of memory, which for small resolutions could be even
+       worse than z-bufer. So this seems to be the best way memory-wise. */
     
     _S3L_projectVertex(model,triangleIndex,0,&matFinal,
       &transformed0,scene.camera.focalLength);
