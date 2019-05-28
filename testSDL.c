@@ -14,10 +14,6 @@
 #define S3L_RESOLUTION_X 640
 #define S3L_RESOLUTION_Y 480
 
-#define S3L_COMPUTE_DEPTH 1
-#define S3L_PERSPECTIVE_CORRECTION 1
-#define S3L_NEAR_CLAMPING 1
-
 #include "small3dlib.h"
 
 #include "house.h"

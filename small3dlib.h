@@ -148,8 +148,7 @@
                                   triangles. */ 
 
 /* === PRESETS ===
-   These can be used to quickly set a predefined library behavior.
-*/
+   These can be used to quickly set a predefined library behavior. */
 
 #ifdef S3L_PRESET_HIGHEST_QUALITY
   #define S3L_Z_BUFFER S3L_Z_BUFFER_FULL
@@ -159,6 +158,7 @@
 
 #ifdef S3L_PRESET_EMBEDDED
   #define S3L_Z_BUFFER S3L_Z_BUFFER_NONE
+  #define S3L_COMPUTE_DEPTH 0
   #define S3L_PERSPECTIVE_CORRECTION 0
   #define S3L_NEAR_CLAMPING 0
   #define S3L_SORT S3L_SORT_BACK_TO_FRONT
@@ -1925,17 +1925,20 @@ void S3L_drawScene(S3L_Scene scene)
 
   for (modelIndex = 0; modelIndex < scene.modelCount; ++modelIndex)
   {
+#if S3L_SORT != S3L_SORT_NONE
+    if (S3L_sortArrayLength >= S3L_MAX_TRIANGES_DRAWN)
+      break;
+
+    previousModel = modelIndex;
+#endif
+
     S3L_makeWorldMatrix(scene.models[modelIndex].transform,&matFinal);
     S3L_mat4Xmat4(&matFinal,&matCamera);
 
     S3L_Index triangleCount = scene.models[modelIndex].triangleCount;
 
     triangleIndex = 0;
-
-#if S3L_SORT != S3L_SORT_NONE
-    previousModel = modelIndex;
-#endif
-
+    
     while (triangleIndex < triangleCount)
     {
       model = &(scene.models[modelIndex]);
@@ -1960,6 +1963,9 @@ void S3L_drawScene(S3L_Scene scene)
         S3L_drawTriangle(transformed0,transformed1,transformed2,
           &(model->config),&(scene.camera),modelIndex,triangleIndex);
 #else
+        if (S3L_sortArrayLength >= S3L_MAX_TRIANGES_DRAWN)
+          break;
+
         // with sorting add to a sort list
         S3L_sortArray[S3L_sortArrayLength].modelIndex = modelIndex;
         S3L_sortArray[S3L_sortArrayLength].triangleIndex = triangleIndex;
@@ -1973,7 +1979,8 @@ void S3L_drawScene(S3L_Scene scene)
         S3L_sortArrayLength++;
 #endif
       }
-      ++triangleIndex;
+
+      triangleIndex++;
     }
   }
 
