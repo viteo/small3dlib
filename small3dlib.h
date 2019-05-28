@@ -1886,7 +1886,17 @@ void S3L_drawScene(S3L_Scene scene)
   }
 
 #if S3L_SORT != S3L_SORT_NONE
-  // TODO: sort
+  // TODO: CHANGE BUBBLE SORT TO SOMETHING FASTER!
+  for (int16_t i = S3L_sortArrayLength - 1; i >= 0; --i)
+    for (S3L_Index j = 0; j <= i; ++j)
+    {
+      if (S3L_sortArray[j].sortValue < S3L_sortArray[j + 1].sortValue)
+      {
+        S3L_TriangleToSort tmp = S3L_sortArray[j];
+        S3L_sortArray[j] = S3L_sortArray[j + 1];
+        S3L_sortArray[j + 1] = tmp;
+      }
+    }
 
   for (S3L_Index i = 0; i < S3L_sortArrayLength; ++i)
   {
@@ -1897,6 +1907,7 @@ void S3L_drawScene(S3L_Scene scene)
 
     if (modelIndex != previousModel)
     {
+      // only recompute the matrix when the model has changed
       S3L_makeWorldMatrix(model->transform,&matFinal);
       S3L_mat4Xmat4(&matFinal,&matCamera);
       previousModel = modelIndex;
