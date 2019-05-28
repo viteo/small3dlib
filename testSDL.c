@@ -207,6 +207,8 @@ int main()
     draw();
     SDL_UpdateTexture(texture,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
 
+    int code = 0;
+
     while (SDL_PollEvent(&event))
     {
       switch (event.type)
@@ -216,11 +218,19 @@ int main()
           break;
 
         case SDL_KEYDOWN:
-          keys['a' + event.key.keysym.scancode - SDL_SCANCODE_A] = 1;
+          code = 'a' + event.key.keysym.scancode - SDL_SCANCODE_A;
+
+          if (code >= 0 && code <= 255)
+            keys[code] = 1;
+
           break;
 
         case SDL_KEYUP:
-          keys['a' + event.key.keysym.scancode - SDL_SCANCODE_A] = 0;
+          code = 'a' + event.key.keysym.scancode - SDL_SCANCODE_A;
+
+          if (code >= 0 && code <= 255)
+            keys[code] = 0;
+
           break;
 
         default:
