@@ -113,6 +113,61 @@
 
 #include <stdint.h>
 
+// values for setting the library behavior:
+
+#define S3L_Z_BUFFER_NONE 0  /**< Don't use z-buffer. This saves a lot of
+                                  memory, but visibility checking won't be
+                                  pixel-accurate and has to mostly be done by
+                                  other means (typically sorting). */
+#define S3L_Z_BUFFER_FULL 1  /**< Use full z-buffer (of S3L_Units) for
+                                  visibiltiy determination. This is the most
+                                  accurate option (and also a fast one), but 
+                                  requires a big amount of memory. */
+#define S3L_Z_BUFFER_BYTE 2  /**< Use reduced-size z-buffer (of bytes). This is
+                                  fast and somewhat accurate, but inaccuracies
+                                  can occur and a considerable amount of memory
+                                  is needed. */
+
+#define S3L_SORT_NONE 0      /**< Don't sort triangles. This is fastest. */
+#define S3L_SORT_BACK_TO_FRONT 1 /**< Sort triangles from back to front. This
+                                  can in most cases solve visibility without
+                                  requiring almost any extra memory compared to
+                                  z-buffer. */
+#define S3L_SORT_FRONT_TO_BACK 2 /**< Sort triangles from front to back. This
+                                  can be faster than back to front, because we
+                                  prevent computing pixels that will be
+                                  overwritten by nearer ones, but we need a 1b
+                                  stencil buffer for this (enable
+                                  S3L_STENCIL_BUFFER), so a bit more memory is
+                                  needed. */
+
+#define S3L_PC_NONE 0        /**< No perspective correction. Fastest, ugly. */
+#define S3L_PC_FULL 1        /**< Per-pixel perspective correction, nice but
+                                  very expensive. */
+#define S3L_PC_SUBDIVIDE 2   /**< Partial perspecive correction by subdividing
+                                  triangles. */ 
+
+/* === PRESETS ===
+   These can be used to quickly set a predefined library behavior.
+*/
+
+#ifdef S3L_PRESET_HIGHEST_QUALITY
+  #define S3L_Z_BUFFER S3L_Z_BUFFER_FULL
+  #define S3L_PERSPECTIVE_CORRECTION S3L_PC_FULL
+  #define S3L_NEAR_CLAMPING 1
+#endif
+
+#ifdef S3L_PRESET_EMBEDDED
+  #define S3L_Z_BUFFER S3L_Z_BUFFER_NONE
+  #define S3L_PERSPECTIVE_CORRECTION 0
+  #define S3L_NEAR_CLAMPING 0
+  #define S3L_SORT S3L_SORT_BACK_TO_FRONT
+  #define S3L_STENCIL_BUFFER 0
+  #define S3L_MAX_TRIANGES_DRAWN 64 
+#endif
+
+// ---------------
+
 #ifndef S3L_RESOLUTION_X
 #define S3L_RESOLUTION_X 640 ///< Redefine to your screen x resolution.
 #endif
@@ -122,68 +177,47 @@
 #endif
 
 #ifndef S3L_COMPUTE_DEPTH
-#define S3L_COMPUTE_DEPTH 0 /**< Whether to compute depth for each pixel
-                                 (fragment). Some other options may turn this
-                                 on. */
+#define S3L_COMPUTE_DEPTH 0  /**< Whether to compute depth for each pixel
+                                  (fragment). Some other options may turn this
+                                  on. */
 #endif
 
 #ifndef S3L_NEAR_CLAMPING
-#define S3L_NEAR_CLAMPING 0 /**< Whether to use depth clamping for the near
-                                 plane. Only works with S3L_COMPUTE_DEPTH
-                                 enabled! This may be a bit slower, but can
-                                 prevent errorneous rendering in specific cases
-                                 and is closer to traditional 3D engines. */
+#define S3L_NEAR_CLAMPING 0  /**< Whether to use depth clamping for the near
+                                  plane. Only works with S3L_COMPUTE_DEPTH
+                                  enabled! This may be a bit slower, but can
+                                  prevent errorneous rendering in specific
+                                  cases and is closer to traditional 3D
+                                  engines. */
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
 #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
-                                          correction (PC) to use. Remember
-                                          this is an expensive operation!
-                                          Possible values:
-
-                                          0: no PC, fastest but ugliest
-                                          1: full (per-pixel) PC, nicest but
-                                             extremely expensive!
-                                          2: triangle subdivided PC, a
-                                             compromise between quality and
-                                             speed (TODO, not implemented)
-                                          */
+                                  correction (PC) to use. Remember this is an
+                                  expensive operation! See S3L_PC_*. */
 #endif
 
-typedef int32_t S3L_Unit; /**< Units of measurement in 3D space. There is
-                               S3L_FRACTIONS_PER_UNIT in one spatial unit.
-                               By dividing the unit into fractions we
-                               effectively achieve fixed point arithmetic.
-                               The number of fractions is a constant that
-                               serves as 1.0 in floating point arithmetic
-                               (normalization etc.). */
+typedef int32_t S3L_Unit;    /**< Units of measurement in 3D space. There is
+                                  S3L_FRACTIONS_PER_UNIT in one spatial unit.
+                                  By dividing the unit into fractions we
+                                  effectively achieve fixed point arithmetic.
+                                  The number of fractions is a constant that
+                                  serves as 1.0 in floating point arithmetic
+                                  (normalization etc.). */
+
 #define S3L_FRACTIONS_PER_UNIT 512 /**< How many fractions a spatial unit is
-                                        split into. WARNING: if setting
-                                        higher than 1024, you'll probably
-                                        have to modify a sin table otherwise
-                                        it will overflow. Also other things
-                                        may overflow, so rather don't do it. */
+                                  split into. WARNING: if setting higher than
+                                  1024, you'll probably have to modify a sin
+                                  table otherwise it will overflow. Also other
+                                  things may overflow, so rather don't do
+                                  it. */
 typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
 
-#define S3L_Z_BUFFER_NONE 0 /**< Don't use z-buffer. This saves a lot of
-                                 memory, but visibility checking won't be
-                                 pixel-accurate and has to mostly be done by
-                                 other means (typically sorting). */
-#define S3L_Z_BUFFER_FULL 1 /**< Use full z-buffer (of S3L_Units) for
-                                 visibiltiy determination. This is the most
-                                 accurate option (and also a fast one), but 
-                                 requires a big amount of memory. */
-#define S3L_Z_BUFFER_BYTE 2 /**< Use reduced-size z-buffer (of bytes). This is
-                                 fast and somewhat accurate, but inaccuracies
-                                 can occur and a considerable amount of memory
-                                 is needed. */
-
 #ifndef S3L_Z_BUFFER
 #define S3L_Z_BUFFER S3L_Z_BUFFER_NONE  /**< What type of z-buffer (depth
-                                             buffer) to use for visibility
-                                             determination. See
-                                             S3L_Z_BUFFER_*. */
+                                  buffer) to use for visibility determination.
+                                  See S3L_Z_BUFFER_*. */
 #endif
 
 #ifndef S3L_STENCIL_BUFFER
@@ -193,53 +227,38 @@ typedef uint16_t S3L_Index;
                                   for front-to-back sorted drawing. */
 #endif
 
-#define S3L_SORT_NONE 0          /**< Don't sort triangles. This is fastest. */
-#define S3L_SORT_BACK_TO_FRONT 1 /**< Sort triangles from back to front. This
-                                      can in most cases solve visibility
-                                      without requiring almost any extra
-                                      memory compared to z-buffer. */
-#define S3L_SORT_FRONT_TO_BACK 2 /**< Sort triangles from front to back. This
-                                      can be faster than back to front, because
-                                      we prevent computing pixels that will be
-                                      overwritten by nearer ones, but we need
-                                      a 1b stencil buffer for this (enable
-                                      S3L_STENCIL_BUFFER), so a bit more memory
-                                      is needed. */
 #ifndef S3L_SORT
 #define S3L_SORT S3L_SORT_NONE /**< Defines how to sort triangles before
-                                    drawing a frame. This can be used to solve
-                                    visibility in case z-buffer is not used, to
-                                    prevent overwrting already rasterized
-                                    pixels, implement transparency etc. Note
-                                    that for simplicity and performance a
-                                    relatively simple sorting is used which
-                                    doesn't work completely correctly, so
-                                    mistakes can occur (even the best sorting
-                                    wouldn't be able to solve e.g. intersecting
-                                    triangles). */
+                                  drawing a frame. This can be used to solve
+                                  visibility in case z-buffer is not used, to
+                                  prevent overwrting already rasterized pixels,
+                                  implement transparency etc. Note that for
+                                  simplicity and performance a relatively
+                                  simple sorting is used which doesn't work
+                                  completely correctly, so mistakes can occur
+                                  (even the best sorting wouldn't be able to
+                                  solve e.g. intersecting triangles). */
 #endif
 
 #ifndef S3L_MAX_TRIANGES_DRAWN
-#define S3L_MAX_TRIANGES_DRAWN 128   /**< Maximum number of triangles that can
-                                          be drawn in sorted modes. This
-                                          affects the size of a cache used for
-                                          triangle sorting. */
+#define S3L_MAX_TRIANGES_DRAWN 128 /**< Maximum number of triangles that can be
+                                  drawn in sorted modes. This affects the size
+                                  of a cache used for triangle sorting. */
 #endif
 
 #ifndef S3L_NEAR
 #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 4) /**< Distance of the near
-                                                   clipping plane. */
+                                  clipping plane. */
 #endif
 
 #ifndef S3L_FAST_LERP_QUALITY
 #define S3L_FAST_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
-                                     interpolations. 0 will most likely be
-                                     faster, but artifacts can occur for
-                                     bigger tris, while higher values can fix
-                                     this -- in theory all higher values will
-                                     have the same speed (it is a shift
-                                     value), but it mustn't be too high to
-                                     prevent overflow. */
+                                  interpolations. 0 will most likely be faster,
+                                  but artifacts can occur for bigger tris,
+                                  while higher values can fix this -- in
+                                  theory all higher values will have the same
+                                  speed (it is a shift value), but it mustn't
+                                  be too high to prevent overflow. */
 #endif
 
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
@@ -304,11 +323,8 @@ typedef uint16_t S3L_Index;
   0,m,  m,0,  m,m,\
   0,m,  0,0,  m,0
 
-/**
-  Vector that consists of four scalars and can represent homogenous
-  coordinates, but is generally also used as Vec3 and Vec2.
-*/
-
+/** Vector that consists of four scalars and can represent homogenous
+  coordinates, but is generally also used as Vec3 and Vec2. */
 typedef struct
 {
   S3L_Unit x;
@@ -338,8 +354,7 @@ typedef struct
 static inline void S3L_initTransoform3D(S3L_Transform3D *t);
 
 /** Converts rotation transformation to three direction vectors of given length
-  (any one can be NULL, in which case it won't be computed).
-*/
+  (any one can be NULL, in which case it won't be computed). */
 void S3L_rotationToDirections(
   S3L_Vec4 rotation,
   S3L_Unit length,

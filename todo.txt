@@ -1,8 +1,8 @@
 features:
 
-- scene and model rendering strategies, that can be optionally selected and 
-  will configure other constants (e.g. a "low memory sort strategy" will turn
-  z-buffer off and turn back-to-front sorting on).
+- presets that can be optionally selected and  will configure other constants
+  (e.g. a "low memory sort strategy" will turn z-buffer off and turn
+  back-to-front sorting on).
 
 - triangle sorting:
   - back-to-front (slower, better memory efficiency)
