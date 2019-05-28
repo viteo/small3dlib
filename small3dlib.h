@@ -1790,73 +1790,121 @@ static inline int8_t S3L_triangleIsVisible(
   return 1;
 }
 
-static inline void _S3L_drawModelTriangle(
-  S3L_Scene scene,
-  S3L_Index modelIndex,
-  S3L_Index triangleIndex,
-  S3L_Mat4 *transformMatrix,
-  S3L_Camera *camera)
+typedef struct
 {
+  uint8_t modelIndex;
+  S3L_Index triangleIndex;
+  uint16_t sortValue;
+} S3L_TriangleToSort;
+
+#if S3L_SORT != S3L_SORT_NONE
+S3L_TriangleToSort S3L_sortArray[S3L_MAX_TRIANGES_DRAWN];
+uint16_t S3L_sortArrayLength;
+#endif
+
+void S3L_drawScene(S3L_Scene scene)
+{
+  S3L_Mat4 matFinal, matCamera;
   S3L_Vec4 modelVertex, transformed0, transformed1, transformed2;
   S3L_Index vertexIndex;
   S3L_Model3D model;
-
-  model = scene.models[modelIndex];
-
-  modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translation
+  S3L_Index modelIndex, triangleIndex;
 
   #define project(n)\
     vertexIndex = model.triangles[triangleIndex * 3 + n] * 3;\
     modelVertex.x = model.vertices[vertexIndex];\
     modelVertex.y = model.vertices[vertexIndex + 1];\
     modelVertex.z = model.vertices[vertexIndex + 2];\
-    S3L_vec3Xmat4(&modelVertex,transformMatrix);\
+    S3L_vec3Xmat4(&modelVertex,&matFinal);\
     transformed##n.x = modelVertex.x;\
     transformed##n.y = modelVertex.y;\
     transformed##n.z = modelVertex.z;\
     transformed##n.w = S3L_FRACTIONS_PER_UNIT;\
-    S3L_perspectiveDivide(&transformed##n,camera->focalLength);
-
-  /* TODO: maybe create an option that would use a cache here to not
-           transform the same point twice? */
-
-  project(0)
-  project(1)
-  project(2)
-
-  #undef project
-
-  if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
-     model.config.backfaceCulling))
-  {
-    S3L_drawTriangle(transformed0,transformed1,transformed2,&(model.config),
-       camera,modelIndex,triangleIndex);
-  } 
-}
-
-void S3L_drawScene(S3L_Scene scene)
-{
-  S3L_Mat4 matFinal, matCamera;
+    S3L_perspectiveDivide(&transformed##n,scene.camera.focalLength);
 
   S3L_makeCameraMatrix(scene.camera.transform,&matCamera);
 
-  for (S3L_Index modelIndex; modelIndex < scene.modelCount; ++modelIndex)
+#if S3L_SORT != S3L_SORT_NONE
+  uint16_t previousModel = 0;
+  S3L_sortArrayLength = 0;
+#endif
+
+  for (modelIndex = 0; modelIndex < scene.modelCount; ++modelIndex)
   {
     S3L_makeWorldMatrix(scene.models[modelIndex].transform,&matFinal);
     S3L_mat4Xmat4(&matFinal,&matCamera);
 
     S3L_Index triangleCount = scene.models[modelIndex].triangleCount;
 
-    S3L_Index triangleIndex = 0;
+    triangleIndex = 0;
+
+#if S3L_SORT != S3L_SORT_NONE
+    previousModel = modelIndex;
+#endif
 
     while (triangleIndex < triangleCount)
     {
-      _S3L_drawModelTriangle(
-        scene,modelIndex,triangleIndex,&matFinal,&(scene.camera));
+      model = scene.models[modelIndex];
 
+      modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translat.
+
+      /* TODO: maybe create an option that would use a cache here to not
+               transform the same point twice? */
+
+      project(0)
+      project(1)
+      project(2)
+
+      if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
+         model.config.backfaceCulling))
+      {
+#if S3L_SORT == S3L_SORT_NONE
+        // without sorting draw right away
+        S3L_drawTriangle(transformed0,transformed1,transformed2,
+          &(model.config),&(scene.camera),modelIndex,triangleIndex);
+#else
+        // with sorting add to a sort list
+        S3L_sortArray[S3L_sortArrayLength].modelIndex = modelIndex;
+        S3L_sortArray[S3L_sortArrayLength].triangleIndex = triangleIndex;
+        S3L_sortArray[S3L_sortArrayLength].sortValue = 
+          (transformed0.z + transformed1.z + transformed2.z) >> 2;
+        S3L_sortArrayLength++;
+#endif
+      }
       ++triangleIndex;
     }
   }
+
+#if S3L_SORT != S3L_SORT_NONE
+
+  // TODO: sort
+
+  for (S3L_Index i = 0; i < S3L_sortArrayLength; ++i)
+  {
+    modelIndex = S3L_sortArray[i].modelIndex;
+    triangleIndex = S3L_sortArray[i].triangleIndex;
+
+    model = scene.models[modelIndex];
+    modelVertex.w = S3L_FRACTIONS_PER_UNIT; // has to be "1.0" for translat.
+
+    if (modelIndex != previousModel)
+    {
+      S3L_makeWorldMatrix(model.transform,&matFinal);
+      S3L_mat4Xmat4(&matFinal,&matCamera);
+      previousModel = modelIndex;
+    }
+    
+    project(0)
+    project(1)
+    project(2)
+
+    S3L_drawTriangle(transformed0,transformed1,transformed2,
+      &(model.config),&(scene.camera),modelIndex,triangleIndex);
+  }
+
+#endif
+
+  #undef project
 }
 
 #endif

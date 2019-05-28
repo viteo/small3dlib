@@ -7,7 +7,9 @@
 #include <stdio.h>
 #include <math.h>
 
-#define S3L_Z_BUFFER 1
+#define S3L_Z_BUFFER 0
+
+#define S3L_SORT S3L_SORT_BACK_TO_FRONT
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
