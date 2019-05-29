@@ -13,6 +13,8 @@ features:
   - reduced (resolution and precision)    DONE
   - more reduced (4-bit)
 
+- MipMapping? Add triangle size to pixelInfo.
+
 - perspective correction modes:
   - none                                    DONE
   - full                                    DONE
