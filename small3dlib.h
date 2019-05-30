@@ -456,17 +456,16 @@ typedef struct
   S3L_ScreenCoord x;          ///< Screen X coordinate.
   S3L_ScreenCoord y;          ///< Screen Y coordinate.
 
-  S3L_Unit barycentric0; /**< Barycentric coord 0 (corresponds to 1st vertex).
-                              Together with 1 and 2 coords these serve to
-                              locate the pixel on a triangle and interpolate
-                              values between it's three points. The sum of the
-                              three coordinates will always be exactly
-                              S3L_FRACTIONS_PER_UNIT. */
-  S3L_Unit barycentric1; ///< Baryc. coord 1 (corresponds to 2nd vertex).
-  S3L_Unit barycentric2; ///< Baryc. coord 2 (corresponds to 3rd vertex).
+  S3L_Unit barycentric[3]; /**< Barycentric coords corresponds to the three
+                              vertices. These serve to locate the pixel on a
+                              triangle and interpolate values between it's
+                              three points. The sum of the three coordinates
+                              will always be exactly S3L_FRACTIONS_PER_UNIT. */
   S3L_Index triangleID;  ///< Triangle index.
   S3L_Index modelID;
   S3L_Unit depth;        ///< Depth (only if depth is turned on).
+  S3L_ScreenCoord triangleSize[2] /**< Rasterized triangle width and height,
+                              can be used e.g. for MIP mapping. */
 } S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
                               (fragment) to the user-defined drawing func. */
 
@@ -1030,9 +1029,9 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
 {                                        // could be faster?
   p->x = 0;
   p->y = 0;
-  p->barycentric0 = S3L_FRACTIONS_PER_UNIT;
-  p->barycentric1 = 0;
-  p->barycentric2 = 0;
+  p->barycentric[0] = S3L_FRACTIONS_PER_UNIT;
+  p->barycentric[1] = 0;
+  p->barycentric[2] = 0;
   p->triangleID = 0;
   p->depth = 0;
 }
@@ -1322,7 +1321,7 @@ void S3L_drawTriangle(
       tPointSx = x##t;\
       tPointSy = y##t;\
       tPointPP = &point##t;\
-      barycentric2 = &(p.barycentric##t);\
+      barycentric2 = &(p.barycentric[t]);\
       int16_t aDx = x##a - x##t;\
       int16_t bDx = x##b - x##t;\
       int16_t aDy = S3L_nonZero(y##a - y##t);\
@@ -1332,16 +1331,16 @@ void S3L_drawTriangle(
         lPointSx = x##a; lPointSy = y##a;\
         rPointSx = x##b; rPointSy = y##b;\
         lPointPP = &point##a; rPointPP = &point##b;\
-        barycentric0 = &(p.barycentric##b);\
-        barycentric1 = &(p.barycentric##a);\
+        barycentric0 = &(p.barycentric[b]);\
+        barycentric1 = &(p.barycentric[a]);\
       }\
       else\
       {\
         lPointSx = x##b; lPointSy = y##b;\
         rPointSx = x##a; rPointSy = y##a;\
         lPointPP = &point##b; rPointPP = &point##a;\
-        barycentric0 = &(p.barycentric##a);\
-        barycentric1 = &(p.barycentric##b);\
+        barycentric0 = &(p.barycentric[a]);\
+        barycentric1 = &(p.barycentric[b]);\
       }\
     }
 
@@ -1361,6 +1360,9 @@ void S3L_drawTriangle(
   }
 
   #undef assignPoints
+
+  p.triangleSize[0] = rPointSx - lPointSx;
+  p.triangleSize[1] = (rPointSy > lPointSy ? rPointSy : lPointSy) - tPointSy;
 
   // now draw the triangle line by line:
 

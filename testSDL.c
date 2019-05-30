@@ -99,13 +99,13 @@ void drawPixel(S3L_PixelInfo *p)
     0,
     0,
     15,
-    p->barycentric0, p->barycentric1, p->barycentric2);
+    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
   v = S3L_interpolateBarycentric(
     0,
     15,
     0,
-    p->barycentric0, p->barycentric1, p->barycentric2);
+    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 /*
   u = S3L_interpolateBarycentric(
     coords[0],
