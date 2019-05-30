@@ -8,6 +8,8 @@ features:
   - back-to-front (slower, better memory efficiency)
   - front-to-back (faster, but needs 1bit stencil buffer)
 
+- option to disable baycentric coordinates computing
+
 - Z-buffer:
   - full                                  DONE
   - reduced (resolution and precision)    DONE
