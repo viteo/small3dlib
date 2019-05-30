@@ -95,6 +95,8 @@ void drawPixel(S3L_PixelInfo *p)
 
   coords = tex_coords + p->triangleID * 6;
 
+if (p->modelID != 0)
+{
   u = S3L_interpolateBarycentric(
     0,
     0,
@@ -106,19 +108,22 @@ void drawPixel(S3L_PixelInfo *p)
     15,
     0,
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-/*
+}
+else
+{
   u = S3L_interpolateBarycentric(
     coords[0],
     coords[2],
     coords[4],
-    p->barycentric0, p->barycentric1, p->barycentric2);
+    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
   v = S3L_interpolateBarycentric(
     coords[1],
     coords[3],
     coords[5],
-    p->barycentric0, p->barycentric1, p->barycentric2);
-*/
+    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+}
+
   uint8_t col = texturePixel(u,v);
   uint8_t dep = (p->depth / 5000.0) * 255;
 
@@ -144,8 +149,8 @@ void draw()
 
   uint32_t f = frame;
 
-  scene.models[0].transform.rotation.z = f * 0.1;
-  scene.models[0].transform.rotation.x = f * 0.3;
+  //scene.models[0].transform.rotation.z = f * 0.1;
+  //scene.models[0].transform.rotation.x = f * 0.3;
 
   S3L_drawScene(scene);
 
@@ -163,7 +168,16 @@ int main()
 
   S3L_initCamera(&scene.camera);
 
-  scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
+//  scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
+
+scene.camera.transform.translation.x = 105;
+scene.camera.transform.translation.y = 469;
+scene.camera.transform.translation.z = 9;
+
+scene.camera.transform.rotation.x = -35;
+scene.camera.transform.rotation.y = 128;
+scene.camera.transform.rotation.z = 0;
+
   scene.modelCount = 2;
   scene.models = models;
 

@@ -351,6 +351,12 @@ typedef struct
   S3L_Vec4 scale;
 } S3L_Transform3D;
 
+#define S3L_writeTransform3D(t)\
+  printf("Transform3D: T = [%d %d %d], R = [%d %d %d], S = [%d %d %d]\n",\
+    (t).translation.x,(t).translation.y,(t).translation.z,\
+    (t).rotation.x,(t).rotation.y,(t).rotation.z,\
+    (t).scale.x,(t).scale.y,(t).scale.z)
+
 static inline void S3L_initTransoform3D(S3L_Transform3D *t);
 
 /** Converts rotation transformation to three direction vectors of given length
