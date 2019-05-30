@@ -430,7 +430,6 @@ static inline void S3L_initCamera(S3L_Camera *c);
 typedef struct
 {
   uint8_t backfaceCulling;
-  uint8_t mode;
 } S3L_DrawConfig;
 
 void S3L_initDrawConfig(S3L_DrawConfig *config);
@@ -476,10 +475,6 @@ static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
 #define S3L_BACKFACE_CULLING_NONE 0
 #define S3L_BACKFACE_CULLING_CW 1
 #define S3L_BACKFACE_CULLING_CCW 2
-
-#define S3L_MODE_TRIANGLES 0
-#define S3L_MODE_LINES 1
-#define S3L_MODE_POINTS 2
 
 // general helper functions
 static inline S3L_Unit S3L_abs(S3L_Unit value);
@@ -1045,11 +1040,10 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
 void S3L_initDrawConfig(S3L_DrawConfig *config)
 {
   config->backfaceCulling = 1;
-  config->mode = S3L_MODE_TRIANGLES;
 }
 
-void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
-                       // TODO: ^ should be inline?
+static inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
+
 typedef struct
 {
   int16_t steps;
@@ -1288,13 +1282,20 @@ void S3L_newFrame()
   S3L_stencilBufferClear();
 }
 
-void _S3L_drawFilledTriangle(
+void S3L_drawTriangle(
   S3L_Vec4 point0,
   S3L_Vec4 point1,
   S3L_Vec4 point2,
+  const S3L_DrawConfig *config,
   const S3L_Camera *camera,
-  S3L_PixelInfo *p)
+  S3L_Index modelID,
+  S3L_Index triangleID)
 {
+  S3L_PixelInfo p;
+  S3L_initPixelInfo(&p);
+  p.modelID = modelID;
+  p.triangleID = triangleID;
+
   S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; /* points in projction plane space
                                                (in Units, normalized by
                                                S3L_FRACTIONS_PER_UNIT) */
@@ -1321,7 +1322,7 @@ void _S3L_drawFilledTriangle(
       tPointSx = x##t;\
       tPointSy = y##t;\
       tPointPP = &point##t;\
-      barycentric2 = &(p->barycentric##t);\
+      barycentric2 = &(p.barycentric##t);\
       int16_t aDx = x##a - x##t;\
       int16_t bDx = x##b - x##t;\
       int16_t aDy = S3L_nonZero(y##a - y##t);\
@@ -1331,16 +1332,16 @@ void _S3L_drawFilledTriangle(
         lPointSx = x##a; lPointSy = y##a;\
         rPointSx = x##b; rPointSy = y##b;\
         lPointPP = &point##a; rPointPP = &point##b;\
-        barycentric0 = &(p->barycentric##b);\
-        barycentric1 = &(p->barycentric##a);\
+        barycentric0 = &(p.barycentric##b);\
+        barycentric1 = &(p.barycentric##a);\
       }\
       else\
       {\
         lPointSx = x##b; lPointSy = y##b;\
         rPointSx = x##a; rPointSy = y##a;\
         lPointPP = &point##b; rPointPP = &point##a;\
-        barycentric0 = &(p->barycentric##a);\
-        barycentric1 = &(p->barycentric##b);\
+        barycentric0 = &(p.barycentric##a);\
+        barycentric1 = &(p.barycentric##b);\
       }\
     }
 
@@ -1535,7 +1536,7 @@ void _S3L_drawFilledTriangle(
     {                     /* TODO: ^ This is bad though, a single large
                              triangle outside he top of the screen will trigger
                              a long loop. Try to FIX THIS! */
-      p->y = currentY;
+      p.y = currentY;
 
       // draw the horizontal line
 
@@ -1604,10 +1605,10 @@ void _S3L_drawFilledTriangle(
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
 #if S3L_STENCIL_BUFFER
-        if (!S3L_stencilTest(x,p->y))
+        if (!S3L_stencilTest(x,p.y))
           continue;
 #endif
-        p->x = x;
+        p.x = x;
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
         S3L_Unit rowT =  
@@ -1617,20 +1618,20 @@ void _S3L_drawFilledTriangle(
 
 #if S3L_COMPUTE_DEPTH
   #if S3L_PERSPECTIVE_CORRECTION == 1
-        p->depth = S3L_interpolateByUnit(lDepth,rDepth,rowT);
+        p.depth = S3L_interpolateByUnit(lDepth,rDepth,rowT);
   #else
-        p->depth = S3L_getFastLerpValue(depthFLS);
+        p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
   #endif
 
   #if S3L_NEAR_CLAMPING
-        if (p->depth < S3L_NEAR)
+        if (p.depth < S3L_NEAR)
           continue;
   #endif
 #endif
 
 #if S3L_Z_BUFFER
-        if (!S3L_zTest(p->x,p->y,p->depth))
+        if (!S3L_zTest(p.x,p.y,p.depth))
           continue;
 #endif
 
@@ -1650,7 +1651,7 @@ void _S3L_drawFilledTriangle(
 
         *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 
-        S3L_PIXEL_FUNCTION(p);
+        S3L_PIXEL_FUNCTION(&p);
       }
     }   // y clipping
 
@@ -1669,91 +1670,6 @@ void _S3L_drawFilledTriangle(
   #undef initPC
   #undef initSide
   #undef stepSide 
-}
-
-void S3L_drawTriangle(
-  S3L_Vec4 point0,
-  S3L_Vec4 point1,
-  S3L_Vec4 point2,
-  const S3L_DrawConfig *config,
-  const S3L_Camera *camera,
-  S3L_Index modelID,
-  S3L_Index triangleID)
-{
-  S3L_PixelInfo p;
-  S3L_initPixelInfo(&p);
-  p.modelID = modelID;
-  p.triangleID = triangleID;
-
-  if (config->mode == S3L_MODE_TRIANGLES)  // triangle mode
-  {
-    /* This function will perform the mapping to screen space itself, it needs
-       the original values, hence no conversion here. */
-    _S3L_drawFilledTriangle(point0,point1,point2,camera,&p);
-    return;
-  }
-
-  // map to screen space
-
-  S3L_ScreenCoord x0, y0, x1, y1, x2, y2;
-
-  S3L_mapProjectionPlaneToScreen(point0,&x0,&y0);
-  S3L_mapProjectionPlaneToScreen(point1,&x1,&y1);
-  S3L_mapProjectionPlaneToScreen(point2,&x2,&y2);
-
-  if (config->mode == S3L_MODE_LINES) // line mode
-  {
-    S3L_BresenhamState line;
-    S3L_Unit lineLen;
-
-    #define drawLine(p1,p2)\
-      S3L_bresenhamInit(&line,x##p1,y##p1,x##p2,y##p2);\
-      p.barycentric0 = 0;\
-      p.barycentric1 = 0;\
-      p.barycentric2 = 0;\
-      lineLen = S3L_nonZero(line.steps);\
-      do\
-      {\
-        if (line.x >= 0 && line.x < S3L_RESOLUTION_X &&\
-            line.y >= 0 && line.y < S3L_RESOLUTION_Y)\
-        {\
-          p.x = line.x; p.y = line.y;\
-          p.barycentric##p1 = S3L_interpolateFrom0(\
-            S3L_FRACTIONS_PER_UNIT,line.steps,lineLen);  \
-          p.barycentric##p2 = S3L_FRACTIONS_PER_UNIT - p.barycentric##p1;\
-          S3L_PIXEL_FUNCTION(&p);\
-        }\
-      } while (S3L_bresenhamStep(&line));
-   
-    drawLine(0,1)
-    drawLine(2,0)
-    drawLine(1,2)
-
-    #undef drawLine
-  }
-  else                                    // point mode
-  {
-    if (x0 >= 0 && x0 < S3L_RESOLUTION_X && y0 >= 0 && y0 < S3L_RESOLUTION_Y)
-    {
-      p.x = x0; p.y = y0; p.barycentric0 = S3L_FRACTIONS_PER_UNIT;
-      p.barycentric1 = 0; p.barycentric2 = 0;
-      S3L_PIXEL_FUNCTION(&p);
-    }
-
-    if (x1 >= 0 && x1 < S3L_RESOLUTION_X && y1 >= 0 && y1 < S3L_RESOLUTION_Y)
-    {
-      p.x = x1; p.y = y1; p.barycentric0 = 0;
-      p.barycentric1 = S3L_FRACTIONS_PER_UNIT; p.barycentric2 = 0;
-      S3L_PIXEL_FUNCTION(&p);
-    }
-
-    if (x2 >= 0 && x2 < S3L_RESOLUTION_X && y2 >= 0 && y2 < S3L_RESOLUTION_Y)
-    {
-      p.x = x2; p.y = y2; p.barycentric0 = 0;
-      p.barycentric1 = 0; p.barycentric2 = S3L_FRACTIONS_PER_UNIT;
-      S3L_PIXEL_FUNCTION(&p);
-    }
-  }
 }
 
 void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)

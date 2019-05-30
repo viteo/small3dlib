@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define S3L_PRESET_EMBEDDED
+#define S3L_PRESET_HIGHEST_QUALITY
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
