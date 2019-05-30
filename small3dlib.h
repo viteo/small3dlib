@@ -1485,7 +1485,7 @@ void S3L_drawTriangle(
       camera->focalLength,\
       &pc##PC);
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
   S3L_PerspectiveCorrectionState lPC, rPC, rowPC;
 
   initPC(t,l,l)
@@ -1519,7 +1519,7 @@ void S3L_drawTriangle(
         initSide(l,l,r,0);
         manageSplit(0,2,r)
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
         initPC(r,l,l)
         initPC(r,t,r)
 #endif
@@ -1529,7 +1529,7 @@ void S3L_drawTriangle(
         initSide(r,r,l,0);
         manageSplit(1,2,l)
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
         initPC(l,r,r)
         initPC(l,t,l)
 #endif
@@ -1550,7 +1550,7 @@ void S3L_drawTriangle(
 
       S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
       S3L_Unit
         lDepth, rDepth,
         lT, rT; // perspective-corrected position along either side 
@@ -1598,7 +1598,7 @@ void S3L_drawTriangle(
       {
         lXClipped = 0;
 
-#if S3L_PERSPECTIVE_CORRECTION != 1
+#if S3L_PERSPECTIVE_CORRECTION != S3L_PC_FULL
         b0FLS.valueScaled -= lX * b0FLS.stepScaled;
         b1FLS.valueScaled -= lX * b1FLS.stepScaled;
 
@@ -1618,14 +1618,14 @@ void S3L_drawTriangle(
 #endif
         p.x = x;
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
         S3L_Unit rowT =  
           S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
             x - lX,rowLength),&rowPC);
 #endif
 
 #if S3L_COMPUTE_DEPTH
-  #if S3L_PERSPECTIVE_CORRECTION == 1
+  #if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
         p.depth = S3L_interpolateByUnit(lDepth,rDepth,rowT);
   #else
         p.depth = S3L_getFastLerpValue(depthFLS);
@@ -1643,7 +1643,7 @@ void S3L_drawTriangle(
           continue;
 #endif
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
         *barycentric0 =
           S3L_interpolateByUnitFrom0(rT,rowT);
 
