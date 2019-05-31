@@ -113,6 +113,7 @@
 
 #include <stdint.h>
 
+// TODO: these are useless as they can't be used from the users program, LOL!
 // values for setting the library behavior:
 
 #define S3L_Z_BUFFER_NONE 0  /**< Don't use z-buffer. This saves a lot of
