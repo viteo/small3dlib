@@ -171,6 +171,22 @@
 #define S3L_COMPUTE_DEPTH 1  // PC inevitably computes depth, so enable it
 #endif
 
+#ifndef S3L_FLAT
+#define S3L_FLAT 0           /**< If on, disables computation of per-pixel
+                                  values such as barycentric coordinates and
+                                  depth -- these will still be available but
+                                  will be the same for the whole triangle. This
+                                  can be used to create flat-shaded renders and
+                                  will be a lot faster. With this option on you
+                                  will probably want to use sorting instead of
+                                  z-buffer. */
+#endif
+
+#if S3L_FLAT
+  #define S3L_COMPUTE_DEPTH 0
+  #define S3L_PERSPECTIVE_CORRECTION 0
+#endif
+
 typedef int32_t S3L_Unit;    /**< Units of measurement in 3D space. There is
                                   S3L_FRACTIONS_PER_UNIT in one spatial unit.
                                   By dividing the unit into fractions we
@@ -1205,6 +1221,8 @@ void S3L_drawTriangle(
   S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; /* points in projction plane space
                                                (in Units, normalized by
                                                S3L_FRACTIONS_PER_UNIT) */
+
+
   S3L_ScreenCoord x0, y0, x1, y1, x2, y2;   /* points in screen space (pixel
                                                coordinates) */
 
@@ -1267,6 +1285,13 @@ void S3L_drawTriangle(
   }
 
   #undef assignPoints
+
+#if S3L_FLAT
+  p.depth = (point0.z + point1.z + point2.z) / 3;
+  *barycentric0 = S3L_FRACTIONS_PER_UNIT / 3;
+  *barycentric1 = S3L_FRACTIONS_PER_UNIT / 3;
+  *barycentric2 = S3L_FRACTIONS_PER_UNIT - 2 * (S3L_FRACTIONS_PER_UNIT / 3);
+#endif
 
   p.triangleSize[0] = rPointSx - lPointSx;
   p.triangleSize[1] = (rPointSy > lPointSy ? rPointSy : lPointSy) - tPointSy;
@@ -1456,9 +1481,10 @@ void S3L_drawTriangle(
 
       // draw the horizontal line
 
+#if !S3L_FLAT
       S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+  #if S3L_PERSPECTIVE_CORRECTION == 1
       S3L_Unit lOverZ, lRecipZ, rOverZ, rRecipZ, lT, rT;
 
       lT = S3L_getFastLerpValue(lSideFLS);
@@ -1469,22 +1495,23 @@ void S3L_drawTriangle(
 
       rOverZ  = S3L_interpolateByUnitFrom0(rRecip1,rT);
       rRecipZ = S3L_interpolateByUnit(rRecip0,rRecip1,rT);
-#else
+  #else
       S3L_FastLerpState b0FLS, b1FLS;
 
-  #if S3L_COMPUTE_LERP_DEPTH
+    #if S3L_COMPUTE_LERP_DEPTH
       S3L_FastLerpState  depthFLS;
 
       depthFLS.valueScaled = lDepthFLS.valueScaled;
       depthFLS.stepScaled =
         (rDepthFLS.valueScaled - lDepthFLS.valueScaled) / rowLength;
-  #endif
+    #endif
 
       b0FLS.valueScaled = 0;
       b1FLS.valueScaled = lSideFLS.valueScaled;
 
       b0FLS.stepScaled = rSideFLS.valueScaled / rowLength;
       b1FLS.stepScaled = -1 * lSideFLS.valueScaled / rowLength;
+  #endif
 #endif
 
       // clip to the screen in x dimension:
@@ -1496,7 +1523,7 @@ void S3L_drawTriangle(
       {
         lXClipped = 0;
 
-#if S3L_PERSPECTIVE_CORRECTION != 1
+#if S3L_PERSPECTIVE_CORRECTION != 1 && !S3L_FLAT
         b0FLS.valueScaled -= lX * b0FLS.stepScaled;
         b1FLS.valueScaled -= lX * b1FLS.stepScaled;
 
@@ -1547,7 +1574,8 @@ void S3L_drawTriangle(
           continue;
 #endif
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if !S3L_FLAT
+  #if S3L_PERSPECTIVE_CORRECTION == 1
         *barycentric0 =
          ( 
            S3L_interpolateFrom0(rOverZ,i,rowLength)
@@ -1559,15 +1587,16 @@ void S3L_drawTriangle(
            (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
            * p.depth
          ) / S3L_FRACTIONS_PER_UNIT;
-#else
+  #else
         *barycentric0 = S3L_getFastLerpValue(b0FLS);
         *barycentric1 = S3L_getFastLerpValue(b1FLS);
 
         S3L_stepFastLerp(b0FLS);
         S3L_stepFastLerp(b1FLS);
-#endif
+  #endif
 
         *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
+#endif
 
         S3L_PIXEL_FUNCTION(&p);
       }
