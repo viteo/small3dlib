@@ -143,6 +143,18 @@
                                   engines. */
 #endif
 
+#ifndef S3L_STRICT_NEAR_CULLING
+#define S3L_STRICT_NEAR_CULLING 1 /**< If on, any triangle that only partially
+                                  intersects the near plane will be culled.
+                                  This can prevent errorneous rendering and 
+                                  artifacts, but also makes triangles close to
+                                  the camera disappear. */
+#endif
+
+#if S3L_STRICT_NEAR_CULLING
+#define S3L_NEAR_CLAMPING 0       // This would be useless.
+#endif
+
 #ifndef S3L_PERSPECTIVE_CORRECTION
 #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
                         correction (PC) to use. Remember this is an expensive
@@ -1180,6 +1192,10 @@ void S3L_drawTriangle(
   p.modelID = modelID;
   p.triangleID = triangleID;
 
+  point0.z = point0.z >= S3L_NEAR ? point0.z : S3L_NEAR;
+  point1.z = point1.z >= S3L_NEAR ? point1.z : S3L_NEAR;
+  point2.z = point2.z >= S3L_NEAR ? point2.z : S3L_NEAR;
+
   S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; /* points in projction plane space
                                                (in Units, normalized by
                                                S3L_FRACTIONS_PER_UNIT) */
@@ -1665,8 +1681,14 @@ static inline int8_t S3L_triangleIsVisible(
   #define clipTest(c,cmp,v)\
     (p0.c cmp (v) && p1.c cmp (v) && p2.c cmp (v))
 
-  if ( // completely outside frustum?
-      clipTest(z,<=,S3L_NEAR) ||
+  if ( // outside frustum?
+
+#if S3L_STRICT_NEAR_CULLING
+      p0.z < S3L_NEAR || p1.z < S3L_NEAR || p2.z < S3L_NEAR ||
+      // ^ partially in front of NEAR?
+#else
+      clipTest(z,<=,S3L_NEAR) || // completely in front of NEAR?
+#endif
       clipTest(x,<,-1 * S3L_FRACTIONS_PER_UNIT) ||
       clipTest(x,>,S3L_FRACTIONS_PER_UNIT) ||
       clipTest(y,<,-1 * S3L_PROJECTION_PLANE_HEIGHT / 2) ||
