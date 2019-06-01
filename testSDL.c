@@ -152,6 +152,8 @@ else
 
   setPixel(p->x,p->y,col * 120,dep,(2 - col) * 120);
 
+// setPixel(p->x,p->y,  (p->triangleID * 60) % 255, (p->triangleID * 170) % 255, (p->triangleID * 10) % 255 );
+
 //setPixel(p->x,p->y,sss, (p->triangleID * 37) % 255 ,128);
 
 //setPixel(p->x,p->y,p->modelID * 64,p->modelID * 128,255);

@@ -167,6 +167,10 @@
                             triangles. */
 #endif
 
+#if S3L_PERSPECTIVE_CORRECTION
+#define S3L_COMPUTE_DEPTH 1  // PC inevitably computes depth, so enable it
+#endif
+
 typedef int32_t S3L_Unit;    /**< Units of measurement in 3D space. There is
                                   S3L_FRACTIONS_PER_UNIT in one spatial unit.
                                   By dividing the unit into fractions we
@@ -1522,7 +1526,10 @@ void S3L_drawTriangle(
         p.x = x;
 
 #if S3L_COMPUTE_DEPTH
-  #if S3L_PERSPECTIVE_CORRECTION != 1
+  #if S3L_PERSPECTIVE_CORRECTION == 1
+        p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+          S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,x - lX,rX - lX));
+  #else
         p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
   #endif
@@ -1539,9 +1546,6 @@ void S3L_drawTriangle(
 #endif
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-        p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
-          S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,x - lX,rX - lX));
-
         *barycentric0 =
          ( 
            S3L_interpolateFrom0(rOverZ,i,rowLength)
