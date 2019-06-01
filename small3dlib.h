@@ -1485,14 +1485,20 @@ void S3L_drawTriangle(
       }
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-      S3L_ScreenCoord i = lXClipped - lX;  /* helper var to save one
-                                              substraction in the inner loop */
+      S3L_ScreenCoord i = lXClipped - lX - 1;  /* helper var to save one
+                                                  substraction in the inner
+                                                  loop */
 #endif
 
       // draw the row -- inner loop:
 
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
+#if S3L_PERSPECTIVE_CORRECTION == 1
+        ++i; /* Has to be done here, because the following tests can skip the
+                the rest of the loop. */
+#endif
+
 #if S3L_STENCIL_BUFFER
         if (!S3L_stencilTest(x,p.y))
           continue;
@@ -1531,8 +1537,6 @@ void S3L_drawTriangle(
            (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
            * p.depth
          ) / S3L_FRACTIONS_PER_UNIT;
-
-        i++;
 #else
         *barycentric0 = S3L_getFastLerpValue(b0FLS);
         *barycentric1 = S3L_getFastLerpValue(b1FLS);
