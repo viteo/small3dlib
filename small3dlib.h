@@ -113,59 +113,10 @@
 
 #include <stdint.h>
 
-// TODO: these are useless as they can't be used from the users program, LOL!
-// values for setting the library behavior:
-
-#define S3L_Z_BUFFER_NONE 0  /**< Don't use z-buffer. This saves a lot of
-                                  memory, but visibility checking won't be
-                                  pixel-accurate and has to mostly be done by
-                                  other means (typically sorting). */
-#define S3L_Z_BUFFER_FULL 1  /**< Use full z-buffer (of S3L_Units) for
-                                  visibiltiy determination. This is the most
-                                  accurate option (and also a fast one), but 
-                                  requires a big amount of memory. */
-#define S3L_Z_BUFFER_BYTE 2  /**< Use reduced-size z-buffer (of bytes). This is
-                                  fast and somewhat accurate, but inaccuracies
-                                  can occur and a considerable amount of memory
-                                  is needed. */
-
-#define S3L_SORT_NONE 0      /**< Don't sort triangles. This is fastest. */
-#define S3L_SORT_BACK_TO_FRONT 1 /**< Sort triangles from back to front. This
-                                  can in most cases solve visibility without
-                                  requiring almost any extra memory compared to
-                                  z-buffer. */
-#define S3L_SORT_FRONT_TO_BACK 2 /**< Sort triangles from front to back. This
-                                  can be faster than back to front, because we
-                                  prevent computing pixels that will be
-                                  overwritten by nearer ones, but we need a 1b
-                                  stencil buffer for this (enable
-                                  S3L_STENCIL_BUFFER), so a bit more memory is
-                                  needed. */
-
-#define S3L_PC_NONE 0        /**< No perspective correction. Fastest, ugly. */
-#define S3L_PC_FULL 1        /**< Per-pixel perspective correction, nice but
-                                  very expensive. */
-#define S3L_PC_SUBDIVIDE 2   /**< Partial perspecive correction by subdividing
-                                  triangles. */ 
-
 /* === PRESETS ===
    These can be used to quickly set a predefined library behavior. */
 
-#ifdef S3L_PRESET_HIGHEST_QUALITY
-  #define S3L_Z_BUFFER S3L_Z_BUFFER_FULL
-  #define S3L_PERSPECTIVE_CORRECTION S3L_PC_FULL
-  #define S3L_NEAR_CLAMPING 1
-#endif
-
-#ifdef S3L_PRESET_EMBEDDED
-  #define S3L_Z_BUFFER S3L_Z_BUFFER_NONE
-  #define S3L_COMPUTE_DEPTH 0
-  #define S3L_PERSPECTIVE_CORRECTION 0
-  #define S3L_NEAR_CLAMPING 0
-  #define S3L_SORT S3L_SORT_BACK_TO_FRONT
-  #define S3L_STENCIL_BUFFER 0
-  #define S3L_MAX_TRIANGES_DRAWN 64 
-#endif
+// TODO
 
 // ---------------
 
@@ -194,8 +145,14 @@
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
 #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
-                                  correction (PC) to use. Remember this is an
-                                  expensive operation! See S3L_PC_*. */
+                        correction (PC) to use. Remember this is an expensive
+                        operation! Possible values:
+ 
+                        - 0 No perspective correction. Fastest, ugly.
+                        - 1 Per-pixel perspective correction, nice but very
+                            expensive.
+                        - 2 Partial perspecive correction by subdividing
+                            triangles. */
 #endif
 
 typedef int32_t S3L_Unit;    /**< Units of measurement in 3D space. There is
@@ -216,9 +173,20 @@ typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
 
 #ifndef S3L_Z_BUFFER
-#define S3L_Z_BUFFER S3L_Z_BUFFER_NONE  /**< What type of z-buffer (depth
-                                  buffer) to use for visibility determination.
-                                  See S3L_Z_BUFFER_*. */
+#define S3L_Z_BUFFER 0  /**< What type of z-buffer (depth buffer) to use
+                        for visibility determination. possible values:
+
+                        - 0 Don't use z-buffer. This saves a lot of memory, but
+                            visibility checking won't be pixel-accurate and has
+                            to mostly be done by other means (typically
+                            sorting).
+                        - 1 Use full z-buffer (of S3L_Units) for visibiltiy
+                            determination. This is the most accurate option
+                            (and also a fast one), but  requires a big amount
+                            of memory.
+                        - 2 Use reduced-size z-buffer (of bytes). This is fast
+                            and somewhat accurate, but inaccuracies can occur
+                            and a considerable amount of memory is needed. */
 #endif
 
 #ifndef S3L_STENCIL_BUFFER
@@ -229,16 +197,26 @@ typedef uint16_t S3L_Index;
 #endif
 
 #ifndef S3L_SORT
-#define S3L_SORT S3L_SORT_NONE /**< Defines how to sort triangles before
-                                  drawing a frame. This can be used to solve
-                                  visibility in case z-buffer is not used, to
-                                  prevent overwrting already rasterized pixels,
-                                  implement transparency etc. Note that for
-                                  simplicity and performance a relatively
-                                  simple sorting is used which doesn't work
-                                  completely correctly, so mistakes can occur
-                                  (even the best sorting wouldn't be able to
-                                  solve e.g. intersecting triangles). */
+#define S3L_SORT 0 /**< Defines how to sort triangles before
+                        drawing a frame. This can be used to solve visibility
+                        in case z-buffer is not used, to prevent overwrting
+                        already rasterized pixels, implement transparency etc.
+                        Note that for simplicity and performance a relatively
+                        simple sorting is used which doesn't work completely
+                        correctly, so mistakes can occur (even the best sorting
+                        wouldn't be able to solve e.g. intersecting triangles).
+                        Possible values:
+
+                        - 0 Don't sort triangles. This is fastest.
+                        - 1 Sort triangles from back to front. This can in most
+                            cases solve visibility without requiring almost any
+                            extra memory compared to z-buffer.
+                        - 2 Sort triangles from front to back. This can be
+                            faster than back to front, because we prevent
+                            computing pixels that will be overwritten by nearer
+                            ones, but we need a 1b stencil buffer for this
+                            (enable S3L_STENCIL_BUFFER), so a bit more memory
+                            is needed. */
 #endif
 
 #ifndef S3L_MAX_TRIANGES_DRAWN
@@ -471,7 +449,7 @@ typedef struct
   S3L_Index triangleID;  ///< Triangle index.
   S3L_Index modelID;
   S3L_Unit depth;        ///< Depth (only if depth is turned on).
-  S3L_ScreenCoord triangleSize[2] /**< Rasterized triangle width and height,
+  S3L_ScreenCoord triangleSize[2]; /**< Rasterized triangle width and height,
                               can be used e.g. for MIP mapping. */
 } S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
                               (fragment) to the user-defined drawing func. */
@@ -559,12 +537,12 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 //=============================================================================
 // privates
 
-#if S3L_Z_BUFFER == S3L_Z_BUFFER_FULL
+#if S3L_Z_BUFFER == 1
   #define S3L_COMPUTE_DEPTH 1
   #define S3L_MAX_DEPTH 2147483647
   S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
   #define S3L_zBufferFormat(depth) (depth)
-#elif S3L_Z_BUFFER == S3L_Z_BUFFER_BYTE
+#elif S3L_Z_BUFFER == 2
   #define S3L_COMPUTE_DEPTH 1
   #define S3L_MAX_DEPTH 255
   uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
@@ -1375,9 +1353,16 @@ void S3L_drawTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
-#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-  S3L_Unit tPointRecipZ, lPointRecipZ, rPointRecipZ,
-           lRecip0, lRecip1, rRecip0, rRecip1;
+#if S3L_PERSPECTIVE_CORRECTION == 1
+  /* PC is done by linearly interpolating reciprocals from which the corrected
+     velues can be computed. See
+     http://www.lysator.liu.se/~mikaelk/doc/perspectivetexture/ */
+
+  S3L_Unit
+    tPointRecipZ, lPointRecipZ, rPointRecipZ, /* Reciprocals of the depth of 
+                                                 each triangle point. */
+    lRecip0, lRecip1, rRecip0, rRecip1;       /* Helper variables for swapping
+                                                 the above after split. */
 
   tPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
     / S3L_nonZero(tPointPP->z);
@@ -1392,6 +1377,14 @@ void S3L_drawTriangle(
   lRecip1 = lPointRecipZ;
   rRecip0 = tPointRecipZ;
   rRecip1 = rPointRecipZ;
+
+  #define manageSplitPerspective(b0,b1)\
+    b1##Recip0 = b0##PointRecipZ;\
+    b1##Recip1 = b1##PointRecipZ;\
+    b0##Recip0 = b0##PointRecipZ;\
+    b0##Recip1 = tPointRecipZ;
+#else
+  #define manageSplitPerspective(b0,b1) ;
 #endif
 
   // clip to the screen in y dimension:
@@ -1408,35 +1401,24 @@ void S3L_drawTriangle(
   {
     if (currentY == splitY) // reached a vertical split of the triangle?
     {
-      #define manageSplit(b0,b1,s)\
+      #define manageSplit(b0,b1,s0,s1)\
         S3L_Unit *tmp = barycentric##b0;\
         barycentric##b0 = barycentric##b1;\
         barycentric##b1 = tmp;\
-        s##SideFLS.valueScaled = (S3L_FRACTIONS_PER_UNIT\
-           << S3L_FAST_LERP_QUALITY) - s##SideFLS.valueScaled;\
-        s##SideFLS.stepScaled *= -1;
+        s0##SideFLS.valueScaled = (S3L_FRACTIONS_PER_UNIT\
+           << S3L_FAST_LERP_QUALITY) - s0##SideFLS.valueScaled;\
+        s0##SideFLS.stepScaled *= -1;\
+        manageSplitPerspective(s0,s1)
 
       if (splitOnLeft)
       {
         initSide(l,l,r,0);
-        manageSplit(0,2,r)
-#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-        lRecip0 = rPointRecipZ;
-        lRecip1 = lPointRecipZ;
-        rRecip0 = rPointRecipZ;
-        rRecip1 = tPointRecipZ ;
-#endif
+        manageSplit(0,2,r,l)
       }
       else
       {
         initSide(r,r,l,0);
-        manageSplit(1,2,l)
-#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-        rRecip0 = lPointRecipZ;
-        rRecip1 = rPointRecipZ;
-        lRecip0 = lPointRecipZ;
-        lRecip1 = tPointRecipZ;
-#endif
+        manageSplit(1,2,l,r)
       }
     }
 
@@ -1454,7 +1436,7 @@ void S3L_drawTriangle(
 
       S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
-#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
+#if S3L_PERSPECTIVE_CORRECTION == 1
       S3L_Unit lOverZ, lRecipZ, rOverZ, rRecipZ, lT, rT;
 
       lT = S3L_getFastLerpValue(lSideFLS);
@@ -1492,7 +1474,7 @@ void S3L_drawTriangle(
       {
         lXClipped = 0;
 
-#if S3L_PERSPECTIVE_CORRECTION != S3L_PC_FULL
+#if S3L_PERSPECTIVE_CORRECTION != 1
         b0FLS.valueScaled -= lX * b0FLS.stepScaled;
         b1FLS.valueScaled -= lX * b1FLS.stepScaled;
 
@@ -1502,7 +1484,12 @@ void S3L_drawTriangle(
 #endif
       }
 
-      // draw the row:
+#if S3L_PERSPECTIVE_CORRECTION == 1
+      S3L_ScreenCoord i = lXClipped - lX;  /* helper var to save one
+                                              substraction in the inner loop */
+#endif
+
+      // draw the row -- inner loop:
 
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
@@ -1513,7 +1500,7 @@ void S3L_drawTriangle(
         p.x = x;
 
 #if S3L_COMPUTE_DEPTH
-  #if S3L_PERSPECTIVE_CORRECTION != S3L_PC_FULL
+  #if S3L_PERSPECTIVE_CORRECTION != 1
         p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
   #endif
@@ -1529,21 +1516,23 @@ void S3L_drawTriangle(
           continue;
 #endif
 
-#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
+#if S3L_PERSPECTIVE_CORRECTION == 1
         p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
           S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,x - lX,rX - lX));
 
         *barycentric0 =
          ( 
-           S3L_interpolate(0,rOverZ,x - lX,rX - lX)
+           S3L_interpolateFrom0(rOverZ,i,rowLength)
            * p.depth
          ) / S3L_FRACTIONS_PER_UNIT;
 
         *barycentric1 =
          ( 
-           S3L_interpolate(lOverZ,0,x - lX,rX - lX)
+           (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
            * p.depth
          ) / S3L_FRACTIONS_PER_UNIT;
+
+        i++;
 #else
         *barycentric0 = S3L_getFastLerpValue(b0FLS);
         *barycentric1 = S3L_getFastLerpValue(b1FLS);
@@ -1696,7 +1685,7 @@ static inline int8_t S3L_triangleIsVisible(
   return 1;
 }
 
-#if S3L_SORT != S3L_SORT_NONE
+#if S3L_SORT != 0
 typedef struct
 {
   uint8_t modelIndex;
@@ -1737,14 +1726,14 @@ void S3L_drawScene(S3L_Scene scene)
 
   S3L_makeCameraMatrix(scene.camera.transform,&matCamera);
 
-#if S3L_SORT != S3L_SORT_NONE
+#if S3L_SORT != 0
   uint16_t previousModel = 0;
   S3L_sortArrayLength = 0;
 #endif
 
   for (modelIndex = 0; modelIndex < scene.modelCount; ++modelIndex)
   {
-#if S3L_SORT != S3L_SORT_NONE
+#if S3L_SORT != 0
     if (S3L_sortArrayLength >= S3L_MAX_TRIANGES_DRAWN)
       break;
 
@@ -1777,7 +1766,7 @@ void S3L_drawScene(S3L_Scene scene)
       if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
          model->config.backfaceCulling))
       {
-#if S3L_SORT == S3L_SORT_NONE
+#if S3L_SORT == 0
         // without sorting draw right away
         S3L_drawTriangle(transformed0,transformed1,transformed2,
           &(model->config),&(scene.camera),modelIndex,triangleIndex);
@@ -1803,9 +1792,9 @@ void S3L_drawScene(S3L_Scene scene)
     }
   }
 
-#if S3L_SORT != S3L_SORT_NONE
+#if S3L_SORT != 0
 
-  #if S3L_SORT == S3L_SORT_BACK_TO_FRONT
+  #if S3L_SORT == 1
     #define cmp <
   #else
     #define cmp >
