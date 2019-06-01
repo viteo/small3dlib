@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 //#define S3L_PRESET_HIGHEST_QUALITY
 
@@ -164,6 +165,10 @@ else
 S3L_Transform3D modelTransform;
 S3L_DrawConfig conf;
 
+clock_t nextT;
+
+int fps = 0;
+
 void draw()
 {
   S3L_newFrame();
@@ -181,6 +186,19 @@ void draw()
 
   if (offScreenPixels > 0)
     printf("offscreen pixels: %d\n",offScreenPixels);
+
+  clock_t nowT = clock();
+
+  double timeDiff = ((double) (nowT - nextT)) / CLOCKS_PER_SEC;
+
+  fps++;
+
+  if (timeDiff >= 1.0)
+  {
+    nextT = nowT;
+    printf("FPS: %d\n",fps);
+    fps = 0;
+  }
 }
 
 int main()
@@ -190,6 +208,8 @@ int main()
   SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
+
+  nextT = clock();
 
   S3L_initCamera(&scene.camera);
 
