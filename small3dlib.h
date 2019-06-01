@@ -1196,9 +1196,11 @@ void S3L_drawTriangle(
   p.modelID = modelID;
   p.triangleID = triangleID;
 
+#if !S3L_STRICT_NEAR_CULLING
   point0.z = point0.z >= S3L_NEAR ? point0.z : S3L_NEAR;
   point1.z = point1.z >= S3L_NEAR ? point1.z : S3L_NEAR;
   point2.z = point2.z >= S3L_NEAR ? point2.z : S3L_NEAR;
+#endif
 
   S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; /* points in projction plane space
                                                (in Units, normalized by
