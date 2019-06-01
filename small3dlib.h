@@ -1077,106 +1077,6 @@ typedef struct
 #define S3L_stepFastLerp(state)\
   state.valueScaled += state.stepScaled
 
-typedef struct
-{
-  S3L_ScreenCoord p0[2]; ///< 2D coordinates of the 1st point projection
-  S3L_ScreenCoord p1[2]; ///< 2D coordinates of the 2nd point projection
-
-  S3L_Unit a[3]; ///< 3D coordinates of the 1st projected point of the line
-  S3L_Unit b[3]; ///< 3D coordinates of the 2nd projected point of the line
-  S3L_Unit pointDifference[3]; ///< [bx - ax, by - ay, bz - cz]
-
-  S3L_ScreenCoord c[2]; /**< helper point to for a plane for the intersection 
-                             with line */
-
-  S3L_Unit fcx; ///< precomputed helper product
-  S3L_Unit fcy; ///< precomputed helper product
-
-  S3L_Unit focalLength; 
-} S3L_PerspectiveCorrectionState; ///< State for computing persp. correction.
-
-/** 
-  Initializes the state of perspective correction along a line. The correction
-  itself is then done using S3L_correctPerspective function, using the state.
-*/
-void S3L_initPerspectiveCorrectionState(
-  S3L_ScreenCoord x0,
-  S3L_ScreenCoord y0,
-  S3L_Unit depth0,
-  S3L_ScreenCoord x1,
-  S3L_ScreenCoord y1,
-  S3L_Unit depth1,
-  S3L_Unit focalLength,
-  S3L_PerspectiveCorrectionState *state)
-{
-  state->focalLength = focalLength;
-
-  state->p0[0] = x0;
-  state->p0[1] = y0;
-
-  state->p1[0] = x1;
-  state->p1[1] = y1;
-
-  state->a[0] = (x0 * (depth0 + focalLength)) / focalLength;
-  state->a[1] = (y0 * (depth0 + focalLength)) / focalLength;
-  state->a[2] = depth0;
-
-  state->b[0] = (x1 * (depth1 + focalLength)) / focalLength;
-  state->b[1] = (y1 * (depth1 + focalLength)) / focalLength;
-  state->b[2] = depth1;
-
-  state->pointDifference[0] = state->b[0] - state->a[0];
-  state->pointDifference[1] = state->b[1] - state->a[1];
-  state->pointDifference[2] = state->b[2] - state->a[2];
-
-  state->c[0] = x1 + y1 - y0;
-  state->c[1] = y1 - x1 + x0;
-
-  state->fcx = focalLength * state->c[0];
-  state->fcy = focalLength * state->c[1];
-}
-
-S3L_Unit S3L_correctPerspective(
-  S3L_Unit interpolationParameter, S3L_PerspectiveCorrectionState *state)
-{
-  S3L_Unit p[2]; // lin. interpolated position between the projections
-
-  // TODO: perhaps this could be interpolated faster by stepping?
-  p[0] =
-    S3L_interpolateByUnit(state->p0[0],state->p1[0],interpolationParameter);
-
-  p[1] =
-    S3L_interpolateByUnit(state->p0[1],state->p1[1],interpolationParameter);
-
-  S3L_Unit a, b, c, d; // plane coeficients
-
-  a = state->focalLength * p[1] - state->fcy;
-  b = state->fcx - state->focalLength * p[0];
-  c = p[0] * state->c[1] - p[1] * state->c[0];
-  d = state->focalLength * c;
-
-  a >>= 4; // TODO: this sometimes prevents overflow, but should be solved better!
-  b >>= 4;
-  c >>= 4;
-  d >>= 4;
-
-  S3L_Unit result =
-    (
-      - a * state->a[0] - b * state->a[1] - c * state->a[2] - d
-    )
-    /
-    S3L_nonZero(
-      (
-        a * state->pointDifference[0] +
-        b * state->pointDifference[1] +
-        c * state->pointDifference[2]
-      ) / S3L_FRACTIONS_PER_UNIT
-    );
-
-  return result < 0 ? 0 :
-    (result > S3L_FRACTIONS_PER_UNIT ? S3L_FRACTIONS_PER_UNIT : result);
-}
-
 static inline S3L_Unit S3L_interpolateBarycentric(
   S3L_Unit value0,
   S3L_Unit value1,
@@ -1475,22 +1375,23 @@ void S3L_drawTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
-  #define initPC(f,t,pc)\
-    S3L_initPerspectiveCorrectionState(\
-      f##PointPP->x,\
-      f##PointPP->y,\
-      f##PointPP->z,\
-      t##PointPP->x,\
-      t##PointPP->y,\
-      t##PointPP->z,\
-      camera->focalLength,\
-      &pc##PC);
-
 #if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-  S3L_PerspectiveCorrectionState lPC, rPC, rowPC;
+  S3L_Unit tPointRecipZ, lPointRecipZ, rPointRecipZ,
+           lRecip0, lRecip1, rRecip0, rRecip1;
 
-  initPC(t,l,l)
-  initPC(t,r,r)
+  tPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
+    / S3L_nonZero(tPointPP->z);
+
+  lPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
+    / S3L_nonZero(lPointPP->z);
+
+  rPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
+    / S3L_nonZero(rPointPP->z);
+
+  lRecip0 = tPointRecipZ;
+  lRecip1 = lPointRecipZ;
+  rRecip0 = tPointRecipZ;
+  rRecip1 = rPointRecipZ;
 #endif
 
   // clip to the screen in y dimension:
@@ -1519,20 +1420,22 @@ void S3L_drawTriangle(
       {
         initSide(l,l,r,0);
         manageSplit(0,2,r)
-
 #if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-        initPC(r,l,l)
-        initPC(r,t,r)
+        lRecip0 = rPointRecipZ;
+        lRecip1 = lPointRecipZ;
+        rRecip0 = rPointRecipZ;
+        rRecip1 = tPointRecipZ ;
 #endif
       }
       else
       {
         initSide(r,r,l,0);
         manageSplit(1,2,l)
-
 #if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-        initPC(l,r,r)
-        initPC(l,t,l)
+        rRecip0 = lPointRecipZ;
+        rRecip1 = rPointRecipZ;
+        lRecip0 = lPointRecipZ;
+        lRecip1 = tPointRecipZ;
 #endif
       }
     }
@@ -1552,26 +1455,16 @@ void S3L_drawTriangle(
       S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
 #if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-      S3L_Unit
-        lDepth, rDepth,
-        lT, rT; // perspective-corrected position along either side 
+      S3L_Unit lOverZ, lRecipZ, rOverZ, rRecipZ, lT, rT;
 
-      lT = S3L_correctPerspective(S3L_getFastLerpValue(lSideFLS),&lPC);
-      rT = S3L_correctPerspective(S3L_getFastLerpValue(rSideFLS),&rPC);
+      lT = S3L_getFastLerpValue(lSideFLS);
+      rT = S3L_getFastLerpValue(rSideFLS);
 
-      lDepth = S3L_interpolateByUnit(lPC.a[2],lPC.b[2],lT);
-      rDepth = S3L_interpolateByUnit(rPC.a[2],rPC.b[2],rT);
+      lOverZ  = S3L_interpolateByUnitFrom0(lRecip1,lT);
+      lRecipZ = S3L_interpolateByUnit(lRecip0,lRecip1,lT);
 
-      S3L_initPerspectiveCorrectionState(
-        S3L_interpolateByUnit(lPC.a[0],lPC.b[0],lT),
-        S3L_interpolateByUnit(lPC.a[1],lPC.b[1],lT),
-        lDepth,
-        S3L_interpolateByUnit(rPC.a[0],rPC.b[0],rT),
-        S3L_interpolateByUnit(rPC.a[1],rPC.b[1],rT),
-        rDepth,
-        camera->focalLength,
-        &rowPC
-        );
+      rOverZ  = S3L_interpolateByUnitFrom0(rRecip1,rT);
+      rRecipZ = S3L_interpolateByUnit(rRecip0,rRecip1,rT);
 #else
       S3L_FastLerpState b0FLS, b1FLS;
 
@@ -1619,16 +1512,8 @@ void S3L_drawTriangle(
 #endif
         p.x = x;
 
-#if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-        S3L_Unit rowT =  
-          S3L_correctPerspective(S3L_interpolateFrom0(S3L_FRACTIONS_PER_UNIT,
-            x - lX,rowLength),&rowPC);
-#endif
-
 #if S3L_COMPUTE_DEPTH
-  #if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
-        p.depth = S3L_interpolateByUnit(lDepth,rDepth,rowT);
-  #else
+  #if S3L_PERSPECTIVE_CORRECTION != S3L_PC_FULL
         p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
   #endif
@@ -1645,11 +1530,20 @@ void S3L_drawTriangle(
 #endif
 
 #if S3L_PERSPECTIVE_CORRECTION == S3L_PC_FULL
+        p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+          S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,x - lX,rX - lX));
+
         *barycentric0 =
-          S3L_interpolateByUnitFrom0(rT,rowT);
+         ( 
+           S3L_interpolate(0,rOverZ,x - lX,rX - lX)
+           * p.depth
+         ) / S3L_FRACTIONS_PER_UNIT;
 
         *barycentric1 =
-          S3L_interpolateByUnitFrom0(lT,S3L_FRACTIONS_PER_UNIT - rowT);
+         ( 
+           S3L_interpolate(lOverZ,0,x - lX,rX - lX)
+           * p.depth
+         ) / S3L_FRACTIONS_PER_UNIT;
 #else
         *barycentric0 = S3L_getFastLerpValue(b0FLS);
         *barycentric1 = S3L_getFastLerpValue(b1FLS);
