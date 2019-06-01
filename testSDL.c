@@ -106,6 +106,24 @@ uint8_t texturePixel(int32_t u, int32_t v)
   return testTexture[v * 16 + u];
 }
 
+void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
+{
+  if (u < 0)
+    u = 0;
+
+  if (v < 0)
+    v = 0;
+
+  u %= HOUSE_WIDTH;
+  v %= HOUSE_HEIGHT;
+
+  int index = (v * HOUSE_WIDTH + u) * 3;
+
+  *r = houseTexture[index];
+  *g = houseTexture[index + 1];
+  *b = houseTexture[index + 2];
+}
+
 void drawPixel(S3L_PixelInfo *p)
 {
   if (p->x < 0 || p ->x >= S3L_RESOLUTION_X || p->y < 0 || p->y >= S3L_RESOLUTION_Y)
@@ -121,17 +139,51 @@ void drawPixel(S3L_PixelInfo *p)
 
 if (p->modelID != 0)
 {
+  int tmp = p->triangleID * 3;
+
+  int i0 = houseUVIndices[tmp];
+  int i1 = houseUVIndices[tmp + 1];
+  int i2 = houseUVIndices[tmp + 2];
+
+  tmp = i0 * 2;
+
+  int uv0[2];
+
+  uv0[0] = houseUVs[tmp];
+  uv0[1] = houseUVs[tmp + 1];
+
+  tmp = i1 * 2;
+
+  int uv1[2];
+
+  uv1[0] = houseUVs[tmp];
+  uv1[1] = houseUVs[tmp + 1];
+
+  tmp = i2 * 2;
+
+  int uv2[2];
+
+  uv2[0] = houseUVs[tmp];
+  uv2[1] = houseUVs[tmp + 1];
+  
   u = S3L_interpolateBarycentric(
-    0,
-    0,
-    15,
+    uv0[0],
+    uv1[0],
+    uv2[0],
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
   v = S3L_interpolateBarycentric(
-    0,
-    15,
-    0,
+    uv0[1],
+    uv1[1],
+    uv2[1],
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+
+  uint8_t r,g,b;
+  houseTex(
+    (u / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_WIDTH,
+    (v / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_HEIGHT,
+    &r,&g,&b);
+  setPixel(p->x,p->y,r,g,b);  
 }
 else
 {
@@ -146,12 +198,12 @@ else
     coords[3],
     coords[5],
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-}
 
   uint8_t col = texturePixel(u,v);
-  uint8_t dep = (p->depth / 5000.0) * 255;
+  setPixel(p->x,p->y,col,col * 30,(2 - col) * 120);
+}
 
-  setPixel(p->x,p->y,col * 120,dep,(2 - col) * 120);
+//  uint8_t dep = (p->depth / 5000.0) * 255;
 
 // setPixel(p->x,p->y,  (p->triangleID * 60) % 255, (p->triangleID * 170) % 255, (p->triangleID * 10) % 255 );
 

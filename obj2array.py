@@ -69,6 +69,7 @@ for line in objFile:
   elif line[:3] == "vt ":
     coords = line[3:].split()
     vertex = [float(coords[i]) for i in range(2)]
+    vertex[1] = 1.0 - vertex[1]
     uvs.append(vertex)
   elif line[:2] == "f ":
     indices = line[2:].split()
@@ -82,10 +83,10 @@ for line in objFile:
     for i in indices:
       components = i.split("/")
       t.append(int(components[0]) - 1)
-      u.append(int(components[0]) - 1)
+      u.append(int(components[1]) - 1)
 
     triangles.append(t)
-    triangleUVs.append(t)
+    triangleUVs.append(u)
 
 # print the result:
 
@@ -156,7 +157,7 @@ print(arrayString(NAME + "Vertices",vertices,3,[VERTEX_SCALE],5,False,"S3L_Unit"
 print(arrayString(NAME + "TriangleIndices",triangles,3,[1],5,True,"S3L_Index"))
 
 if INDEXED_UVS:
-  print(arrayString(NAME + "UVs",vertices,2,[U_SCALE,V_SCALE],5,False,"S3L_Unit"))
+  print(arrayString(NAME + "UVs",uvs,2,[U_SCALE,V_SCALE],5,False,"S3L_Unit"))
   print(arrayString(NAME + "UVIndices",triangleUVs,3,[1],5,True,"S3L_Index"))
 else:
   uvs2 = []
