@@ -1277,11 +1277,11 @@ void S3L_drawTriangle(
       tPointSy = y##t;\
       tPointPP = &point##t;\
       barycentric2 = &(p.barycentric[t]);\
-      int16_t aDx = x##a - x##t;\
-      int16_t bDx = x##b - x##t;\
-      int16_t aDy = S3L_nonZero(y##a - y##t);\
-      int16_t bDy = S3L_nonZero(y##b - y##t);\
-      if ((aDx << 5) / aDy < (bDx << 5) / bDy)\
+      int32_t aDx = x##a - x##t;\
+      int32_t bDx = x##b - x##t;\
+      int32_t aDy = S3L_nonZero(y##a - y##t);\
+      int32_t bDy = S3L_nonZero(y##b - y##t);\
+      if ((aDx << 8) / aDy < (bDx << 8) / bDy)\
       {\
         lPointSx = x##a; lPointSy = y##a;\
         rPointSx = x##b; rPointSy = y##b;\
