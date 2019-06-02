@@ -150,8 +150,8 @@ def arrayString(name, array, components, scales, align, short, dataType):
 result = ""
 
 if GUARDS:
-  print("#ifndef " + NAME.upper() + "_H")
-  print("#define " + NAME.upper() + "_H\n")
+  print("#ifndef " + NAME.upper() + "_MODEL_H")
+  print("#define " + NAME.upper() + "_MODEL_H\n")
 
 print(arrayString(NAME + "Vertices",vertices,3,[VERTEX_SCALE],5,False,"S3L_Unit"))
 print(arrayString(NAME + "TriangleIndices",triangles,3,[1],5,True,"S3L_Index"))
@@ -172,7 +172,7 @@ else:
 
   print(arrayString(NAME + "TriangleUVs",uvs2,6,[U_SCALE,V_SCALE],5,False,"S3L_Unit"))
 
-print("S3L_Model3D " + NAME + " = ")
+print("S3L_Model3D " + NAME + "Model = ")
 
 if COMPACT:
   print("{.vertices=" +
