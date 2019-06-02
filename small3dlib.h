@@ -478,8 +478,8 @@ typedef struct
                               triangle and interpolate values between it's
                               three points. The sum of the three coordinates
                               will always be exactly S3L_FRACTIONS_PER_UNIT. */
-  S3L_Index triangleID;  ///< Triangle index.
-  S3L_Index modelID;
+  S3L_Index triangleIndex;  ///< Triangle index.
+  S3L_Index modelIndex;
   S3L_Unit depth;        ///< Depth (only if depth is turned on).
   S3L_ScreenCoord triangleSize[2]; /**< Rasterized triangle width and height,
                               can be used e.g. for MIP mapping. */
@@ -554,8 +554,8 @@ void S3L_drawTriangle(
   S3L_Vec4 point2,
   const S3L_DrawConfig *config,
   const S3L_Camera *camera,
-  S3L_Index modelID,
-  S3L_Index triangleID);
+  S3L_Index modelIndex,
+  S3L_Index triangleIndex);
 
 /** This should be called before rendering each frame. The function clears
   buffers and does potentially other things needed for the frame. */
@@ -1049,7 +1049,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
   p->barycentric[0] = S3L_FRACTIONS_PER_UNIT;
   p->barycentric[1] = 0;
   p->barycentric[2] = 0;
-  p->triangleID = 0;
+  p->triangleIndex = 0;
   p->depth = 0;
 }
 
@@ -1204,13 +1204,13 @@ void S3L_drawTriangle(
   S3L_Vec4 point2,
   const S3L_DrawConfig *config,
   const S3L_Camera *camera,
-  S3L_Index modelID,
-  S3L_Index triangleID)
+  S3L_Index modelIndex,
+  S3L_Index triangleIndex)
 {
   S3L_PixelInfo p;
   S3L_initPixelInfo(&p);
-  p.modelID = modelID;
-  p.triangleID = triangleID;
+  p.modelIndex = modelIndex;
+  p.triangleIndex = triangleIndex;
 
 #if !S3L_STRICT_NEAR_CULLING
   point0.z = point0.z >= S3L_NEAR ? point0.z : S3L_NEAR;

@@ -137,11 +137,11 @@ void drawPixel(S3L_PixelInfo *p)
   S3L_Unit u, v;
   const S3L_Unit *coords;
 
-  coords = tex_coords + p->triangleID * 6;
+  coords = tex_coords + p->triangleIndex * 6;
 
-if (p->modelID != 0)
+if (p->modelIndex != 0)
 {
-  int tmp = p->triangleID * 3;
+  int tmp = p->triangleIndex * 3;
 
   int i0 = houseUVIndices[tmp];
   int i1 = houseUVIndices[tmp + 1];
