@@ -251,6 +251,9 @@ void draw()
   {
     nextT = nowT;
     printf("FPS: %d\n",fps);
+
+    printf("camera: ");
+    S3L_writeTransform3D(scene.camera.transform);
     fps = 0;
   }
 }
@@ -276,6 +279,8 @@ scene.camera.transform.translation.z = 9;
 scene.camera.transform.rotation.x = -35;
 scene.camera.transform.rotation.y = 128;
 scene.camera.transform.rotation.z = 0;
+
+S3L_setTransform3D(-542,-449,3259,39,216,0,512,512,512,&(scene.camera.transform));
 
   scene.modelCount = 2;
   scene.models = models;

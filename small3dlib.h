@@ -371,6 +371,18 @@ typedef struct
 
 static inline void S3L_initTransoform3D(S3L_Transform3D *t);
 
+void S3L_setTransform3D(
+  S3L_Unit tx,
+  S3L_Unit ty,
+  S3L_Unit tz,
+  S3L_Unit rx,
+  S3L_Unit ry,
+  S3L_Unit rz,
+  S3L_Unit sx,
+  S3L_Unit sy,
+  S3L_Unit sz,
+  S3L_Transform3D *t);
+
 /** Converts rotation transformation to three direction vectors of given length
   (any one can be NULL, in which case it won't be computed). */
 void S3L_rotationToDirections(
@@ -447,7 +459,11 @@ static inline void S3L_initCamera(S3L_Camera *c);
 
 typedef struct
 {
-  uint8_t backfaceCulling;
+  uint8_t backfaceCulling;    /**< What backface culling to use. Possible
+                                   values:
+                                   - 0 none
+                                   - 1 clock-wise
+                                   - 2 counter clock-wise */
 } S3L_DrawConfig;
 
 void S3L_initDrawConfig(S3L_DrawConfig *config);
@@ -488,10 +504,6 @@ typedef struct
                               (fragment) to the user-defined drawing func. */
 
 static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
-
-#define S3L_BACKFACE_CULLING_NONE 0
-#define S3L_BACKFACE_CULLING_CW 1
-#define S3L_BACKFACE_CULLING_CCW 2
 
 // general helper functions
 static inline S3L_Unit S3L_abs(S3L_Unit value);
@@ -999,6 +1011,31 @@ void S3L_initTransoform3D(S3L_Transform3D *t)
   t->scale.x = S3L_FRACTIONS_PER_UNIT;
   t->scale.y = S3L_FRACTIONS_PER_UNIT;
   t->scale.z = S3L_FRACTIONS_PER_UNIT;
+}
+
+void S3L_setTransform3D(
+  S3L_Unit tx,
+  S3L_Unit ty,
+  S3L_Unit tz,
+  S3L_Unit rx,
+  S3L_Unit ry,
+  S3L_Unit rz,
+  S3L_Unit sx,
+  S3L_Unit sy,
+  S3L_Unit sz,
+  S3L_Transform3D *t)
+{
+  t->translation.x = tx;
+  t->translation.y = ty;
+  t->translation.z = tz;
+
+  t->rotation.x = rx;
+  t->rotation.y = ry;
+  t->rotation.z = rz;
+
+  t->scale.x = sx;
+  t->scale.y = sy;
+  t->scale.z = sz;
 }
 
 void S3L_initCamera(S3L_Camera *c)
@@ -1733,13 +1770,13 @@ static inline int8_t S3L_triangleIsVisible(
 
   #undef clipTest
 
-  if (backfaceCulling != S3L_BACKFACE_CULLING_NONE)
+  if (backfaceCulling != 0)
   {
     int32_t winding = // determines CW or CCW
       (p1.y - p0.y) * (p2.x - p1.x) - (p1.x - p0.x) * (p2.y - p1.y); 
 
-    if ((backfaceCulling == S3L_BACKFACE_CULLING_CW && winding < 0) ||
-        (backfaceCulling == S3L_BACKFACE_CULLING_CCW && winding >= 0))
+    if ((backfaceCulling == 1 && winding < 0) ||
+        (backfaceCulling == 2 && winding >= 0))
       return 0;
   }
 
