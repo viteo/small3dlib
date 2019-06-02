@@ -128,25 +128,12 @@
 #define S3L_RESOLUTION_Y 480 ///< Redefine to your screen y resolution.
 #endif
 
-#ifndef S3L_NEAR_CLAMPING
-#define S3L_NEAR_CLAMPING 0  /**< Whether to use depth clamping for the near
-                                  plane. Only works with S3L_COMPUTE_DEPTH
-                                  enabled! This may be a bit slower, but can
-                                  prevent errorneous rendering in specific
-                                  cases and is closer to traditional 3D
-                                  engines. */
-#endif
-
 #ifndef S3L_STRICT_NEAR_CULLING
 #define S3L_STRICT_NEAR_CULLING 1 /**< If on, any triangle that only partially
                                   intersects the near plane will be culled.
                                   This can prevent errorneous rendering and 
                                   artifacts, but also makes triangles close to
                                   the camera disappear. */
-#endif
-
-#if S3L_STRICT_NEAR_CULLING
-#define S3L_NEAR_CLAMPING 0       // This would be useless.
 #endif
 
 #ifndef S3L_FLAT
@@ -1604,11 +1591,6 @@ void S3L_drawTriangle(
   #else
         p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
-  #endif
-
-  #if S3L_NEAR_CLAMPING
-        if (p.depth < S3L_NEAR)
-          continue;
   #endif
 #endif
 
