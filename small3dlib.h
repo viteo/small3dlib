@@ -1542,7 +1542,7 @@ void S3L_drawTriangle(
 #if S3L_COMPUTE_DEPTH
   #if S3L_PERSPECTIVE_CORRECTION == 1
         p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
-          S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,x - lX,rX - lX));
+          S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,i,rowLength));
   #else
         p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
