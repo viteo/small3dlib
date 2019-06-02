@@ -260,7 +260,13 @@ typedef uint16_t S3L_Index;
 
 #ifndef S3L_NEAR
 #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 4) /**< Distance of the near
-                                  clipping plane. */
+                                  clipping plane. Points in front or EXATLY ON
+                                  this plane are considered outside the
+                                  frustum. This must be >= 0. */
+#endif
+
+#if S3L_NEAR <= 0
+#define S3L_NEAR 1              // Can't be <= 0.
 #endif
 
 #ifndef S3L_FAST_LERP_QUALITY
@@ -1722,20 +1728,14 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
   S3L_mat4Xmat4(m,&r);
 }
 
+/**
+  Performs perspecive division (z-divide). Does NOT check for division by zero.
+*/
 static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   S3L_Unit focalLength)
 {
-  S3L_Unit divisor = vector->z > 0 ? vector->z : (-1 * (vector->z - 1));
-  /* ^ This has two purposes:
-
-    1. Prevent division by zero.
-    2. Prevent a "rapid flip" of the vertex, e.g.: having a vertex
-       [100,0,0.1] z-divides it to [1000,0], but when it shift a short
-       distance to [100,0,-0.1], it z-divides to [-1000,0], rapidly flipping
-       from right to the left. */
-
-  vector->x = (vector->x * focalLength) / divisor;
-  vector->y = (vector->y * focalLength) / divisor;
+  vector->x = (vector->x * focalLength) / vector->z;
+  vector->y = (vector->y * focalLength) / vector->z;
 }
 
 /**
@@ -1756,7 +1756,7 @@ static inline int8_t S3L_triangleIsVisible(
   if ( // outside frustum?
 
 #if S3L_STRICT_NEAR_CULLING
-      p0.z < S3L_NEAR || p1.z < S3L_NEAR || p2.z < S3L_NEAR ||
+      p0.z <= S3L_NEAR || p1.z <= S3L_NEAR || p2.z <= S3L_NEAR ||
       // ^ partially in front of NEAR?
 #else
       clipTest(z,<=,S3L_NEAR) || // completely in front of NEAR?
@@ -1811,7 +1811,13 @@ void _S3L_projectVertex(
   result->w = S3L_FRACTIONS_PER_UNIT; // for translation 
  
   S3L_vec3Xmat4(result,projectionMatrix);
-  
+ 
+  result->z = result->z >= S3L_NEAR ? result->z : S3L_NEAR;
+  /* ^ This firstly prevents zero division in the follwoing z-divide and
+    secondly "pushes" vertices that are in front of near a little bit forward,
+    which makes the behave a bit better. If all three vertices end up exactly
+    on NEAR, the triangle will be culled. */ 
+
   S3L_perspectiveDivide(result,focalLength);
 }
 
