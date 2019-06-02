@@ -1519,7 +1519,7 @@ void S3L_drawTriangle(
       }
 
 #if S3L_PERSPECTIVE_CORRECTION == 1
-      S3L_ScreenCoord i = lXClipped - lX - 1;  /* helper var to save one
+      S3L_ScreenCoord i = lXClipped - lX;  /* helper var to save one
                                                   substraction in the inner
                                                   loop */
 #endif
@@ -1528,14 +1528,11 @@ void S3L_drawTriangle(
 
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
-#if S3L_PERSPECTIVE_CORRECTION == 1
-        ++i; /* Has to be done here, because the following tests can skip the
-                the rest of the loop. */
-#endif
+        int8_t testsPassed = 1;
 
 #if S3L_STENCIL_BUFFER
         if (!S3L_stencilTest(x,p.y))
-          continue;
+          testsPassed = 0;
 #endif
         p.x = x;
 
@@ -1551,36 +1548,47 @@ void S3L_drawTriangle(
 
 #if S3L_Z_BUFFER
         if (!S3L_zTest(p.x,p.y,p.depth))
-          continue;
+          testsPassed = 0;
 #endif
+
+        if (testsPassed)
+        {
+#if !S3L_FLAT
+  #if S3L_PERSPECTIVE_CORRECTION == 1
+          *barycentric0 =
+           ( 
+             S3L_interpolateFrom0(rOverZ,i,rowLength)
+             * p.depth
+           ) / S3L_FRACTIONS_PER_UNIT;
+
+          *barycentric1 =
+           ( 
+             (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
+             * p.depth
+           ) / S3L_FRACTIONS_PER_UNIT;
+  #else
+          *barycentric0 = S3L_getFastLerpValue(b0FLS);
+          *barycentric1 = S3L_getFastLerpValue(b1FLS);
+  #endif
+
+          *barycentric2 =
+            S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
+#endif
+
+          S3L_PIXEL_FUNCTION(&p);
+        }
 
 #if !S3L_FLAT
   #if S3L_PERSPECTIVE_CORRECTION == 1
-        *barycentric0 =
-         ( 
-           S3L_interpolateFrom0(rOverZ,i,rowLength)
-           * p.depth
-         ) / S3L_FRACTIONS_PER_UNIT;
-
-        *barycentric1 =
-         ( 
-           (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
-           * p.depth
-         ) / S3L_FRACTIONS_PER_UNIT;
+           i++;
   #else
-        *barycentric0 = S3L_getFastLerpValue(b0FLS);
-        *barycentric1 = S3L_getFastLerpValue(b1FLS);
-
-        S3L_stepFastLerp(b0FLS);
-        S3L_stepFastLerp(b1FLS);
+          S3L_stepFastLerp(b0FLS);
+          S3L_stepFastLerp(b1FLS);
   #endif
-
-        *barycentric2 = S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 #endif
 
-        S3L_PIXEL_FUNCTION(&p);
-      }
-    }   // y clipping
+      }  // inner loop
+    }  // y clipping
 
     S3L_stepFastLerp(lSideFLS);
     S3L_stepFastLerp(rSideFLS);
