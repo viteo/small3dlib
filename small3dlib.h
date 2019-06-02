@@ -128,12 +128,6 @@
 #define S3L_RESOLUTION_Y 480 ///< Redefine to your screen y resolution.
 #endif
 
-#ifndef S3L_COMPUTE_DEPTH
-#define S3L_COMPUTE_DEPTH 0  /**< Whether to compute depth for each pixel
-                                  (fragment). Some other options may turn this
-                                  on. */
-#endif
-
 #ifndef S3L_NEAR_CLAMPING
 #define S3L_NEAR_CLAMPING 0  /**< Whether to use depth clamping for the near
                                   plane. Only works with S3L_COMPUTE_DEPTH
@@ -155,6 +149,23 @@
 #define S3L_NEAR_CLAMPING 0       // This would be useless.
 #endif
 
+#ifndef S3L_FLAT
+#define S3L_FLAT 0           /**< If on, disables computation of per-pixel
+                                  values such as barycentric coordinates and
+                                  depth -- these will still be available but
+                                  will be the same for the whole triangle. This
+                                  can be used to create flat-shaded renders and
+                                  will be a lot faster. With this option on you
+                                  will probably want to use sorting instead of
+                                  z-buffer. */
+#endif
+
+#if S3L_FLAT
+  #define S3L_COMPUTE_DEPTH 0
+  #define S3L_PERSPECTIVE_CORRECTION 0
+  #define S3L_Z_BUFFER 0
+#endif
+
 #ifndef S3L_PERSPECTIVE_CORRECTION
 #define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
                         correction (PC) to use. Remember this is an expensive
@@ -171,20 +182,10 @@
 #define S3L_COMPUTE_DEPTH 1  // PC inevitably computes depth, so enable it
 #endif
 
-#ifndef S3L_FLAT
-#define S3L_FLAT 0           /**< If on, disables computation of per-pixel
-                                  values such as barycentric coordinates and
-                                  depth -- these will still be available but
-                                  will be the same for the whole triangle. This
-                                  can be used to create flat-shaded renders and
-                                  will be a lot faster. With this option on you
-                                  will probably want to use sorting instead of
-                                  z-buffer. */
-#endif
-
-#if S3L_FLAT
-  #define S3L_COMPUTE_DEPTH 0
-  #define S3L_PERSPECTIVE_CORRECTION 0
+#ifndef S3L_COMPUTE_DEPTH
+#define S3L_COMPUTE_DEPTH 1  /**< Whether to compute depth for each pixel
+                                  (fragment). Some other options may turn this
+                                  on. */
 #endif
 
 typedef int32_t S3L_Unit;    /**< Units of measurement in 3D space. There is
@@ -1222,7 +1223,6 @@ void S3L_drawTriangle(
                                                (in Units, normalized by
                                                S3L_FRACTIONS_PER_UNIT) */
 
-
   S3L_ScreenCoord x0, y0, x1, y1, x2, y2;   /* points in screen space (pixel
                                                coordinates) */
 
@@ -1287,7 +1287,7 @@ void S3L_drawTriangle(
   #undef assignPoints
 
 #if S3L_FLAT
-  p.depth = (point0.z + point1.z + point2.z) / 3;
+  p.depth = (tPointPP->z + lPointPP->z + rPointPP->z) / 3;
   *barycentric0 = S3L_FRACTIONS_PER_UNIT / 3;
   *barycentric1 = S3L_FRACTIONS_PER_UNIT / 3;
   *barycentric2 = S3L_FRACTIONS_PER_UNIT - 2 * (S3L_FRACTIONS_PER_UNIT / 3);
