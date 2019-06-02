@@ -5,17 +5,17 @@ features:
   back-to-front sorting on).
 
 - triangle sorting:
-  - back-to-front (slower, better memory efficiency)
-  - front-to-back (faster, but needs 1bit stencil buffer)
+  - back-to-front (slower, better memory efficiency)       DONE
+  - front-to-back (faster, but needs 1bit stencil buffer)  DONE
 
-- option to disable baycentric coordinates computing
+- option to disable baycentric coordinates computing    DONE
 
 - Z-buffer:
   - full                                  DONE
   - reduced (resolution and precision)    DONE
   - more reduced (4-bit)
 
-- MipMapping? Add triangle size to pixelInfo.
+- MipMapping? Add triangle size to pixelInfo.  DONE
 
 - perspective correction modes:
   - none                                    DONE
@@ -35,19 +35,15 @@ features:
 - Depth computation during rasterization -- this should be an optional thing,
   specified with a define (S3L_COMPUTE_DEPTH), which may be turned on
   automatically for some modes (e.g. Z-buffer). It should be computed by the
-  fast lerp and passed in the PixelInfo struct.
-- Python tool to convert obj to C array
+  fast lerp and passed in the PixelInfo struct.    DONE
+- Python tool to convert obj to C array            DONE
 - helper functions for lighting/shading
-- Line and point drawing modes for triangles should maybe not overlap on
-  adjacent triangles (as filled triangles already do)?
 - create demos
 - drawModel: create an option that would use a cache to not transform the same
   point twice
 - Optional rendering stats (FPS, rendered triangles, ...).
 
 bugs:
-
-- Why is persp. correction inaccurate near the camera?
 
 repeated:
 
