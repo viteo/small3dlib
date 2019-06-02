@@ -398,6 +398,8 @@ typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
 /** Initializes a 4x4 matrix to identity. */
 static inline void S3L_initMat4(S3L_Mat4 *m);
 
+void S3L_transposeMat4(S3L_Mat4 *m);
+
 void S3L_makeTranslationMat(
   S3L_Unit offsetX,
   S3L_Unit offsetY,
@@ -414,12 +416,6 @@ void S3L_makeScaleMatrix(
 
 /** Makes a matrixfor rotation in the ZXY order. */
 void S3L_makeRotationMatrixZXY(
-  S3L_Unit byX,
-  S3L_Unit byY,
-  S3L_Unit byZ,
-  S3L_Mat4 *m);
-
-void S3L_makeRotationMatrixYXZ(
   S3L_Unit byX,
   S3L_Unit byY,
   S3L_Unit byZ,
@@ -945,47 +941,6 @@ void S3L_makeRotationMatrixZXY(
   M(0,2) = (cx * sy) / S;
   M(1,2) = -1 * sx;
   M(2,2) = (cy * cx) / S;
-  M(3,2) = 0;
-
-  M(0,3) = 0;
-  M(1,3) = 0;
-  M(2,3) = 0;
-  M(3,3) = S3L_FRACTIONS_PER_UNIT;
-
-  #undef M
-  #undef S 
-}
-
-void S3L_makeRotationMatrixYXZ(
-  S3L_Unit byX,
-  S3L_Unit byY,
-  S3L_Unit byZ,
-  S3L_Mat4 *m)
-{
-  S3L_Unit sx = S3L_sin(byX);
-  S3L_Unit sy = S3L_sin(byY);
-  S3L_Unit sz = S3L_sin(byZ);
-
-  S3L_Unit cx = S3L_cos(byX);
-  S3L_Unit cy = S3L_cos(byY);
-  S3L_Unit cz = S3L_cos(byZ);
-
-  #define M(x,y) (*m)[x][y]
-  #define S S3L_FRACTIONS_PER_UNIT
-
-  M(0,0) = (cy * cz) / S - (sy * sx * sz) / (S * S);
-  M(1,0) = (cy * sz) / S + (sx * sy * cz) / (S * S);
-  M(2,0) = -1 * (cx * sy) / S;
-  M(3,0) = 0;
-
-  M(0,1) = -1 * (sz * cx) / S;
-  M(1,1) = (cz * cx) / S;
-  M(2,1) = sx;
-  M(3,1) = 0;
-
-  M(0,2) = (cz * sy) / S + (sz * sx * cy) / (S * S);
-  M(1,2) = (sz * sy) / S - (cz * sx * cy) / (S * S);
-  M(2,2) = (cx * cy) / S;
   M(3,2) = 0;
 
   M(0,3) = 0;
@@ -1691,6 +1646,19 @@ void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
   S3L_mat4Xmat4(m,&t);
 }
 
+void S3L_transposeMat4(S3L_Mat4 *m)
+{
+  S3L_Unit tmp;
+
+  for (uint8_t y = 0; y < 3; ++y)
+    for (uint8_t x = 1 + y; x < 4; ++x)
+    {
+      tmp = (*m)[x][y];
+      (*m)[x][y] = (*m)[y][x];
+      (*m)[y][x] = tmp;
+    }
+}
+
 void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 {
   S3L_makeTranslationMat(
@@ -1701,11 +1669,13 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
 
   S3L_Mat4 r;
 
-  S3L_makeRotationMatrixYXZ(
-    cameraTransform.rotation.x,
-    cameraTransform.rotation.y,
-    cameraTransform.rotation.z,
+  S3L_makeRotationMatrixZXY(
+    -1 * cameraTransform.rotation.x,
+    -1 * cameraTransform.rotation.y,
+    -1 * cameraTransform.rotation.z,
     &r);
+
+  S3L_transposeMat4(&r); // transposing creates an inverse transform
 
   S3L_mat4Xmat4(m,&r);
 }
