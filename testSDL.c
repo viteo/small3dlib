@@ -18,8 +18,8 @@
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
-#define S3L_RESOLUTION_X 640
-#define S3L_RESOLUTION_Y 480
+#define S3L_RESOLUTION_X 110
+#define S3L_RESOLUTION_Y 88
 
 #include "small3dlib.h"
 
@@ -280,7 +280,7 @@ scene.camera.transform.rotation.x = -35;
 scene.camera.transform.rotation.y = 128;
 scene.camera.transform.rotation.z = 0;
 
-S3L_setTransform3D(-542,-449,3259,39,216,0,512,512,512,&(scene.camera.transform));
+S3L_setTransform3D(-542,-449,4000,39,216,0,512,512,512,&(scene.camera.transform));
 
   scene.modelCount = 2;
   scene.models = models;
