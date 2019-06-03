@@ -116,10 +116,10 @@ void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
   if (v < 0)
     v = 0;
 
-  u %= HOUSE_WIDTH;
-  v %= HOUSE_HEIGHT;
+  u %= HOUSE_TEXTURE_WIDTH;
+  v %= HOUSE_TEXTURE_HEIGHT;
 
-  int index = (v * HOUSE_WIDTH + u) * 3;
+  int index = (v * HOUSE_TEXTURE_WIDTH + u) * 3;
 
   *r = houseTexture[index];
   *g = houseTexture[index + 1];
@@ -182,8 +182,8 @@ if (p->modelIndex != 0)
 
   uint8_t r,g,b;
   houseTex(
-    (u / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_WIDTH,
-    (v / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_HEIGHT,
+    (u / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_WIDTH,
+    (v / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_HEIGHT,
     &r,&g,&b);
   setPixel(p->x,p->y,r,g,b);  
 }

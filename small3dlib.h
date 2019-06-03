@@ -35,7 +35,12 @@
   CONVENTIONS:
 
   This library should never draw pixels outside the specified screen
-  coordinates, so you don't have to check this!
+  boundaries, so you don't have to check this!
+
+  You can safely suppose that triangles are rasterized one by one and from top
+  down, left to right (so you can utilize e.g. various caches), and if sorting
+  is disabled the order of rasterization will be that specified in the scene
+  structure (of course, some triangles and models may be skipped).
 
   Angles are in S3L_Units, a full angle (2 pi) is S3L_FRACTIONS_PER_UNITs.
 

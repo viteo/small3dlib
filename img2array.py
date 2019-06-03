@@ -123,10 +123,11 @@ if GUARDS:
 if USE_PALETTE:
   printArray(paletteArray,NAME + "Palette",str(len(paletteArray)))
 
-printArray(imageArray,NAME + "Texture",NAME.upper() + "_WIDTH * " + NAME.upper() + "_HEIGHT * 3")
+print("#define " + NAME.upper() + "_TEXTURE_WIDTH " + str(OUT_WIDTH))
+print("#define " + NAME.upper() + "_TEXTURE_HEIGHT " + str(OUT_HEIGHT))
+print("")
 
-print("#define " + NAME.upper() + "_WIDTH " + str(OUT_WIDTH))
-print("#define " + NAME.upper() + "_HEIGHT " + str(OUT_HEIGHT))
+printArray(imageArray,NAME + "Texture",NAME.upper() + "_TEXTURE_WIDTH * " + NAME.upper() + "_TEXTURE_HEIGHT * 3")
 
 if GUARDS:
   print("\n#endif // guard")
