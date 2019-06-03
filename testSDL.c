@@ -18,8 +18,8 @@
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
-#define S3L_RESOLUTION_X 110
-#define S3L_RESOLUTION_Y 88
+#define S3L_RESOLUTION_X 640
+#define S3L_RESOLUTION_Y 480
 
 #include "small3dlib.h"
 

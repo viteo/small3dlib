@@ -1531,7 +1531,8 @@ void S3L_drawTriangle(
                                                   loop */
 #endif
 
-      if (rXClipped < lXClipped)
+      if (rXClipped < lXClipped &&
+          lXClipped < S3L_RESOLUTION_X && rXClipped >= 0)
       {
         /* This can sometimes happen because of numerical errors in sorting
         left vs right triangle point, which are compared based on SLOPE, not
