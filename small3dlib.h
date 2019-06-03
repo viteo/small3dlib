@@ -453,6 +453,7 @@ typedef struct
                                    - 0 none
                                    - 1 clock-wise
                                    - 2 counter clock-wise */
+  int8_t visible;             /**< Can be used to easily hide the model. */
 } S3L_DrawConfig;
 
 void S3L_initDrawConfig(S3L_DrawConfig *config);
@@ -1042,6 +1043,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
 void S3L_initDrawConfig(S3L_DrawConfig *config)
 {
   config->backfaceCulling = 1;
+  config->visible = 1;
 }
 
 static inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
@@ -1797,6 +1799,9 @@ void S3L_drawScene(S3L_Scene scene)
 
   for (modelIndex = 0; modelIndex < scene.modelCount; ++modelIndex)
   {
+    if (!scene.models[modelIndex].config.visible)
+      continue;
+
 #if S3L_SORT != 0
     if (S3L_sortArrayLength >= S3L_MAX_TRIANGES_DRAWN)
       break;
