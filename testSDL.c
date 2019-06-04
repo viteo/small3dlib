@@ -266,26 +266,7 @@ void recomputeLight()
  
   for (int i = 0; i < 127; ++i)
   {
-    S3L_Vec4 v;
-
-    int index = i * 3;
-
-    v.x = houseVertices[index];
-    v.y = houseVertices[index + 1];
-    v.z = houseVertices[index + 2];
-  
-    S3L_vec3Xmat4(&v,m);
-
-    S3L_Unit d = S3L_distanceManhattan(v,scene.camera.transform.translation);
-
-    d = radius - d;
-
-    int l = 0;
-
-    if (d >= 0)
-      l = 255 - S3L_interpolateFrom0(255,d,radius);
-
-    houseVertexLighting[i] = l;
+    houseVertexLighting[i] = 255;
   }
 }
 
@@ -302,8 +283,7 @@ void draw()
   if (f % 16 == 0)
     recomputeLight();
 
-  //scene.models[0].transform.rotation.z = f * 0.1;
-  //scene.models[0].transform.rotation.x = f * 0.3;
+  scene.models[0].transform.translation.x = sin(f / 16.0) * S3L_FRACTIONS_PER_UNIT;
 
   S3L_drawScene(scene);
 

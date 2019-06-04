@@ -276,9 +276,10 @@ typedef struct
 } S3L_Vec4;
 
 static inline void S3L_initVec4(S3L_Vec4 *v);
-
 static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
 static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
+S3L_Unit S3L_vec3Length(S3L_Vec4 v);
+void S3L_normalizeVec3(S3L_Vec4 *v);
 
 #define S3L_logVec4(v)\
   printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
@@ -443,6 +444,9 @@ static inline S3L_Unit S3L_nonZero(S3L_Unit value);
 
 S3L_Unit S3L_sin(S3L_Unit x);
 static inline S3L_Unit S3L_cos(S3L_Unit x);
+
+S3L_Unit S3L_vec3Length(S3L_Vec4 v);
+S3L_Unit S3L_sqrt(S3L_Unit value);
 
 /** Interpolated between two values, v1 and v2, in the same ratio as t is to
   tMax. Does NOT prevent zero division. */
@@ -962,6 +966,55 @@ void S3L_makeRotationMatrixZXY(
 
   #undef M
   #undef S 
+}
+
+S3L_Unit S3L_sqrt(S3L_Unit value)
+{
+  int8_t sign = 1;
+
+  if (value < 0)
+  {
+    sign = -1;
+    value *= -1;
+  }
+
+  uint32_t result = 0;
+  uint32_t a = value;
+  uint32_t b = 1u << 30;
+
+  while (b > a)
+    b >>= 2;
+
+  while (b != 0)
+  {
+    if (a >= result + b)
+    {
+      a -= result + b;
+      result = result +  2 * b;
+    }
+
+    b >>= 2;
+    result >>= 1;
+  }
+
+  return result * sign;
+}
+
+S3L_Unit S3L_vec3Length(S3L_Vec4 v)
+{
+  return S3L_sqrt(v.x * v.x + v.y * v.y + v.z * v.z);  
+}
+
+void S3L_normalizeVec3(S3L_Vec4 *v)
+{
+  S3L_Unit l = S3L_vec3Length(*v);
+
+  if (l == 0)
+    return;
+
+  v->x = (v->x * S3L_FRACTIONS_PER_UNIT) / l;
+  v->y = (v->y * S3L_FRACTIONS_PER_UNIT) / l;
+  v->z = (v->z * S3L_FRACTIONS_PER_UNIT) / l;
 }
 
 void S3L_initTransoform3D(S3L_Transform3D *t)
