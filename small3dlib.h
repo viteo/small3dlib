@@ -274,65 +274,6 @@ typedef uint16_t S3L_Index;
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
 #define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
 
-#define S3L_PROJECTION_PLANE_HEIGHT\
-  ((S3L_RESOLUTION_Y * S3L_FRACTIONS_PER_UNIT * 2) / S3L_RESOLUTION_X)
-
-/** Predefined vertices of a cube to simply insert in an array. These come with
-    S3L_CUBE_TRIANGLES and S3L_CUBE_TEXCOORDS. */
-#define S3L_CUBE_VERTICES\
- /* 0 front, bottom, right */\
- S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
- /* 1 front, bottom, left */\
--S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
- /* 2 front, top,    right */\
- S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
- /* 3 front, top,    left */\
--S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,\
- /* 4 back,  bottom, right */\
- S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,\
- /* 5 back,  bottom, left */\
--S3L_FRACTIONS_PER_UNIT/2,-S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,\
- /* 6 back,  top,    right */\
- S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,\
- /* 7 back,  top,    left */\
--S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2,S3L_FRACTIONS_PER_UNIT/2
-
-#define S3L_CUBE_VERTEX_COUNT 8
-
-/** Predefined triangle indices of a cube, to be used with S3L_CUBE_VERTICES
-    and S3L_CUBE_TEXCOORDS. */
-#define S3L_CUBE_TRIANGLES\
-  0, 3, 2, /* front  */\
-  0, 1, 3,\
-  4, 0, 2, /* right  */\
-  4, 2, 6,\
-  5, 4, 6, /* back   */\
-  6, 7, 5,\
-  7, 3, 1, /* left   */\
-  7, 1, 5,\
-  3, 6, 2, /* top    */\
-  3, 7, 6,\
-  4, 1, 0, /* bottom */\
-  4, 5, 1
-
-#define S3L_CUBE_TRIANGLE_COUNT 12
-
-/** Predefined texture coordinates of a cube, corresponding to triangles (NOT
-    vertices), to be used with S3L_CUBE_VERTICES and S3L_CUBE_TRIANGLES. */
-#define S3L_CUBE_TEXCOORDS(m)\
-  m,m,  0,0,  m,0,\
-  m,m,  0,m,  0,0,\
-  m,0,  m,m,  0,m,\
-  m,0,  0,m,  0,0,\
-  0,0,  m,0,  m,m,\
-  m,m,  0,m,  0,0,\
-  0,m,  0,0,  m,0,\
-  0,m,  m,0,  m,m,\
-  m,m,  0,0,  m,0,\
-  m,m,  0,m,  0,0,\
-  0,m,  m,0,  m,m,\
-  0,m,  0,0,  m,0
-
 /** Vector that consists of four scalars and can represent homogenous
   coordinates, but is generally also used as Vec3 and Vec2. */
 typedef struct
@@ -536,6 +477,8 @@ static inline S3L_Unit S3L_interpolateByUnitFrom0(
   S3L_Unit v2,
   S3L_Unit t);
 
+static inline S3L_Unit S3L_distanceManhattan(S3L_Vec4 a, S3L_Vec4 b);
+
 /** Returns a value interpolated between the three triangle vertices based on
   barycentric coordinates. */
 static inline S3L_Unit S3L_interpolateBarycentric(
@@ -574,8 +517,67 @@ void S3L_stencilBufferClear();
 
 static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 
+/** Predefined vertices of a cube to simply insert in an array. These come with
+    S3L_CUBE_TRIANGLES and S3L_CUBE_TEXCOORDS. */
+#define S3L_CUBE_VERTICES(m)\
+ /* 0 front, bottom, right */\
+ m/2, -m/2, -m/2,\
+ /* 1 front, bottom, left */\
+-m/2, -m/2, -m/2,\
+ /* 2 front, top,    right */\
+ m/2,  m/2, -m/2,\
+ /* 3 front, top,    left */\
+-m/2,  m/2, -m/2,\
+ /* 4 back,  bottom, right */\
+ m/2, -m/2,  m/2,\
+ /* 5 back,  bottom, left */\
+-m/2, -m/2,  m/2,\
+ /* 6 back,  top,    right */\
+ m/2,  m/2,  m/2,\
+ /* 7 back,  top,    left */\
+-m/2,  m/2,  m/2
+
+#define S3L_CUBE_VERTEX_COUNT 8
+
+/** Predefined triangle indices of a cube, to be used with S3L_CUBE_VERTICES
+    and S3L_CUBE_TEXCOORDS. */
+#define S3L_CUBE_TRIANGLES\
+  0, 3, 2, /* front  */\
+  0, 1, 3,\
+  4, 0, 2, /* right  */\
+  4, 2, 6,\
+  5, 4, 6, /* back   */\
+  6, 7, 5,\
+  7, 3, 1, /* left   */\
+  7, 1, 5,\
+  3, 6, 2, /* top    */\
+  3, 7, 6,\
+  4, 1, 0, /* bottom */\
+  4, 5, 1
+
+#define S3L_CUBE_TRIANGLE_COUNT 12
+
+/** Predefined texture coordinates of a cube, corresponding to triangles (NOT
+    vertices), to be used with S3L_CUBE_VERTICES and S3L_CUBE_TRIANGLES. */
+#define S3L_CUBE_TEXCOORDS(m)\
+  m,m,  0,0,  m,0,\
+  m,m,  0,m,  0,0,\
+  m,0,  m,m,  0,m,\
+  m,0,  0,m,  0,0,\
+  0,0,  m,0,  m,m,\
+  m,m,  0,m,  0,0,\
+  0,m,  0,0,  m,0,\
+  0,m,  m,0,  m,m,\
+  m,m,  0,0,  m,0,\
+  m,m,  0,m,  0,0,\
+  0,m,  m,0,  m,m,\
+  0,m,  0,0,  m,0
+
 //=============================================================================
 // privates
+
+#define S3L_PROJECTION_PLANE_HEIGHT\
+  ((S3L_RESOLUTION_Y * S3L_FRACTIONS_PER_UNIT * 2) / S3L_RESOLUTION_X)
 
 #if S3L_Z_BUFFER == 1
   #define S3L_COMPUTE_DEPTH 1
@@ -834,6 +836,14 @@ S3L_Unit S3L_interpolateByUnitFrom0(S3L_Unit v2, S3L_Unit t)
 S3L_Unit S3L_interpolateFrom0(S3L_Unit v2, S3L_Unit t, S3L_Unit tMax)
 {
   return (v2 * t) / tMax;
+}
+
+S3L_Unit S3L_distanceManhattan(S3L_Vec4 a, S3L_Vec4 b)
+{
+  return
+    S3L_abs(a.x - b.x) +
+    S3L_abs(a.y - b.y) +
+    S3L_abs(a.z - b.z);
 }
 
 void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2)

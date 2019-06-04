@@ -23,20 +23,22 @@
 
 #include "small3dlib.h"
 
+#include "houseTexture.h"
 #include "house.h"
 
 int32_t offScreenPixels = 0;
-const S3L_Unit ver[] = { S3L_CUBE_VERTICES };
+const S3L_Unit ver[] = { S3L_CUBE_VERTICES(S3L_FRACTIONS_PER_UNIT) };
 const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
 const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS(16) };
 
 S3L_Model3D models[2];
 S3L_Scene scene;
 
+uint8_t houseVertexLighting[127];
+
 int8_t keys[256];
 
 const uint8_t testTexture[] =
-/*
 {
   2,2,2,0,0,0,2,2,2,2,0,0,0,2,2,2,
   2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
@@ -55,7 +57,7 @@ const uint8_t testTexture[] =
   2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
   2,2,2,0,0,0,2,2,2,2,0,0,0,2,2,2
 };
-*/
+/*
 {
   0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,
   1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,
@@ -73,6 +75,7 @@ const uint8_t testTexture[] =
   1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,
   2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2
 };
+*/
 
 uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
 
@@ -126,8 +129,19 @@ void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
   *b = houseTexture[index + 2];
 }
 
+int l0, l1, l2;
+int previousTriangle = 255;
+
 void drawPixel(S3L_PixelInfo *p)
 {
+  if (p->triangleIndex != previousTriangle)
+  {
+    l0 = houseVertexLighting[houseTriangleIndices[p->triangleIndex * 3]];
+    l1 = houseVertexLighting[houseTriangleIndices[p->triangleIndex * 3 + 1]];
+    l2 = houseVertexLighting[houseTriangleIndices[p->triangleIndex * 3 + 2]];
+    previousTriangle = p->triangleIndex;
+  }
+
   if (p->x < 0 || p ->x >= S3L_RESOLUTION_X || p->y < 0 || p->y >= S3L_RESOLUTION_Y)
   {
     offScreenPixels++;
@@ -185,7 +199,26 @@ if (p->modelIndex != 0)
     (u / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_WIDTH,
     (v / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_HEIGHT,
     &r,&g,&b);
-  setPixel(p->x,p->y,r,g,b);  
+
+  uint8_t l = S3L_interpolateBarycentric(l0,l1,l2,
+                p->barycentric[0],
+                p->barycentric[1],
+                p->barycentric[2]);
+
+  l = 255 - l;
+
+  l /= 2;
+
+  int16_t clampTmp = r - l;
+  r = clampTmp >= 0 ? clampTmp : 0;
+
+  clampTmp = g - l;
+  g = clampTmp >= 0 ? clampTmp : 0;
+
+  clampTmp = b - l;
+  b = clampTmp >= 0 ? clampTmp : 0;
+
+  setPixel(p->x,p->y,r,g,b); 
 }
 else
 {
@@ -223,6 +256,39 @@ clock_t nextT;
 
 int fps = 0;
 
+void recomputeLight()
+{ 
+  S3L_Mat4 m;
+
+  S3L_makeWorldMatrix(scene.models[1].transform,&m);
+
+  int radius = S3L_FRACTIONS_PER_UNIT * 12;
+ 
+  for (int i = 0; i < 127; ++i)
+  {
+    S3L_Vec4 v;
+
+    int index = i * 3;
+
+    v.x = houseVertices[index];
+    v.y = houseVertices[index + 1];
+    v.z = houseVertices[index + 2];
+  
+    S3L_vec3Xmat4(&v,m);
+
+    S3L_Unit d = S3L_distanceManhattan(v,scene.camera.transform.translation);
+
+    d = radius - d;
+
+    int l = 0;
+
+    if (d >= 0)
+      l = 255 - S3L_interpolateFrom0(255,d,radius);
+
+    houseVertexLighting[i] = l;
+  }
+}
+
 void draw()
 {
   S3L_newFrame();
@@ -232,6 +298,9 @@ void draw()
   clearScreen();
 
   uint32_t f = frame;
+
+  if (f % 16 == 0)
+    recomputeLight();
 
   //scene.models[0].transform.rotation.z = f * 0.1;
   //scene.models[0].transform.rotation.x = f * 0.3;
@@ -280,7 +349,7 @@ scene.camera.transform.rotation.x = -35;
 scene.camera.transform.rotation.y = 128;
 scene.camera.transform.rotation.z = 0;
 
-S3L_setTransform3D(-542,-449,4000,39,216,0,512,512,512,&(scene.camera.transform));
+S3L_setTransform3D(3196,1814,5958,-18,300,0,512,512,512,&(scene.camera.transform));
 
   scene.modelCount = 2;
   scene.models = models;
@@ -296,11 +365,13 @@ S3L_setTransform3D(-542,-449,4000,39,216,0,512,512,512,&(scene.camera.transform)
 //  scene.models[1] = scene.models[0];
 //  scene.models[1].transform.translation.x = 0.5 * S3L_FRACTIONS_PER_UNIT;
 
-  scene.models[1] = house;
+  scene.models[1] = houseModel;
   S3L_initTransoform3D(&(scene.models[1].transform));
   S3L_initDrawConfig(&(scene.models[1].config));
   scene.models[1].transform.translation.y = -1 * S3L_FRACTIONS_PER_UNIT;
   scene.models[1].transform.translation.z = 4 * S3L_FRACTIONS_PER_UNIT;
+
+  recomputeLight();
 
 //  scene.camera.transform.translation.x = S3L_FRACTIONS_PER_UNIT;
 //  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
@@ -350,7 +421,7 @@ S3L_setTransform3D(-542,-449,4000,39,216,0,512,512,512,&(scene.camera.transform)
     }
 
     S3L_Vec4 camF, camR, camU;
-    int step = 10;
+    int step = 50;
  
     S3L_rotationToDirections(
       scene.camera.transform.rotation,
