@@ -4,9 +4,13 @@ features:
   (e.g. a "low memory sort strategy" will turn z-buffer off and turn
   back-to-front sorting on).
 
+- function for computing normals and lighting
+
 - triangle sorting:
   - back-to-front (slower, better memory efficiency)       DONE
   - front-to-back (faster, but needs 1bit stencil buffer)  DONE
+
+- function to set/clear stencil buffer -- can be useful
 
 - dithered barycentric interpolation function that is faster than normal
   interpolation -- it will randomly picky one of three values, with greater
