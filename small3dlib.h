@@ -1,5 +1,5 @@
-#ifndef S3L_H
-#define S3L_H
+#ifndef SMALL3DLIB_H
+#define SMALL3DLIB_H
 
 /*
   WIP
@@ -126,30 +126,44 @@
 // ---------------
 
 #ifndef S3L_RESOLUTION_X
-#define S3L_RESOLUTION_X 640 ///< Redefine to your screen x resolution.
+#define S3L_RESOLUTION_X 640 ///< Redefine to screen x resolution.
 #endif
 
 #ifndef S3L_RESOLUTION_Y
-#define S3L_RESOLUTION_Y 480 ///< Redefine to your screen y resolution.
+#define S3L_RESOLUTION_Y 480 ///< Redefine to screen y resolution.
 #endif
 
+/** Units of measurement in 3D space. There is S3L_FRACTIONS_PER_UNIT in one
+spatial unit. By dividing the unit into fractions we effectively achieve a
+fixed point arithmetic. The number of fractions is a constant that serves as
+1.0 in floating point arithmetic (normalization etc.). */
+
+typedef int32_t S3L_Unit;    
+
+/** How many fractions a spatial unit is split into. This is NOT SUPPOSED TO
+BE REDEFINED, so rather don't do it (otherwise things may overflow etc.). */
+
+#define S3L_FRACTIONS_PER_UNIT 512 
+
+typedef int16_t S3L_ScreenCoord;
+typedef uint16_t S3L_Index;
+
 #ifndef S3L_STRICT_NEAR_CULLING
-#define S3L_STRICT_NEAR_CULLING 1 /**< If on, any triangle that only partially
-                                  intersects the near plane will be culled.
-                                  This can prevent errorneous rendering and 
-                                  artifacts, but also makes triangles close to
-                                  the camera disappear. */
+  /** If on, any triangle that only partially intersects the near plane will be
+  culled. This can prevent errorneous rendering and  artifacts, but also makes
+  triangles close to the camera disappear. */
+
+  #define S3L_STRICT_NEAR_CULLING 1 
 #endif
 
 #ifndef S3L_FLAT
-#define S3L_FLAT 0           /**< If on, disables computation of per-pixel
-                                  values such as barycentric coordinates and
-                                  depth -- these will still be available but
-                                  will be the same for the whole triangle. This
-                                  can be used to create flat-shaded renders and
-                                  will be a lot faster. With this option on you
-                                  will probably want to use sorting instead of
-                                  z-buffer. */
+  /** If on, disables computation of per-pixel values such as barycentric
+  coordinates and depth -- these will still be available but will be the same
+  for the whole triangle. This can be used to create flat-shaded renders and
+  will be a lot faster. With this option on you will probably want to use
+  sorting instead of z-buffer. */
+
+  #define S3L_FLAT 0           
 #endif
 
 #if S3L_FLAT
@@ -159,15 +173,13 @@
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
-#define S3L_PERSPECTIVE_CORRECTION 0 /**< Specifies what type of perspective
-                        correction (PC) to use. Remember this is an expensive
-                        operation! Possible values:
+  /** Specifies what type of perspective correction (PC) to use. Remember this
+  is an expensive operation! Possible values:
  
-                        - 0 No perspective correction. Fastest, ugly.
-                        - 1 Per-pixel perspective correction, nice but very
-                            expensive.
-                        - 2 Partial perspecive correction by subdividing
-                            triangles. */
+  - 0: No perspective correction. Fastest, ugly.
+  - 1: Per-pixel perspective correction, nice but very expensive.*/
+
+  #define S3L_PERSPECTIVE_CORRECTION 0 
 #endif
 
 #if S3L_PERSPECTIVE_CORRECTION
@@ -175,104 +187,83 @@
 #endif
 
 #ifndef S3L_COMPUTE_DEPTH
-#define S3L_COMPUTE_DEPTH 1  /**< Whether to compute depth for each pixel
-                                  (fragment). Some other options may turn this
-                                  on. */
+  /** Whether to compute depth for each pixel (fragment). Some other options
+  may turn this on automatically. */
+  #define S3L_COMPUTE_DEPTH 1
 #endif
 
-typedef int32_t S3L_Unit;    /**< Units of measurement in 3D space. There is
-                                  S3L_FRACTIONS_PER_UNIT in one spatial unit.
-                                  By dividing the unit into fractions we
-                                  effectively achieve fixed point arithmetic.
-                                  The number of fractions is a constant that
-                                  serves as 1.0 in floating point arithmetic
-                                  (normalization etc.). */
-
-#define S3L_FRACTIONS_PER_UNIT 512 /**< How many fractions a spatial unit is
-                                  split into. WARNING: if setting higher than
-                                  1024, you'll probably have to modify a sin
-                                  table otherwise it will overflow. Also other
-                                  things may overflow, so rather don't do
-                                  it. */
-typedef int16_t S3L_ScreenCoord;
-typedef uint16_t S3L_Index;
-
 #ifndef S3L_Z_BUFFER
-#define S3L_Z_BUFFER 0  /**< What type of z-buffer (depth buffer) to use
-                        for visibility determination. possible values:
+  /** What type of z-buffer (depth buffer) to use for visibility determination.
+  Possible values:
 
-                        - 0 Don't use z-buffer. This saves a lot of memory, but
-                            visibility checking won't be pixel-accurate and has
-                            to mostly be done by other means (typically
-                            sorting).
-                        - 1 Use full z-buffer (of S3L_Units) for visibiltiy
-                            determination. This is the most accurate option
-                            (and also a fast one), but  requires a big amount
-                            of memory.
-                        - 2 Use reduced-size z-buffer (of bytes). This is fast
-                            and somewhat accurate, but inaccuracies can occur
-                            and a considerable amount of memory is needed. */
+  - 0: Don't use z-buffer. This saves a lot of memory, but visibility checking
+       won't be pixel-accurate and has to mostly be done by other means
+       (typically sorting).
+  - 1: Use full z-buffer (of S3L_Units) for visibiltiy determination. This is
+       the most accurate option (and also a fast one), but  requires a big
+       amount of memory.
+  - 2: Use reduced-size z-buffer (of bytes). This is fast and somewhat
+       accurate, but inaccuracies can occur and a considerable amount of memory
+       is needed. */
+
+  #define S3L_Z_BUFFER 0  
 #endif
 
 #ifndef S3L_STENCIL_BUFFER
-#define S3L_STENCIL_BUFFER 0 /**< Whether to use stencil buffer for drawing --
-                                  with this pixels that have already been
-                                  rasterized will be discarded. This is mostly
-                                  for front-to-back sorted drawing. */
+  /** Whether to use stencil buffer for drawing -- with this a pixel that would
+  be resterized over an already rasterized pixel will be discarded. This is
+  mostly for front-to-back sorted drawing. */
+
+  #define S3L_STENCIL_BUFFER 0 
 #endif
 
 #ifndef S3L_SORT
-#define S3L_SORT 0 /**< Defines how to sort triangles before
-                        drawing a frame. This can be used to solve visibility
-                        in case z-buffer is not used, to prevent overwrting
-                        already rasterized pixels, implement transparency etc.
-                        Note that for simplicity and performance a relatively
-                        simple sorting is used which doesn't work completely
-                        correctly, so mistakes can occur (even the best sorting
-                        wouldn't be able to solve e.g. intersecting triangles).
-                        Possible values:
+  /** Defines how to sort triangles before drawing a frame. This can be used to
+  solve visibility in case z-buffer is not used, to prevent overwrting already
+  rasterized pixels, implement transparency etc. Note that for simplicity and
+  performance a relatively simple sorting is used which doesn't work completely
+  correctly, so mistakes can occur (even the best sorting wouldn't be able to
+  solve e.g. intersecting triangles). Possible values:
 
-                        - 0 Don't sort triangles. This is fastest.
-                        - 1 Sort triangles from back to front. This can in most
-                            cases solve visibility without requiring almost any
-                            extra memory compared to z-buffer.
-                        - 2 Sort triangles from front to back. This can be
-                            faster than back to front, because we prevent
-                            computing pixels that will be overwritten by nearer
-                            ones, but we need a 1b stencil buffer for this
-                            (enable S3L_STENCIL_BUFFER), so a bit more memory
-                            is needed. */
+  - 0: Don't sort triangles. This is fastest.
+  - 1: Sort triangles from back to front. This can in most cases solve 
+       visibility without requiring almost any extra memory compared to 
+       z-buffer.
+  - 2: Sort triangles from front to back. This can be faster than back to
+       front, because we prevent computing pixels that will be overwritten by
+       nearer ones, but we need a 1b stencil buffer for this (enable
+       S3L_STENCIL_BUFFER), so a bit more memory is needed. */
+
+  #define S3L_SORT 0
 #endif
 
 #ifndef S3L_MAX_TRIANGES_DRAWN
-#define S3L_MAX_TRIANGES_DRAWN 128 /**< Maximum number of triangles that can be
-                                  drawn in sorted modes. This affects the size
-                                  of a cache used for triangle sorting. */
+  /** Maximum number of triangles that can be drawn in sorted modes. This
+  affects the size of the cache used for triangle sorting. */
+
+  #define S3L_MAX_TRIANGES_DRAWN 128 
 #endif
 
 #ifndef S3L_NEAR
-#define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 4) /**< Distance of the near
-                                  clipping plane. Points in front or EXATLY ON
-                                  this plane are considered outside the
-                                  frustum. This must be >= 0. */
+  /** Distance of the near clipping plane. Points in front or EXATLY ON this
+  plane are considered outside the frustum. This must be >= 0. */
+
+  #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 4) 
 #endif
 
 #if S3L_NEAR <= 0
-#define S3L_NEAR 1              // Can't be <= 0.
+#define S3L_NEAR 1 // Can't be <= 0.
 #endif
 
 #ifndef S3L_FAST_LERP_QUALITY
-#define S3L_FAST_LERP_QUALITY 8 /**< Quality (scaling) of SOME linear
-                                  interpolations. 0 will most likely be faster,
-                                  but artifacts can occur for bigger tris,
-                                  while higher values can fix this -- in
-                                  theory all higher values will have the same
-                                  speed (it is a shift value), but it mustn't
-                                  be too high to prevent overflow. */
-#endif
+  /** Quality (scaling) of SOME (stepped) linear interpolations. 0 will most
+  likely be a tiny bit faster, but artifacts can occur for bigger tris, while
+  higher values can fix this -- in theory all higher values will have the same
+  speed (it is a shift value), but it mustn't be too high to prevent
+  overflow. */
 
-#define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
-#define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
+  #define S3L_FAST_LERP_QUALITY 8 
+#endif
 
 /** Vector that consists of four scalars and can represent homogenous
   coordinates, but is generally also used as Vec3 and Vec2. */
@@ -289,7 +280,7 @@ static inline void S3L_initVec4(S3L_Vec4 *v);
 static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
 static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
 
-#define S3L_writeVec4(v)\
+#define S3L_logVec4(v)\
   printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
 
 typedef struct
@@ -302,7 +293,7 @@ typedef struct
   S3L_Vec4 scale;
 } S3L_Transform3D;
 
-#define S3L_writeTransform3D(t)\
+#define S3L_logTransform3D(t)\
   printf("Transform3D: T = [%d %d %d], R = [%d %d %d], S = [%d %d %d]\n",\
     (t).translation.x,(t).translation.y,(t).translation.z,\
     (t).rotation.x,(t).rotation.y,(t).rotation.z,\
@@ -331,10 +322,12 @@ void S3L_rotationToDirections(
   S3L_Vec4 *right,
   S3L_Vec4 *up);
 
-typedef S3L_Unit S3L_Mat4[4][4]; /**< 4x4 matrix, used mostly for 3D
-                                      transforms. The indexing is this:
-                                      matrix[column][row]. */
-#define S3L_writeMat4(m)\
+
+/** 4x4 matrix, used mostly for 3D transforms. The indexing is this:
+    matrix[column][row]. */
+typedef S3L_Unit S3L_Mat4[4][4]; 
+
+#define S3L_logMat4(m)\
   printf("Mat4:\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n  %d %d %d %d\n"\
    ,(m)[0][0],(m)[1][0],(m)[2][0],(m)[3][0],\
     (m)[0][1],(m)[1][1],(m)[2][1],(m)[3][1],\
@@ -575,6 +568,9 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 
 //=============================================================================
 // privates
+
+#define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
+#define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
 
 #define S3L_PROJECTION_PLANE_HEIGHT\
   ((S3L_RESOLUTION_Y * S3L_FRACTIONS_PER_UNIT * 2) / S3L_RESOLUTION_X)

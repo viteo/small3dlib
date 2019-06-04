@@ -322,7 +322,7 @@ void draw()
     printf("FPS: %d\n",fps);
 
     printf("camera: ");
-    S3L_writeTransform3D(scene.camera.transform);
+    S3L_logTransform3D(scene.camera.transform);
     fps = 0;
   }
 }
