@@ -1095,10 +1095,15 @@ void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
 
   v.x = pointTo.x - pointFrom.x;
   v.y = pointTo.z - pointFrom.z;
-  
-  S3L_normalizeVec2(&v);
 
-  t->rotation.y = (v.y + S3L_FRACTIONS_PER_UNIT) / 2  ;
+  S3L_Unit l = S3L_vec2Length(v);
+  
+  v.x = (v.x * S3L_FRACTIONS_PER_UNIT) / l;
+
+  t->rotation.y = S3L_asin(v.x);
+
+  if (v.y < 0)
+    t->rotation.y = S3L_FRACTIONS_PER_UNIT / 2 - t->rotation.y;
 
   // TODO
 }
