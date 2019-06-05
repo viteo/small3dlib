@@ -45,11 +45,11 @@ features:
   automatically for some modes (e.g. Z-buffer). It should be computed by the
   fast lerp and passed in the PixelInfo struct.    DONE
 - Python tool to convert obj to C array            DONE
-- helper functions for lighting/shading
 - create demos
 - drawModel: create an option that would use a cache to not transform the same
   point twice
 - Optional rendering stats (FPS, rendered triangles, ...).
+- profiling functions for optimization
 
 bugs:
 
