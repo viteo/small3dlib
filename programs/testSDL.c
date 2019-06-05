@@ -309,6 +309,13 @@ void draw()
 
 int main()
 {
+
+
+for (int i = -512; i < 513; ++i)
+  printf("%d: %d (%d)\n",i,S3L_asin(i),S3L_sin(S3L_asin(i)));
+
+return 0;
+
   SDL_Window *window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
   SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
@@ -445,6 +452,9 @@ S3L_setTransform3D(3196,1814,5958,-18,300,0,512,512,512,&(scene.camera.transform
 
     if (keys['g'])
       scene.camera.transform.rotation.z += 1;
+
+    if (keys['p'])
+      S3L_lookAt(scene.camera.transform.translation,scene.models[1].transform.translation,&(scene.camera.transform));
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,texture,NULL,NULL);

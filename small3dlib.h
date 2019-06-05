@@ -280,6 +280,8 @@ static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
 static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
 S3L_Unit S3L_vec3Length(S3L_Vec4 v);
 void S3L_normalizeVec3(S3L_Vec4 *v);
+S3L_Unit S3L_vec2Length(S3L_Vec4 v);
+void S3L_normalizeVec2(S3L_Vec4 *v);
 
 #define S3L_logVec4(v)\
   printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
@@ -301,6 +303,8 @@ typedef struct
     (t).scale.x,(t).scale.y,(t).scale.z)
 
 static inline void S3L_initTransoform3D(S3L_Transform3D *t);
+
+void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t);
 
 void S3L_setTransform3D(
   S3L_Unit tx,
@@ -439,10 +443,12 @@ static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
 static inline S3L_Unit S3L_abs(S3L_Unit value);
 static inline S3L_Unit S3L_min(S3L_Unit v1, S3L_Unit v2);
 static inline S3L_Unit S3L_max(S3L_Unit v1, S3L_Unit v2);
+static inline S3L_Unit S3L_clamp(S3L_Unit v, S3L_Unit v1, S3L_Unit v2);
 static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod);
 static inline S3L_Unit S3L_nonZero(S3L_Unit value);
 
 S3L_Unit S3L_sin(S3L_Unit x);
+S3L_Unit S3L_asin(S3L_Unit x);
 static inline S3L_Unit S3L_cos(S3L_Unit x);
 
 S3L_Unit S3L_vec3Length(S3L_Vec4 v);
@@ -639,6 +645,7 @@ static inline int8_t S3L_stencilTest(
   (S3L_COMPUTE_DEPTH && (S3L_PERSPECTIVE_CORRECTION != 1))
 
 #define S3L_SIN_TABLE_LENGTH 128
+
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 {
   /* 511 was chosen here as a highest number that doesn't overflow during
@@ -808,6 +815,11 @@ S3L_Unit S3L_max(S3L_Unit v1, S3L_Unit v2)
   return v1 >= v2 ? v1 : v2;
 }
 
+S3L_Unit S3L_clamp(S3L_Unit v, S3L_Unit v1, S3L_Unit v2)
+{
+  return v >= v1 ? (v <= v2 ? v : v2) : v1;
+}
+
 S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
 {
   return value >= 0 ? (value % mod) : (mod + (value % mod) - 1);
@@ -886,6 +898,41 @@ S3L_Unit S3L_sin(S3L_Unit x)
   }
 
   return positive ? S3L_sinTable[x] : -1 * S3L_sinTable[x];
+}
+
+S3L_Unit S3L_asin(S3L_Unit x)
+{
+  x = S3L_clamp(x,-S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT);
+
+  int8_t sign = 1;
+
+  if (x < 0)
+  {
+    sign = -1;
+    x *= -1;
+  }
+
+  int16_t low = 0;
+  int16_t high = S3L_SIN_TABLE_LENGTH -1;
+  int16_t middle;
+
+  while (low <= high) // binary search
+  {
+    middle = (low + high) / 2;
+
+    S3L_Unit v = S3L_sinTable[middle];
+
+    if (v > x)
+      high = middle - 1;
+    else if (v < x)
+      low = middle + 1;
+    else
+      break;
+  }
+
+  middle *= S3L_SIN_TABLE_UNIT_STEP;
+
+  return sign * middle;
 }
 
 S3L_Unit S3L_cos(S3L_Unit x)
@@ -1005,6 +1052,11 @@ S3L_Unit S3L_vec3Length(S3L_Vec4 v)
   return S3L_sqrt(v.x * v.x + v.y * v.y + v.z * v.z);  
 }
 
+S3L_Unit S3L_vec2Length(S3L_Vec4 v)
+{
+  return S3L_sqrt(v.x * v.x + v.y * v.y);  
+}
+
 void S3L_normalizeVec3(S3L_Vec4 *v)
 {
   S3L_Unit l = S3L_vec3Length(*v);
@@ -1017,6 +1069,17 @@ void S3L_normalizeVec3(S3L_Vec4 *v)
   v->z = (v->z * S3L_FRACTIONS_PER_UNIT) / l;
 }
 
+void S3L_normalizeVec2(S3L_Vec4 *v)
+{
+  S3L_Unit l = S3L_vec2Length(*v);
+
+  if (l == 0)
+    return;
+
+  v->x = (v->x * S3L_FRACTIONS_PER_UNIT) / l;
+  v->y = (v->y * S3L_FRACTIONS_PER_UNIT) / l;
+}
+
 void S3L_initTransoform3D(S3L_Transform3D *t)
 {
   S3L_initVec4(&(t->translation));
@@ -1024,6 +1087,20 @@ void S3L_initTransoform3D(S3L_Transform3D *t)
   t->scale.x = S3L_FRACTIONS_PER_UNIT;
   t->scale.y = S3L_FRACTIONS_PER_UNIT;
   t->scale.z = S3L_FRACTIONS_PER_UNIT;
+}
+
+void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
+{
+  S3L_Vec4 v;
+
+  v.x = pointTo.x - pointFrom.x;
+  v.y = pointTo.z - pointFrom.z;
+  
+  S3L_normalizeVec2(&v);
+
+  t->rotation.y = (v.y + S3L_FRACTIONS_PER_UNIT) / 2  ;
+
+  // TODO
 }
 
 void S3L_setTransform3D(
