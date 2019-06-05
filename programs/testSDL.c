@@ -21,10 +21,10 @@
 #define S3L_RESOLUTION_X 640
 #define S3L_RESOLUTION_Y 480
 
-#include "small3dlib.h"
+#include "../small3dlib.h"
 
 #include "houseTexture.h"
-#include "house.h"
+#include "houseModel.h"
 
 int32_t offScreenPixels = 0;
 const S3L_Unit ver[] = { S3L_CUBE_VERTICES(S3L_FRACTIONS_PER_UNIT) };
