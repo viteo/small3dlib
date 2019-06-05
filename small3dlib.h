@@ -282,6 +282,8 @@ S3L_Unit S3L_vec3Length(S3L_Vec4 v);
 void S3L_normalizeVec3(S3L_Vec4 *v);
 S3L_Unit S3L_vec2Length(S3L_Vec4 v);
 void S3L_normalizeVec2(S3L_Vec4 *v);
+void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result);
+static inline S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b);
 
 #define S3L_logVec4(v)\
   printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
@@ -453,6 +455,10 @@ static inline S3L_Unit S3L_cos(S3L_Unit x);
 
 S3L_Unit S3L_vec3Length(S3L_Vec4 v);
 S3L_Unit S3L_sqrt(S3L_Unit value);
+
+/** Computes a normalized normal of given triangle. */
+void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
+  S3L_Vec4 *n);
 
 /** Interpolated between two values, v1 and v2, in the same ratio as t is to
   tMax. Does NOT prevent zero division. */
@@ -753,6 +759,33 @@ void S3L_initMat4(S3L_Mat4 *m)
   #undef S
 }
 
+S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b)
+{
+  return (a.x * b.x + a.y * b.y + a.z * b.z) / S3L_FRACTIONS_PER_UNIT;
+}
+
+void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result)
+{
+  result->x = a.y * b.z - a.z * b.y;
+  result->y = a.z * b.x - a.x * b.z;
+  result->z = a.x * b.y - a.y * b.x;
+}
+
+void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
+  S3L_Vec4 *n)
+{
+  t1.x = t1.x - t0.x;
+  t1.y = t1.y - t0.y;
+  t1.z = t1.z - t0.z;
+
+  t2.x = t2.x - t0.x;
+  t2.y = t2.y - t0.y;
+  t2.z = t2.z - t0.z;
+
+  S3L_crossProduct(t1,t2,n);
+  S3L_normalizeVec3(n);
+}
+
 void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 {
   S3L_Vec4 vBackup;
@@ -765,10 +798,10 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
   // TODO: try alternative operation orders to optimize
 
   #define dotCol(col)\
-    (vBackup.x * (*m)[col][0]) / S3L_FRACTIONS_PER_UNIT +\
-    (vBackup.y * (*m)[col][1]) / S3L_FRACTIONS_PER_UNIT +\
-    (vBackup.z * (*m)[col][2]) / S3L_FRACTIONS_PER_UNIT +\
-    (vBackup.w * (*m)[col][3]) / S3L_FRACTIONS_PER_UNIT
+    ((vBackup.x * (*m)[col][0]) +\
+     (vBackup.y * (*m)[col][1]) +\
+     (vBackup.z * (*m)[col][2]) +\
+     (vBackup.w * (*m)[col][3])) / S3L_FRACTIONS_PER_UNIT
 
   v->x = dotCol(0);
   v->y = dotCol(1);
@@ -1099,7 +1132,7 @@ void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
   S3L_Unit dx = v.x;
   S3L_Unit l = S3L_vec2Length(v);
 
-  dx = (v.x * S3L_FRACTIONS_PER_UNIT) / l; // normalize
+  dx = (v.x * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(l); // normalize
 
   t->rotation.y = S3L_asin(dx);
 
@@ -1108,8 +1141,10 @@ void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
 
   v.x = pointTo.y - pointFrom.y;
   v.y = l;
-  
-  dx = (v.x * S3L_FRACTIONS_PER_UNIT) / S3L_vec2Length(v);
+ 
+  l = S3L_vec2Length(v);
+ 
+  dx = (v.x * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(l);
 
   t->rotation.x = S3L_asin(dx);
 }
