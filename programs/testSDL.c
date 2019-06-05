@@ -134,6 +134,62 @@ int previousTriangle = 255;
 
 void drawPixel(S3L_PixelInfo *p)
 {
+
+S3L_Vec4 a,b,c,n,V;
+
+int tmpI = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
+
+a.x = scene.models[p->modelIndex].vertices[tmpI];
+tmpI++;
+a.y = scene.models[p->modelIndex].vertices[tmpI];
+tmpI++;
+a.z = scene.models[p->modelIndex].vertices[tmpI];
+
+tmpI = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
+
+b.x = scene.models[p->modelIndex].vertices[tmpI];
+tmpI++;
+b.y = scene.models[p->modelIndex].vertices[tmpI];
+tmpI++;
+b.z = scene.models[p->modelIndex].vertices[tmpI];
+
+tmpI = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
+
+c.x = scene.models[p->modelIndex].vertices[tmpI];
+tmpI++;
+c.y = scene.models[p->modelIndex].vertices[tmpI];
+tmpI++;
+c.z = scene.models[p->modelIndex].vertices[tmpI];
+
+S3L_triangleNormal(a,b,c,&n);
+/*
+printf("--------\n");
+S3L_logVec4(a);
+S3L_logVec4(b);
+S3L_logVec4(c);
+S3L_logVec4(n);
+*/
+V.x = 10; 
+V.y = 10;
+V.z = 10;
+
+S3L_normalizeVec3(&V);
+
+int16_t l = S3L_clamp(S3L_dotProductVec3(V,n) / 2,0,255);
+
+l &= 192;
+
+/*
+setPixel(p->x,p->y,
+ S3L_clamp(128 + n.x / 4,0,255),
+ S3L_clamp(128 + n.y / 4,0,255),
+ S3L_clamp(128 + n.z / 4,0,255));
+*/
+
+setPixel(p->x,p->y,l,l,l);
+
+return;
+
   if (p->triangleIndex != previousTriangle)
   {
     l0 = houseVertexLighting[houseTriangleIndices[p->triangleIndex * 3]];

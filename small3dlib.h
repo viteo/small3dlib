@@ -774,13 +774,17 @@ void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result)
 void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
   S3L_Vec4 *n)
 {
-  t1.x = t1.x - t0.x;
-  t1.y = t1.y - t0.y;
-  t1.z = t1.z - t0.z;
+  #define antiOverflow 32
 
-  t2.x = t2.x - t0.x;
-  t2.y = t2.y - t0.y;
-  t2.z = t2.z - t0.z;
+  t1.x = (t1.x - t0.x) / antiOverflow;
+  t1.y = (t1.y - t0.y) / antiOverflow;
+  t1.z = (t1.z - t0.z) / antiOverflow;
+
+  t2.x = (t2.x - t0.x) / antiOverflow;
+  t2.y = (t2.y - t0.y) / antiOverflow;
+  t2.z = (t2.z - t0.z) / antiOverflow;
+
+  #undef antiOverflow
 
   S3L_crossProduct(t1,t2,n);
   S3L_normalizeVec3(n);
