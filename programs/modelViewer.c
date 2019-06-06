@@ -27,10 +27,15 @@
 #include "houseTexture.h"
 #include "houseModel.h"
 
+#define TEXTURE_W 128
+#define TEXTURE_H 128
+
 S3L_Unit houseNormals[HOUSE_VERTEX_COUNT * 3];
 
 S3L_Model3D model;
 S3L_Scene scene;
+
+uint8_t *texture;
 
 uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
 
@@ -38,7 +43,7 @@ uint32_t frame = 0;
 
 void clearScreen()
 {
-  memset(pixels,0,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
+  memset(pixels,200,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
 }
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
@@ -58,17 +63,17 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
   pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
 }
 
-void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
+void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
 {
-  int32_t index = (v * HOUSE_TEXTURE_WIDTH + u) * 3;
+  int32_t index = (v * TEXTURE_W + u) * 3;
 
-  index = S3L_clamp(index,0,HOUSE_TEXTURE_WIDTH * HOUSE_TEXTURE_HEIGHT * 3);
+  index = S3L_clamp(index,0,TEXTURE_W * TEXTURE_H * 3);
 
-  *r = houseTexture[index];
+  *r = texture[index];
   index++;
-  *g = houseTexture[index];
+  *g = texture[index];
   index++;
-  *b = houseTexture[index];
+  *b = texture[index];
 }
 
 int16_t previousTriangle = -1;
@@ -156,10 +161,7 @@ void drawPixel(S3L_PixelInfo *p)
 
   uint8_t r,g,b;
 
-  houseTex(
-    (uv[0] / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_WIDTH,
-    (uv[1] / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_HEIGHT,
-    &r,&g,&b);
+  sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
 
   r = S3L_clamp((((int16_t) r) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
   g = S3L_clamp((((int16_t) g) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
@@ -186,7 +188,7 @@ int main()
 {
   SDL_Window *window = SDL_CreateWindow("model viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
-  SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
+  SDL_Texture *textureSDL = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
 
@@ -199,6 +201,8 @@ int main()
   S3L_initCamera(&scene.camera);
 
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
+
+  texture = houseTexture;
 
   scene.modelCount = 1;
   scene.models = &model;
@@ -226,7 +230,7 @@ int main()
 
     fps++;
 
-    SDL_UpdateTexture(texture,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
+    SDL_UpdateTexture(textureSDL,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
 
     clock_t nowT = clock();
 
@@ -282,7 +286,7 @@ int main()
     }
 
     SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer,texture,NULL,NULL);
+    SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
     SDL_RenderPresent(renderer);
 
     frame++;

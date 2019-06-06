@@ -128,7 +128,7 @@ def printArray(array, name, sizeString):
 
     if lineLen > 80:
       arrayString += "\n"
-      lineLen = 0
+      lineLen = len(item)
 
     arrayString += item
 

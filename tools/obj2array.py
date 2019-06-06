@@ -65,6 +65,7 @@ for line in objFile:
   if line[:2] == "v ":
     coords = line[2:].split()
     vertex = [float(coords[i]) for i in range(3)]
+    vertex[2] *= -1
     vertices.append(vertex)
   elif line[:3] == "vt ":
     coords = line[3:].split()
