@@ -90,8 +90,8 @@ for line in objFile:
 
 # print the result:
 
-def arrayString(name, array, components, scales, align, short, dataType):
-  result = "const " + dataType + " " + name + "[] = {\n"
+def arrayString(name, array, components, scales, align, short, dataType, sizeStr):
+  result = "const " + dataType + " " + name + "[" + sizeStr + "] = {\n"
 
   if COMPACT:
     lineLen = 0
@@ -153,12 +153,17 @@ if GUARDS:
   print("#ifndef " + NAME.upper() + "_MODEL_H")
   print("#define " + NAME.upper() + "_MODEL_H\n")
 
-print(arrayString(NAME + "Vertices",vertices,3,[VERTEX_SCALE],5,False,"S3L_Unit"))
-print(arrayString(NAME + "TriangleIndices",triangles,3,[1],5,True,"S3L_Index"))
+print("#define " + NAME.upper() + "_VERTEX_COUNT " + str(len(vertices)))
+print(arrayString(NAME + "Vertices",vertices,3,[VERTEX_SCALE],5,False,"S3L_Unit",NAME.upper() + "_VERTEX_COUNT * 3"))
+
+print("#define " + NAME.upper() + "_TRIANGLE_COUNT " + str(len(triangles)))
+print(arrayString(NAME + "TriangleIndices",triangles,3,[1],5,True,"S3L_Index",NAME.upper() + "_TRIANGLE_COUNT * 3"))
 
 if INDEXED_UVS:
-  print(arrayString(NAME + "UVs",uvs,2,[U_SCALE,V_SCALE],5,False,"S3L_Unit"))
-  print(arrayString(NAME + "UVIndices",triangleUVs,3,[1],5,True,"S3L_Index"))
+  print("#define " + NAME.upper() + "_UV_COUNT " + str(len(uvs)))
+  print(arrayString(NAME + "UVs",uvs,2,[U_SCALE,V_SCALE],5,False,"S3L_Unit",NAME.upper() + "_UV_COUNT * 2"))
+  print("#define " + NAME.upper() + "_UV_INDEX_COUNT " + str(len(triangleUVs)))
+  print(arrayString(NAME + "UVIndices",triangleUVs,3,[1],5,True,"S3L_Index",NAME.upper() + "_UV_INDEX_COUNT * 3"))
 else:
   uvs2 = []
   for item in triangleUVs:
@@ -170,21 +175,22 @@ else:
       uvs[item[2]][0],
       uvs[item[2]][1]])
 
-  print(arrayString(NAME + "TriangleUVs",uvs2,6,[U_SCALE,V_SCALE],5,False,"S3L_Unit"))
+  print("#define " + NAME.upper() + "_DIRECT_UV_COUNT " + str(len(uvs2)))
+  print(arrayString(NAME + "DirectUVs",uvs2,6,[U_SCALE,V_SCALE],5,False,"S3L_Unit",NAME.upper() + "_DIRECT_UV_COUNT * 6"))
 
 print("S3L_Model3D " + NAME + "Model = ")
 
 if COMPACT:
   print("{.vertices=" +
     NAME + "Vertices,.vertexCount=" + str(len(vertices)) +
-    ",.triangles=" + NAME + "TriangleIndices,\n.triangleCount=" +
+    ",.triangles=" + NAME.upper() + "TriangleIndices,\n.triangleCount=" +
     str(len(triangles)) + "};");
 else:
   print("{")
   print("  .vertices = " + NAME + "Vertices,") 
-  print("  .vertexCount = " + str(len(vertices)) + ",")
+  print("  .vertexCount = " + NAME.upper() + "_VERTEX_COUNT,")
   print("  .triangles = " + NAME + "TriangleIndices,")
-  print("  .triangleCount = " + str(len(triangles)))
+  print("  .triangleCount = " + NAME.upper() + "_TRIANGLE_COUNT")
   print("};")
 
 if GUARDS:
