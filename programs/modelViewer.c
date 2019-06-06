@@ -11,25 +11,21 @@
 #include <time.h>
 
 #define S3L_FLAT 0
-#define S3L_STRICT_NEAR_CULLING 0
-#define S3L_PERSPECTIVE_CORRECTION11
+#define S3L_STRICT_NEAR_CULLING 1
+#define S3L_PERSPECTIVE_CORRECTION 0
 #define S3L_SORT 0
+#define S3L_STENCIL_BUFFER 0
 #define S3L_Z_BUFFER 1
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
-#define S3L_RESOLUTION_X 640
-#define S3L_RESOLUTION_Y 480
+#define S3L_RESOLUTION_X 800
+#define S3L_RESOLUTION_Y 600
 
 #include "../small3dlib.h"
 
 #include "houseTexture.h"
 #include "houseModel.h"
-
-int32_t offScreenPixels = 0;
-const S3L_Unit ver[] = { S3L_CUBE_VERTICES(S3L_FRACTIONS_PER_UNIT) };
-const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
-const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS(16) };
 
 S3L_Unit houseNormals[HOUSE_VERTEX_COUNT * 3];
 
@@ -64,25 +60,20 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
 
 void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
 {
-  if (u < 0)
-    u = 0;
+  int32_t index = (v * HOUSE_TEXTURE_WIDTH + u) * 3;
 
-  if (v < 0)
-    v = 0;
-
-  u %= HOUSE_TEXTURE_WIDTH;
-  v %= HOUSE_TEXTURE_HEIGHT;
-
-  int index = (v * HOUSE_TEXTURE_WIDTH + u) * 3;
+  index = S3L_clamp(index,0,HOUSE_TEXTURE_WIDTH * HOUSE_TEXTURE_HEIGHT * 3);
 
   *r = houseTexture[index];
-  *g = houseTexture[index + 1];
-  *b = houseTexture[index + 2];
+  index++;
+  *g = houseTexture[index];
+  index++;
+  *b = houseTexture[index];
 }
 
 int16_t previousTriangle = -1;
 S3L_Unit uv0[2], uv1[2], uv2[2];
-uint8_t l0, l1, l2;
+uint16_t l0, l1, l2;
 S3L_Vec4 toLight;
 
 void drawPixel(S3L_PixelInfo *p)
@@ -136,9 +127,9 @@ void drawPixel(S3L_PixelInfo *p)
     index++;
     n2.z = houseNormals[index];
 
-    l0 = 64 + S3L_clamp(S3L_dotProductVec3(n0,toLight),-511,511) / 8;
-    l1 = 64 + S3L_clamp(S3L_dotProductVec3(n1,toLight),-511,511) / 8;
-    l2 = 64 + S3L_clamp(S3L_dotProductVec3(n2,toLight),-511,511) / 8;
+    l0 = 256 + S3L_clamp(S3L_dotProductVec3(n0,toLight),-511,511) / 2;
+    l1 = 256 + S3L_clamp(S3L_dotProductVec3(n1,toLight),-511,511) / 2;
+    l2 = 256 + S3L_clamp(S3L_dotProductVec3(n2,toLight),-511,511) / 2;
 
     previousTriangle = p->triangleIndex;
   }
@@ -157,7 +148,7 @@ void drawPixel(S3L_PixelInfo *p)
     uv2[1],
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
-  uint8_t l = S3L_interpolateBarycentric(
+  int16_t l = S3L_interpolateBarycentric(
     l0,
     l1,
     l2,
@@ -170,9 +161,9 @@ void drawPixel(S3L_PixelInfo *p)
     (uv[1] / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_HEIGHT,
     &r,&g,&b);
 
-  r = S3L_clamp(((int16_t) r) - l,0,255);
-  g = S3L_clamp(((int16_t) g) - l,0,255);
-  b = S3L_clamp(((int16_t) b) - l,0,255);
+  r = S3L_clamp((((int16_t) r) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
+  g = S3L_clamp((((int16_t) g) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
+  b = S3L_clamp((((int16_t) b) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
 
   setPixel(p->x,p->y,r,g,b); 
 }
@@ -193,7 +184,7 @@ int16_t fps = 0;
 
 int main()
 {
-  SDL_Window *window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
+  SDL_Window *window = SDL_CreateWindow("model viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
   SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
