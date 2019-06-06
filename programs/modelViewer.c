@@ -80,8 +80,9 @@ int16_t previousTriangle = -1;
 S3L_Unit uv0[2], uv1[2], uv2[2];
 uint16_t l0, l1, l2;
 S3L_Vec4 toLight;
-
 int8_t light = 1;
+int8_t mode = 0;
+S3L_Vec4 n0, n1, n2;
 
 void drawPixel(S3L_PixelInfo *p)
 {
@@ -107,8 +108,6 @@ void drawPixel(S3L_PixelInfo *p)
 
     uv2[0] = houseUVs[index];
     uv2[1] = houseUVs[index + 1];    
-
-    S3L_Vec4 n0, n1, n2;
 
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
@@ -141,23 +140,57 @@ void drawPixel(S3L_PixelInfo *p)
     previousTriangle = p->triangleIndex;
   }
 
-  S3L_Unit uv[2];
-
-  uv[0] = S3L_interpolateBarycentric(
-    uv0[0],
-    uv1[0],
-    uv2[0],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-  uv[1] = S3L_interpolateBarycentric(
-    uv0[1],
-    uv1[1],
-    uv2[1],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
   uint8_t r,g,b;
 
-  sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
+  switch (mode)
+  {
+    case 0: // textured mode
+    {
+      S3L_Unit uv[2];
+
+      uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],
+        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+
+      uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],
+        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+
+      sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
+
+      break;
+    }
+
+    case 1: // single color mode
+    {
+      r = 128;
+      g = 128;
+      b = 128;
+
+      break;
+    }
+
+    case 2: // normal mode
+    {
+      S3L_Vec4 n;
+
+      n.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,
+        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+
+      n.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,
+        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+
+      n.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,
+        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+
+      S3L_normalizeVec3(&n);
+
+      r = S3L_clamp(128 + n.x / 4,0,255);
+      g = S3L_clamp(128 + n.y / 4,0,255);
+      b = S3L_clamp(128 + n.z / 4,0,255);
+    }
+  
+    default:
+      break;
+  }
 
   if (light)
   {
@@ -291,6 +324,13 @@ int main()
         scene.camera.transform.translation.z =
           S3L_max(-S3L_FRACTIONS_PER_UNIT * 16, scene.camera.transform.translation.z - zoomStep);
     }
+    
+    if (state[SDL_SCANCODE_KP_0])
+      mode = 0;
+    else if (state[SDL_SCANCODE_KP_1])
+      mode = 1;
+    else if (state[SDL_SCANCODE_KP_2])
+      mode = 2;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
