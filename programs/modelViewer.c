@@ -191,8 +191,8 @@ int main()
   SDL_Event event;
 
   toLight.x = 10;
-  toLight.y = -10;
-  toLight.z = -10;
+  toLight.y = 10;
+  toLight.z = 10;
 
   S3L_normalizeVec3(&toLight);
 

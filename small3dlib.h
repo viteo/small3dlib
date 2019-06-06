@@ -1349,7 +1349,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
 
 void S3L_initDrawConfig(S3L_DrawConfig *config)
 {
-  config->backfaceCulling = 1;
+  config->backfaceCulling = 2;
   config->visible = 1;
 }
 
