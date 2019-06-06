@@ -27,15 +27,22 @@
 #include "houseTexture.h"
 #include "houseModel.h"
 
+#include "chestTexture.h"
+#include "chestModel.h"
+
 #define TEXTURE_W 128
 #define TEXTURE_H 128
 
 S3L_Unit houseNormals[HOUSE_VERTEX_COUNT * 3];
+S3L_Unit chestNormals[CHEST_VERTEX_COUNT * 3];
 
 S3L_Model3D model;
-S3L_Scene scene;
-
 uint8_t *texture;
+const S3L_Unit *uvs;
+const S3L_Unit *normals;
+const S3L_Index *uvIndices;
+
+S3L_Scene scene;
 
 uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
 
@@ -90,48 +97,48 @@ void drawPixel(S3L_PixelInfo *p)
   {
     int16_t index = p->triangleIndex * 3;
 
-    int16_t i0 = houseUVIndices[index];
-    int16_t i1 = houseUVIndices[index + 1];
-    int16_t i2 = houseUVIndices[index + 2];
+    int16_t i0 = uvIndices[index];
+    int16_t i1 = uvIndices[index + 1];
+    int16_t i2 = uvIndices[index + 2];
 
     index = i0 * 2;
 
-    uv0[0] = houseUVs[index];
-    uv0[1] = houseUVs[index + 1];
+    uv0[0] = uvs[index];
+    uv0[1] = uvs[index + 1];
 
     index = i1 * 2;
 
-    uv1[0] = houseUVs[index];
-    uv1[1] = houseUVs[index + 1];
+    uv1[0] = uvs[index];
+    uv1[1] = uvs[index + 1];
 
     index = i2 * 2;
 
-    uv2[0] = houseUVs[index];
-    uv2[1] = houseUVs[index + 1];    
+    uv2[0] = uvs[index];
+    uv2[1] = uvs[index + 1];    
 
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
-    n0.x = houseNormals[index];
+    n0.x = normals[index];
     index++;
-    n0.y = houseNormals[index];
+    n0.y = normals[index];
     index++;
-    n0.z = houseNormals[index];
+    n0.z = normals[index];
 
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
 
-    n1.x = houseNormals[index];
+    n1.x = normals[index];
     index++;
-    n1.y = houseNormals[index];
+    n1.y = normals[index];
     index++;
-    n1.z = houseNormals[index];
+    n1.z = normals[index];
  
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
 
-    n2.x = houseNormals[index];
+    n2.x = normals[index];
     index++;
-    n2.y = houseNormals[index];
+    n2.y = normals[index];
     index++;
-    n2.z = houseNormals[index];
+    n2.z = normals[index];
 
     l0 = 256 + S3L_clamp(S3L_dotProductVec3(n0,toLight),-511,511) / 2;
     l1 = 256 + S3L_clamp(S3L_dotProductVec3(n1,toLight),-511,511) / 2;
@@ -205,9 +212,6 @@ void drawPixel(S3L_PixelInfo *p)
   setPixel(p->x,p->y,r,g,b); 
 }
 
-S3L_Transform3D modelTransform;
-S3L_DrawConfig conf;
-
 void draw()
 {
   S3L_newFrame();
@@ -215,6 +219,35 @@ void draw()
   clearScreen();
 
   S3L_drawScene(scene);
+}
+
+void setModel(uint8_t index)
+{
+  #define modelCase(n,m)\
+    case n:\
+    {\
+      texture = m##Texture;\
+      uvs = m##UVs;\
+      uvIndices = m##UVIndices;\
+      normals = m##Normals;\
+      scene.models[0] = m##Model;\
+      S3L_computeModelNormals(scene.models[0],m##Normals,0);\
+      break;\
+    }
+
+  switch (index)
+  {
+    modelCase(0,house)
+    modelCase(1,chest)
+
+    default:
+      break;
+  }
+
+  #undef modelCase
+
+  S3L_initTransoform3D(&(scene.models[0].transform));
+  S3L_initDrawConfig(&(scene.models[0].config));
 }
 
 int16_t fps = 0;
@@ -237,21 +270,14 @@ int main()
 
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
 
-  texture = houseTexture;
-
   scene.modelCount = 1;
   scene.models = &model;
 
-  scene.models[0] = houseModel;
-  S3L_initTransoform3D(&(scene.models[0].transform));
-  S3L_initDrawConfig(&(scene.models[0].config));
-
-  S3L_initTransoform3D(&modelTransform);
-  S3L_initDrawConfig(&conf);
+  int8_t modelIndex = 0;
+  int8_t modelsTotal = 2;
+  setModel(0);
 
   int running = 1;
-   
-  S3L_computeModelNormals(scene.models[0],houseNormals,1);
 
   clock_t nextPrintT;
 
@@ -287,6 +313,11 @@ int main()
       {
         if (event.key.keysym.scancode == SDL_SCANCODE_L)
           light = !light;
+        else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
+        {
+          modelIndex = (modelIndex + 1) % modelsTotal;
+          setModel(modelIndex);
+        }
       }
     }
 
