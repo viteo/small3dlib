@@ -81,6 +81,8 @@ S3L_Unit uv0[2], uv1[2], uv2[2];
 uint16_t l0, l1, l2;
 S3L_Vec4 toLight;
 
+int8_t light = 1;
+
 void drawPixel(S3L_PixelInfo *p)
 {
   if (p->triangleIndex != previousTriangle)
@@ -153,19 +155,19 @@ void drawPixel(S3L_PixelInfo *p)
     uv2[1],
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
-  int16_t l = S3L_interpolateBarycentric(
-    l0,
-    l1,
-    l2,
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
   uint8_t r,g,b;
 
   sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
 
-  r = S3L_clamp((((int16_t) r) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
-  g = S3L_clamp((((int16_t) g) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
-  b = S3L_clamp((((int16_t) b) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
+  if (light)
+  {
+    int16_t l = S3L_interpolateBarycentric(l0,l1,l2,
+      p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+
+    r = S3L_clamp((((int16_t) r) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
+    g = S3L_clamp((((int16_t) g) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
+    b = S3L_clamp((((int16_t) b) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
+  }
 
   setPixel(p->x,p->y,r,g,b); 
 }
@@ -248,6 +250,11 @@ int main()
     {
       if (event.type == SDL_QUIT)
         running = 0;
+      else if (event.type == SDL_KEYDOWN)
+      {
+        if (event.key.keysym.scancode == SDL_SCANCODE_L)
+          light = !light;
+      }
     }
 
     uint8_t *state = SDL_GetKeyboardState(NULL);
