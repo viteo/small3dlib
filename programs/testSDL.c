@@ -31,6 +31,8 @@ const S3L_Unit ver[] = { S3L_CUBE_VERTICES(S3L_FRACTIONS_PER_UNIT) };
 const S3L_Index tri[] = { S3L_CUBE_TRIANGLES };
 const S3L_Unit tex_coords[] = { S3L_CUBE_TEXCOORDS(16) };
 
+S3L_Unit houseNormals[HOUSE_VERTEX_COUNT * 3];
+
 S3L_Model3D models[2];
 S3L_Scene scene;
 
@@ -129,75 +131,8 @@ void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
   *b = houseTexture[index + 2];
 }
 
-int l0, l1, l2;
-int previousTriangle = 255;
-
 void drawPixel(S3L_PixelInfo *p)
 {
-
-S3L_Vec4 a,b,c,n,V;
-
-int tmpI = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
-
-a.x = scene.models[p->modelIndex].vertices[tmpI];
-tmpI++;
-a.y = scene.models[p->modelIndex].vertices[tmpI];
-tmpI++;
-a.z = scene.models[p->modelIndex].vertices[tmpI];
-
-tmpI = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
-
-b.x = scene.models[p->modelIndex].vertices[tmpI];
-tmpI++;
-b.y = scene.models[p->modelIndex].vertices[tmpI];
-tmpI++;
-b.z = scene.models[p->modelIndex].vertices[tmpI];
-
-tmpI = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
-
-c.x = scene.models[p->modelIndex].vertices[tmpI];
-tmpI++;
-c.y = scene.models[p->modelIndex].vertices[tmpI];
-tmpI++;
-c.z = scene.models[p->modelIndex].vertices[tmpI];
-
-S3L_triangleNormal(a,b,c,&n);
-/*
-printf("--------\n");
-S3L_logVec4(a);
-S3L_logVec4(b);
-S3L_logVec4(c);
-S3L_logVec4(n);
-*/
-V.x = 10; 
-V.y = 10;
-V.z = 10;
-
-S3L_normalizeVec3(&V);
-
-int16_t l = S3L_clamp(S3L_dotProductVec3(V,n) / 2,0,255);
-
-l &= 192;
-
-/*
-setPixel(p->x,p->y,
- S3L_clamp(128 + n.x / 4,0,255),
- S3L_clamp(128 + n.y / 4,0,255),
- S3L_clamp(128 + n.z / 4,0,255));
-*/
-
-setPixel(p->x,p->y,l,l,l);
-
-return;
-
-  if (p->triangleIndex != previousTriangle)
-  {
-    l0 = houseVertexLighting[houseTriangleIndices[p->triangleIndex * 3]];
-    l1 = houseVertexLighting[houseTriangleIndices[p->triangleIndex * 3 + 1]];
-    l2 = houseVertexLighting[houseTriangleIndices[p->triangleIndex * 3 + 2]];
-    previousTriangle = p->triangleIndex;
-  }
-
   if (p->x < 0 || p ->x >= S3L_RESOLUTION_X || p->y < 0 || p->y >= S3L_RESOLUTION_Y)
   {
     offScreenPixels++;
@@ -256,23 +191,39 @@ if (p->modelIndex != 0)
     (v / ((float) S3L_FRACTIONS_PER_UNIT)) * HOUSE_TEXTURE_HEIGHT,
     &r,&g,&b);
 
-  uint8_t l = S3L_interpolateBarycentric(l0,l1,l2,
-                p->barycentric[0],
-                p->barycentric[1],
-                p->barycentric[2]);
+S3L_Vec4 n0, n1, n2, n;
 
-  l = 255 - l;
+n0.x = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3];
+n0.y = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3 + 1];
+n0.z = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3 + 2];
 
-  l /= 2;
+n1.x = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3];
+n1.y = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3 + 1];
+n1.z = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3 + 2];
 
-  int16_t clampTmp = r - l;
-  r = clampTmp >= 0 ? clampTmp : 0;
+n2.x = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3];
+n2.y = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3 + 1];
+n2.z = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3 + 2];
 
-  clampTmp = g - l;
-  g = clampTmp >= 0 ? clampTmp : 0;
+n.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+n.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+n.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
 
-  clampTmp = b - l;
-  b = clampTmp >= 0 ? clampTmp : 0;
+S3L_Vec4 V;
+
+V.x = 10;
+V.y = 10;
+V.z = 10;
+
+S3L_normalizeVec3(&V);
+
+int16_t l = 64 + S3L_clamp(S3L_dotProductVec3(n,V),-511,511) / 8;
+
+//setPixel(p->x,p->y,l,l,l);
+
+r = S3L_clamp(((int16_t) r) - l,0,255);
+g = S3L_clamp(((int16_t) g) - l,0,255);
+b = S3L_clamp(((int16_t) b) - l,0,255);
 
   setPixel(p->x,p->y,r,g,b); 
 }
@@ -360,6 +311,8 @@ void draw()
     printf("camera: ");
     S3L_logTransform3D(scene.camera.transform);
     fps = 0;
+
+    S3L_computeModelNormals(scene.models[1],houseNormals,1);
   }
 }
 

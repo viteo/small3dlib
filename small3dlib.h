@@ -460,6 +460,16 @@ S3L_Unit S3L_sqrt(S3L_Unit value);
 void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
   S3L_Vec4 *n);
 
+/** Computes a normalized normal for every vertex of given model (this is
+  relatively slow and SHOUDN'T be done each frame). The dst array must have a
+  sufficient size preallocated! The size is: number of model vertices * 3 *
+  sizeof(S3L_Unit). Note that for advanced allowing sharp edges it is not
+  sufficient to have per-vertex normals, but must be per-triangle. This
+  function doesn't support this. */
+
+void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
+  int8_t transformNormals);
+
 /** Interpolated between two values, v1 and v2, in the same ratio as t is to
   tMax. Does NOT prevent zero division. */
 static inline S3L_Unit S3L_interpolate(
@@ -788,6 +798,112 @@ void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
 
   S3L_crossProduct(t1,t2,n);
   S3L_normalizeVec3(n);
+}
+
+void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
+  int8_t transformNormals)
+{
+  S3L_Index vPos = 0;
+
+  S3L_Vec4 n;
+
+  n.w = 0;
+
+  #define MAX_NORMALS 6
+
+  S3L_Vec4 ns[MAX_NORMALS];
+  S3L_Index normalCount;
+
+  for (S3L_Index i = 0; i < model.vertexCount; ++i)
+  {
+    normalCount = 0;
+
+    for (S3L_Index j = 0; j < model.triangleCount * 3; j += 3)
+    {
+      if (
+        (model.triangles[j] == i) ||
+        (model.triangles[j + 1] == i) ||
+        (model.triangles[j + 2] == i))
+      {    
+        S3L_Vec4 t0, t1, t2;
+        S3L_Index vIndex;
+
+        #define getVertex(n)\
+          vIndex = model.triangles[j + n] * 3;\
+          t##n.x = model.vertices[vIndex];\
+          vIndex++;\
+          t##n.y = model.vertices[vIndex];\
+          vIndex++;\
+          t##n.z = model.vertices[vIndex];
+
+        getVertex(0)
+        getVertex(1)
+        getVertex(2)
+
+        #undef getVertex
+        
+        S3L_triangleNormal(t0,t1,t2,&(ns[normalCount]));    
+
+        normalCount++;
+
+        if (normalCount >= MAX_NORMALS)
+          break;
+      }
+    }
+      
+    n.x = S3L_FRACTIONS_PER_UNIT;
+    n.y = 0;
+    n.z = 0;
+
+    if (normalCount != 0)
+    {
+      // compute average
+
+      n.x = 0;
+
+      for (uint8_t i = 0; i < MAX_NORMALS; ++i)
+      {
+        n.x += ns[i].x;
+        n.y += ns[i].y;
+        n.z += ns[i].z;
+      }
+
+      n.x /= normalCount;
+      n.y /= normalCount;
+      n.z /= normalCount;
+
+      S3L_normalizeVec3(&n);
+    }
+
+    dst[vPos] = n.x;
+    vPos++;
+
+    dst[vPos] = n.y;
+    vPos++;
+
+    dst[vPos] = n.z;
+    vPos++;
+  }
+
+  #undef MAX_NORMALS
+    
+  S3L_Mat4 m;
+
+  S3L_makeWorldMatrix(model.transform,&m);
+
+  if (transformNormals)
+    for (S3L_Index i = 0; i < model.vertexCount * 3; i += 3)
+    {
+      n.x = dst[i];
+      n.y = dst[i + 1];
+      n.z = dst[i + 2];
+
+      S3L_vec4Xmat4(&n,&m);
+
+      dst[i] = n.x;
+      dst[i + 1] = n.y;
+      dst[i + 2] = n.z;
+    }
 }
 
 void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
