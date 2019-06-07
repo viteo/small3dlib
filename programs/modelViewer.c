@@ -90,7 +90,7 @@ S3L_Vec4 toLight;
 int8_t light = 1;
 int8_t fog = 0;
 int8_t mode = 0;
-S3L_Vec4 n0, n1, n2;
+S3L_Vec4 n0, n1, n2, nt;
 
 void drawPixel(S3L_PixelInfo *p)
 {
@@ -101,6 +101,41 @@ void drawPixel(S3L_PixelInfo *p)
     int16_t i0 = uvIndices[index];
     int16_t i1 = uvIndices[index + 1];
     int16_t i2 = uvIndices[index + 2];
+
+    if (mode == 3)
+    {
+      S3L_Vec4 v0, v1, v2;
+
+      S3L_Index v = model.triangles[index] * 3;
+
+      v0.x = model.vertices[v];
+      v++;
+      v0.y = model.vertices[v];
+      v++;
+      v0.z = model.vertices[v];
+
+      v = model.triangles[index + 1] * 3;
+
+      v1.x = model.vertices[v];
+      v++;
+      v1.y = model.vertices[v];
+      v++;
+      v1.z = model.vertices[v];
+
+      v = model.triangles[index + 2] * 3;
+
+      v2.x = model.vertices[v];
+      v++;
+      v2.y = model.vertices[v];
+      v++;
+      v2.z = model.vertices[v];
+
+      S3L_triangleNormal(v0,v1,v2,&nt);
+
+      nt.x = S3L_clamp(128 + nt.x / 4,0,255);
+      nt.y = S3L_clamp(128 + nt.y / 4,0,255);
+      nt.z = S3L_clamp(128 + nt.z / 4,0,255);
+    }
 
     index = i0 * 2;
 
@@ -176,7 +211,7 @@ void drawPixel(S3L_PixelInfo *p)
       break;
     }
 
-    case 2: // normal mode
+    case 2: // smooth normal mode
     {
       S3L_Vec4 n;
 
@@ -194,6 +229,24 @@ void drawPixel(S3L_PixelInfo *p)
       r = S3L_clamp(128 + n.x / 4,0,255);
       g = S3L_clamp(128 + n.y / 4,0,255);
       b = S3L_clamp(128 + n.z / 4,0,255);
+ 
+      break;
+    }
+
+    case 3: // non-smooth normal mode
+    {
+      r = nt.x;
+      g = nt.y;
+      b = nt.z;
+      break;
+    }
+
+    case 4: // barycentric mode
+    {
+      r = p->barycentric[0] >> 1;
+      g = p->barycentric[1] >> 1;
+      b = p->barycentric[2] >> 1;
+      break;
     }
   
     default:
@@ -376,6 +429,10 @@ int main()
       mode = 1;
     else if (state[SDL_SCANCODE_KP_2])
       mode = 2;
+    else if (state[SDL_SCANCODE_KP_3])
+      mode = 3;
+    else if (state[SDL_SCANCODE_KP_4])
+      mode = 4;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
