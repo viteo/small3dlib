@@ -88,6 +88,7 @@ S3L_Unit uv0[2], uv1[2], uv2[2];
 uint16_t l0, l1, l2;
 S3L_Vec4 toLight;
 int8_t light = 1;
+int8_t fog = 0;
 int8_t mode = 0;
 S3L_Vec4 n0, n1, n2;
 
@@ -209,6 +210,17 @@ void drawPixel(S3L_PixelInfo *p)
     b = S3L_clamp((((int16_t) b) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
   }
 
+  if (fog)
+  {
+    int16_t f = ((p->depth - S3L_NEAR) * 255) / (S3L_FRACTIONS_PER_UNIT * 64);
+
+    f *= 2;
+
+    r = S3L_clamp(((int16_t) r) + f,0,255);
+    g = S3L_clamp(((int16_t) g) + f,0,255);
+    b = S3L_clamp(((int16_t) b) + f,0,255);
+  }
+
   setPixel(p->x,p->y,r,g,b); 
 }
 
@@ -313,6 +325,8 @@ int main()
       {
         if (event.key.keysym.scancode == SDL_SCANCODE_L)
           light = !light;
+        else if (event.key.keysym.scancode == SDL_SCANCODE_F)
+          fog = !fog;
         else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
         {
           modelIndex = (modelIndex + 1) % modelsTotal;
