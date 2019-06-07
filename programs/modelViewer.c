@@ -96,14 +96,35 @@ void drawPixel(S3L_PixelInfo *p)
 {
   if (p->triangleIndex != previousTriangle)
   {
-    int16_t index = p->triangleIndex * 3;
+    int16_t index;
 
-    int16_t i0 = uvIndices[index];
-    int16_t i1 = uvIndices[index + 1];
-    int16_t i2 = uvIndices[index + 2];
-
-    if (mode == 3)
+    if (mode == 0)
     {
+      index = p->triangleIndex * 3;
+
+      int16_t i0 = uvIndices[index];
+      int16_t i1 = uvIndices[index + 1];
+      int16_t i2 = uvIndices[index + 2];
+
+      index = i0 * 2;
+
+      uv0[0] = uvs[index];
+      uv0[1] = uvs[index + 1];
+
+      index = i1 * 2;
+
+      uv1[0] = uvs[index];
+      uv1[1] = uvs[index + 1];
+
+      index = i2 * 2;
+
+      uv2[0] = uvs[index];
+      uv2[1] = uvs[index + 1];
+    }
+    else if (mode == 3)
+    {
+      index = p->triangleIndex * 3;
+
       S3L_Vec4 v0, v1, v2;
 
       S3L_Index v = model.triangles[index] * 3;
@@ -137,48 +158,36 @@ void drawPixel(S3L_PixelInfo *p)
       nt.z = S3L_clamp(128 + nt.z / 4,0,255);
     }
 
-    index = i0 * 2;
+    if (light || mode == 2)
+    {
+      index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
-    uv0[0] = uvs[index];
-    uv0[1] = uvs[index + 1];
+      n0.x = normals[index];
+      index++;
+      n0.y = normals[index];
+      index++;
+      n0.z = normals[index];
 
-    index = i1 * 2;
+      index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
 
-    uv1[0] = uvs[index];
-    uv1[1] = uvs[index + 1];
+      n1.x = normals[index];
+      index++;
+      n1.y = normals[index];
+      index++;
+      n1.z = normals[index];
+   
+      index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
 
-    index = i2 * 2;
+      n2.x = normals[index];
+      index++;
+      n2.y = normals[index];
+      index++;
+      n2.z = normals[index];
 
-    uv2[0] = uvs[index];
-    uv2[1] = uvs[index + 1];    
-
-    index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
-
-    n0.x = normals[index];
-    index++;
-    n0.y = normals[index];
-    index++;
-    n0.z = normals[index];
-
-    index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
-
-    n1.x = normals[index];
-    index++;
-    n1.y = normals[index];
-    index++;
-    n1.z = normals[index];
- 
-    index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
-
-    n2.x = normals[index];
-    index++;
-    n2.y = normals[index];
-    index++;
-    n2.z = normals[index];
-
-    l0 = 256 + S3L_clamp(S3L_dotProductVec3(n0,toLight),-511,511) / 2;
-    l1 = 256 + S3L_clamp(S3L_dotProductVec3(n1,toLight),-511,511) / 2;
-    l2 = 256 + S3L_clamp(S3L_dotProductVec3(n2,toLight),-511,511) / 2;
+      l0 = 256 + S3L_clamp(S3L_dotProductVec3(n0,toLight),-511,511) / 2;
+      l1 = 256 + S3L_clamp(S3L_dotProductVec3(n1,toLight),-511,511) / 2;
+      l2 = 256 + S3L_clamp(S3L_dotProductVec3(n2,toLight),-511,511) / 2;
+    }
 
     previousTriangle = p->triangleIndex;
   }
