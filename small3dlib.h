@@ -433,7 +433,11 @@ typedef struct
                               will always be exactly S3L_FRACTIONS_PER_UNIT. */
   S3L_Index triangleIndex;  ///< Triangle index.
   S3L_Index modelIndex;
-  S3L_Unit depth;        ///< Depth (only if depth is turned on).
+  S3L_Unit depth;         ///< Depth (only if depth is turned on).
+  S3L_Unit previousDepth; /**< Depth that was in the z-buffer on the pixels
+                               position before this pixel was rasterized. This
+                               can be used to set the value back, e.g. for
+                               transparency. */
   S3L_ScreenCoord triangleSize[2]; /**< Rasterized triangle width and height,
                               can be used e.g. for MIP mapping. */
 } S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
@@ -534,6 +538,9 @@ void S3L_newFrame();
 void S3L_zBufferClear();
 void S3L_stencilBufferClear();
 
+void S3L_zBufferWrite(S3L_ScreenCoord x, S3L_ScreenCoord y, S3L_Unit value);
+S3L_Unit S3L_zBufferRead(S3L_ScreenCoord x, S3L_ScreenCoord y);
+
 static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 
 /** Predefined vertices of a cube to simply insert in an array. These come with
@@ -561,36 +568,36 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 /** Predefined triangle indices of a cube, to be used with S3L_CUBE_VERTICES
     and S3L_CUBE_TEXCOORDS. */
 #define S3L_CUBE_TRIANGLES\
-  0, 3, 2, /* front  */\
-  0, 1, 3,\
-  4, 0, 2, /* right  */\
-  4, 2, 6,\
-  5, 4, 6, /* back   */\
-  6, 7, 5,\
-  7, 3, 1, /* left   */\
-  7, 1, 5,\
-  3, 6, 2, /* top    */\
-  3, 7, 6,\
-  4, 1, 0, /* bottom */\
-  4, 5, 1
+  3, 0, 2, /* front  */\
+  1, 0, 3,\
+  0, 4, 2, /* right  */\
+  2, 4, 6,\
+  4, 5, 6, /* back   */\
+  7, 6, 5,\
+  3, 7, 1, /* left   */\
+  1, 7, 5,\
+  6, 3, 2, /* top    */\
+  7, 3, 6,\
+  1, 4, 0, /* bottom */\
+  5, 4, 1
 
 #define S3L_CUBE_TRIANGLE_COUNT 12
 
 /** Predefined texture coordinates of a cube, corresponding to triangles (NOT
     vertices), to be used with S3L_CUBE_VERTICES and S3L_CUBE_TRIANGLES. */
 #define S3L_CUBE_TEXCOORDS(m)\
-  m,m,  0,0,  m,0,\
-  m,m,  0,m,  0,0,\
-  m,0,  m,m,  0,m,\
-  m,0,  0,m,  0,0,\
-  0,0,  m,0,  m,m,\
-  m,m,  0,m,  0,0,\
-  0,m,  0,0,  m,0,\
-  0,m,  m,0,  m,m,\
-  m,m,  0,0,  m,0,\
-  m,m,  0,m,  0,0,\
-  0,m,  m,0,  m,m,\
-  0,m,  0,0,  m,0
+  0,0,  m,m,  m,0,\
+  0,m,  m,m,  0,0,\
+  m,m,  m,0,  0,m,\
+  0,m,  m,0,  0,0,\
+  m,0,  0,0,  m,m,\
+  0,m,  m,m,  0,0,\
+  0,0,  0,m,  m,0,\
+  m,0,  0,m,  m,m,\
+  0,0,  m,m,  m,0,\
+  0,m,  m,m,  0,0,\
+  m,0,  0,m,  m,m,\
+  0,0,  0,m,  m,0
 
 //=============================================================================
 // privates
@@ -632,6 +639,26 @@ static inline int8_t S3L_zTest(
   return 0;
 }
 #endif
+
+S3L_Unit S3L_zBufferRead(S3L_ScreenCoord x, S3L_ScreenCoord y)
+{
+#if S3L_Z_BUFFER
+  return S3L_zBuffer[y * S3L_RESOLUTION_X + x];
+#else
+  return 0;
+#endif
+}
+
+void S3L_zBufferWrite(S3L_ScreenCoord x, S3L_ScreenCoord y, S3L_Unit value)
+{
+#if S3L_Z_BUFFER
+  uint32_t index = y * S3L_RESOLUTION_X + x;
+
+  value = S3L_zBufferFormat(value);
+
+  S3L_zBuffer[y * S3L_RESOLUTION_X + x] = value;
+#endif
+}
 
 #if S3L_STENCIL_BUFFER
   #define S3L_STENCIL_BUFFER_SIZE\
@@ -1345,6 +1372,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
   p->barycentric[2] = 0;
   p->triangleIndex = 0;
   p->depth = 0;
+  p->previousDepth = 0;
 }
 
 void S3L_initDrawConfig(S3L_DrawConfig *config)
@@ -1871,6 +1899,8 @@ void S3L_drawTriangle(
 #if S3L_Z_BUFFER
         if (!S3L_zTest(p.x,p.y,p.depth))
           testsPassed = 0;
+        
+        p.previousDepth = S3L_zBuffer[p.y * S3L_RESOLUTION_X + p.x];
 #endif
 
         if (testsPassed)
