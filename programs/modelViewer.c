@@ -13,7 +13,7 @@
 
 #define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 1
-#define S3L_PERSPECTIVE_CORRECTION 1
+#define S3L_PERSPECTIVE_CORRECTION 0
 #define S3L_SORT 0
 #define S3L_STENCIL_BUFFER 0
 #define S3L_Z_BUFFER 1
@@ -89,9 +89,10 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
 
 void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
 {
-  int32_t index = (v * TEXTURE_W + u) * 3;
+  u = S3L_clamp(u,0,TEXTURE_W - 1);
+  v = S3L_clamp(v,0,TEXTURE_H - 1);
 
-  index = S3L_clamp(index,0,TEXTURE_W * TEXTURE_H * 3);
+  int32_t index = (v * TEXTURE_W + u) * 3;
 
   *r = texture[index];
   index++;
@@ -361,6 +362,8 @@ void draw()
 
 void setModel(uint8_t index)
 {
+  printf("Setting model nmber %d.\n",index);
+
   #define modelCase(n,m)\
     case n:\
     {\
@@ -399,6 +402,9 @@ void setModel(uint8_t index)
     scene.models[0].config.backfaceCulling = 2;
     transparency = 0;
   }
+
+  printf("vertices: %d\n",scene.models[0].vertexCount);
+  printf("triangles: %d\n",scene.models[0].triangleCount);
 }
 
 int16_t fps = 0;
