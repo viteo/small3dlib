@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 1
@@ -125,6 +126,7 @@ uint16_t l0, l1, l2;
 S3L_Vec4 toLight;
 int8_t light = 1;
 int8_t fog = 0;
+int8_t noise = 0;
 int8_t mode = 0;
 S3L_Vec4 n0, n1, n2, nt;
 
@@ -319,7 +321,10 @@ void drawPixel(S3L_PixelInfo *p)
     b = S3L_clamp(((int16_t) b) + f,0,255);
   }
 
-  setPixel(p->x,p->y,r,g,b); 
+  if (noise)
+    setPixel(p->x + rand() % 8,p->y + rand() % 8,r,g,b); 
+  else
+    setPixel(p->x,p->y,r,g,b); 
 }
 
 void draw()
@@ -430,6 +435,8 @@ int main()
           light = !light;
         else if (event.key.keysym.scancode == SDL_SCANCODE_F)
           fog = !fog;
+        else if (event.key.keysym.scancode == SDL_SCANCODE_N)
+          noise = !noise;
         else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
         {
           modelIndex = (modelIndex + 1) % modelsTotal;
