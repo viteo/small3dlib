@@ -305,6 +305,13 @@ void drawPixel(S3L_PixelInfo *p)
       b = p->barycentric[2] >> 1;
       break;
     }
+
+    case 5: // triangle index mode
+    {
+      r = S3L_min(p->triangleIndex,255);
+      g = r;
+      b = r;
+    }
   
     default:
       break;
@@ -518,6 +525,8 @@ int main()
       mode = 3;
     else if (state[SDL_SCANCODE_KP_4])
       mode = 4;
+    else if (state[SDL_SCANCODE_KP_5])
+      mode = 5;
 
     if (modelIndex == 2)
       animate(((double) clock()) / CLOCKS_PER_SEC); 
