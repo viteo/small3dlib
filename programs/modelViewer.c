@@ -30,11 +30,23 @@
 #include "chestTexture.h"
 #include "chestModel.h"
 
+#include "cat1Model.h"
+#include "cat2Model.h"
+#include "catTexture.h"
+
 #define TEXTURE_W 128
 #define TEXTURE_H 128
 
 S3L_Unit houseNormals[HOUSE_VERTEX_COUNT * 3];
 S3L_Unit chestNormals[CHEST_VERTEX_COUNT * 3];
+S3L_Unit catNormals[CHEST_VERTEX_COUNT * 3];
+
+S3L_Unit catVertices[CAT1_VERTEX_COUNT * 3];
+const S3L_Index *catTriangleIndices = cat1TriangleIndices;
+const S3L_Index *catUVs = cat1UVs;
+const S3L_Index *catUVIndices = cat1UVIndices;
+
+S3L_Model3D catModel; 
 
 S3L_Model3D model;
 uint8_t *texture;
@@ -81,6 +93,30 @@ void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
   *g = texture[index];
   index++;
   *b = texture[index];
+}
+
+void animate(double time)
+{
+  time = (1.0 + sin(time * 8)) / 2; 
+
+  S3L_Unit t = time * S3L_FRACTIONS_PER_UNIT;
+
+  for (S3L_Index i = 0; i < CAT1_VERTEX_COUNT * 3; i += 3)
+  {
+    S3L_Unit v0[3], v1[3];
+
+    v0[0] = cat1Vertices[i];
+    v0[1] = cat1Vertices[i + 1];
+    v0[2] = cat1Vertices[i + 2];
+
+    v1[0] = cat2Vertices[i];
+    v1[1] = cat2Vertices[i + 1];
+    v1[2] = cat2Vertices[i + 2];
+
+    catVertices[i] =  S3L_interpolateByUnit(v0[0],v1[0],t);
+    catVertices[i + 1] = S3L_interpolateByUnit(v0[1],v1[1],t);
+    catVertices[i + 2] = S3L_interpolateByUnit(v0[2],v1[2],t);
+  }
 }
 
 int16_t previousTriangle = -1;
@@ -313,6 +349,7 @@ void setModel(uint8_t index)
   {
     modelCase(0,house)
     modelCase(1,chest)
+    modelCase(2,cat)
 
     default:
       break;
@@ -344,11 +381,15 @@ int main()
 
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
 
+  catModel = cat1Model;
+  catModel.vertices = catVertices;
+  animate(0);
+
   scene.modelCount = 1;
   scene.models = &model;
 
   int8_t modelIndex = 0;
-  int8_t modelsTotal = 2;
+  int8_t modelsTotal = 3;
   setModel(0);
 
   int running = 1;
@@ -442,6 +483,9 @@ int main()
       mode = 3;
     else if (state[SDL_SCANCODE_KP_4])
       mode = 4;
+
+    if (modelIndex == 2)
+      animate(((double) clock()) / CLOCKS_PER_SEC); 
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
