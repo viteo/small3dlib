@@ -31,6 +31,9 @@
 #include "chestTexture.h"
 #include "chestModel.h"
 
+#include "plantTexture.h"
+#include "plantModel.h"
+
 #include "cat1Model.h"
 #include "cat2Model.h"
 #include "catTexture.h"
@@ -40,7 +43,8 @@
 
 S3L_Unit houseNormals[HOUSE_VERTEX_COUNT * 3];
 S3L_Unit chestNormals[CHEST_VERTEX_COUNT * 3];
-S3L_Unit catNormals[CHEST_VERTEX_COUNT * 3];
+S3L_Unit catNormals[CAT1_VERTEX_COUNT * 3];
+S3L_Unit plantNormals[PLANT_VERTEX_COUNT * 3];
 
 S3L_Unit catVertices[CAT1_VERTEX_COUNT * 3];
 const S3L_Index *catTriangleIndices = cat1TriangleIndices;
@@ -127,6 +131,7 @@ S3L_Vec4 toLight;
 int8_t light = 1;
 int8_t fog = 0;
 int8_t noise = 0;
+int8_t transparency = 0;
 int8_t mode = 0;
 S3L_Vec4 n0, n1, n2, nt;
 
@@ -232,6 +237,8 @@ void drawPixel(S3L_PixelInfo *p)
 
   uint8_t r,g,b;
 
+  int8_t transparent = 0;
+
   switch (mode)
   {
     case 0: // textured mode
@@ -245,6 +252,9 @@ void drawPixel(S3L_PixelInfo *p)
         p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
       sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
+
+      if (transparency && r == 255 && g == 0 && b == 0)
+        transparent = 1;
 
       break;
     }
@@ -321,6 +331,12 @@ void drawPixel(S3L_PixelInfo *p)
     b = S3L_clamp(((int16_t) b) + f,0,255);
   }
 
+  if (transparency && transparent)
+  {
+    S3L_zBufferWrite(p->x,p->y,p->previousZ);
+    return;
+  }
+
   if (noise)
     setPixel(p->x + rand() % 8,p->y + rand() % 8,r,g,b); 
   else
@@ -355,6 +371,7 @@ void setModel(uint8_t index)
     modelCase(0,house)
     modelCase(1,chest)
     modelCase(2,cat)
+    modelCase(3,plant)
 
     default:
       break;
@@ -364,6 +381,17 @@ void setModel(uint8_t index)
 
   S3L_initTransoform3D(&(scene.models[0].transform));
   S3L_initDrawConfig(&(scene.models[0].config));
+
+  if (index == 3)
+  {
+    scene.models[0].config.backfaceCulling = 0;
+    transparency = 1;
+  }
+  else
+  {
+    scene.models[0].config.backfaceCulling = 2;
+    transparency = 0;
+  }
 }
 
 int16_t fps = 0;
@@ -394,7 +422,7 @@ int main()
   scene.models = &model;
 
   int8_t modelIndex = 0;
-  int8_t modelsTotal = 3;
+  int8_t modelsTotal = 4;
   setModel(0);
 
   int running = 1;

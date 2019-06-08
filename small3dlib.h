@@ -434,10 +434,11 @@ typedef struct
   S3L_Index triangleIndex;  ///< Triangle index.
   S3L_Index modelIndex;
   S3L_Unit depth;         ///< Depth (only if depth is turned on).
-  S3L_Unit previousDepth; /**< Depth that was in the z-buffer on the pixels
-                               position before this pixel was rasterized. This
-                               can be used to set the value back, e.g. for
-                               transparency. */
+  S3L_Unit previousZ;     /**< Z-buffer value (not necessarily world depth in
+                               S3L_Units!) that was in the z-buffer on the
+                               pixels position before this pixel was
+                               rasterized. This can be used to set the value
+                               back, e.g. for transparency. */
   S3L_ScreenCoord triangleSize[2]; /**< Rasterized triangle width and height,
                               can be used e.g. for MIP mapping. */
 } S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
@@ -652,10 +653,6 @@ S3L_Unit S3L_zBufferRead(S3L_ScreenCoord x, S3L_ScreenCoord y)
 void S3L_zBufferWrite(S3L_ScreenCoord x, S3L_ScreenCoord y, S3L_Unit value)
 {
 #if S3L_Z_BUFFER
-  uint32_t index = y * S3L_RESOLUTION_X + x;
-
-  value = S3L_zBufferFormat(value);
-
   S3L_zBuffer[y * S3L_RESOLUTION_X + x] = value;
 #endif
 }
@@ -663,7 +660,8 @@ void S3L_zBufferWrite(S3L_ScreenCoord x, S3L_ScreenCoord y, S3L_Unit value)
 #if S3L_STENCIL_BUFFER
   #define S3L_STENCIL_BUFFER_SIZE\
     ((S3L_RESOLUTION_X * S3L_RESOLUTION_Y - 1) / 8 + 1)
-  uint8_t S3L_stencilBuffer[S3L_STENCIL_BUFFER_SIZE];
+
+uint8_t S3L_stencilBuffer[S3L_STENCIL_BUFFER_SIZE];
 
 static inline int8_t S3L_stencilTest(
   S3L_ScreenCoord x,
@@ -1372,7 +1370,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
   p->barycentric[2] = 0;
   p->triangleIndex = 0;
   p->depth = 0;
-  p->previousDepth = 0;
+  p->previousZ = 0;
 }
 
 void S3L_initDrawConfig(S3L_DrawConfig *config)
@@ -1897,10 +1895,10 @@ void S3L_drawTriangle(
 #endif
 
 #if S3L_Z_BUFFER
+        p.previousZ = S3L_zBuffer[p.y * S3L_RESOLUTION_X + p.x];
+
         if (!S3L_zTest(p.x,p.y,p.depth))
-          testsPassed = 0;
-        
-        p.previousDepth = S3L_zBuffer[p.y * S3L_RESOLUTION_X + p.x];
+          testsPassed = 0;        
 #endif
 
         if (testsPassed)
