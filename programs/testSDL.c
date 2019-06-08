@@ -85,7 +85,7 @@ uint32_t frame = 0;
 
 void clearScreen()
 {
-  memset(pixels,0,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
+  memset(pixels,255,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
 }
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
@@ -133,6 +133,12 @@ void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
 
 void drawPixel(S3L_PixelInfo *p)
 {
+
+//setPixel(p->x,p->y,p->triangleIndex,p->triangleIndex,p->triangleIndex);
+setPixel(p->x,p->y,0,0,0);
+
+return;
+
   if (p->x < 0 || p ->x >= S3L_RESOLUTION_X || p->y < 0 || p->y >= S3L_RESOLUTION_Y)
   {
     offScreenPixels++;
@@ -338,7 +344,7 @@ scene.camera.transform.rotation.x = -35;
 scene.camera.transform.rotation.y = 128;
 scene.camera.transform.rotation.z = 0;
 
-S3L_setTransform3D(3196,1814,5958,-18,300,0,512,512,512,&(scene.camera.transform));
+S3L_setTransform3D(-2039,173,6096,-2,-296,0,512,512,512,&(scene.camera.transform));
 
   scene.modelCount = 2;
   scene.models = models;

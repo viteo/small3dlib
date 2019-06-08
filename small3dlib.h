@@ -2124,7 +2124,7 @@ static inline int8_t S3L_triangleIsVisible(
       (p1.y - p0.y) * (p2.x - p1.x) - (p1.x - p0.x) * (p2.y - p1.y); 
 
     if ((backfaceCulling == 1 && winding < 0) ||
-        (backfaceCulling == 2 && winding >= 0))
+        (backfaceCulling == 2 && winding > 0))
       return 0;
   }
 
