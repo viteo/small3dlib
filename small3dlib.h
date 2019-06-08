@@ -390,7 +390,7 @@ typedef struct
   S3L_Transform3D transform;
 } S3L_Camera;
 
-static inline void S3L_initCamera(S3L_Camera *c);
+void S3L_initCamera(S3L_Camera *camera);
 
 typedef struct
 {
@@ -414,12 +414,24 @@ typedef struct
   S3L_DrawConfig config;
 } S3L_Model3D;                ///< Represents a 3D model.
 
+void S3L_initModel3D(
+  S3L_Unit *vertices,
+  S3L_Unit vertexCount,
+  S3L_Index *triangles,
+  S3L_Index triangleCount,
+  S3L_Model3D *model);
+
 typedef struct
 {
   S3L_Model3D *models;
   S3L_Index modelCount;
   S3L_Camera camera;
 } S3L_Scene;                  ///< Represent the 3D scene to be rendered.
+
+void S3L_initScene(
+  S3L_Model3D *models,
+  S3L_Index modelCount,
+  S3L_Scene *scene);
 
 typedef struct
 {
@@ -1319,10 +1331,10 @@ void S3L_setTransform3D(
   t->scale.z = sz;
 }
 
-void S3L_initCamera(S3L_Camera *c)
+void S3L_initCamera(S3L_Camera *camera)
 {
-  c->focalLength = S3L_FRACTIONS_PER_UNIT;
-  S3L_initTransoform3D(&(c->transform));
+  camera->focalLength = S3L_FRACTIONS_PER_UNIT;
+  S3L_initTransoform3D(&(camera->transform));
 }
 
 void S3L_rotationToDirections(
@@ -1371,6 +1383,32 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
   p->triangleIndex = 0;
   p->depth = 0;
   p->previousZ = 0;
+}
+
+void S3L_initModel3D(
+  S3L_Unit *vertices,
+  S3L_Unit vertexCount,
+  S3L_Index *triangles,
+  S3L_Index triangleCount,
+  S3L_Model3D *model)
+{
+  model->vertices = vertices;
+  model->vertexCount = vertexCount;
+  model->triangles = triangles;
+  model->triangleCount = triangleCount;
+  
+  S3L_initTransoform3D(&(model->transform));
+  S3L_initDrawConfig(&(model->config));
+}
+
+void S3L_initScene(
+  S3L_Model3D *models,
+  S3L_Index modelCount,
+  S3L_Scene *scene)
+{
+  scene->models = models;
+  scene->modelCount = modelCount;
+  S3L_initCamera(&(scene->camera));
 }
 
 void S3L_initDrawConfig(S3L_DrawConfig *config)

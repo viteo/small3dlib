@@ -417,16 +417,13 @@ int main()
 
   S3L_normalizeVec3(&toLight);
 
-  S3L_initCamera(&scene.camera);
+  S3L_initScene(&model,1,&scene);
 
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
 
   catModel = cat1Model;
   catModel.vertices = catVertices;
   animate(0);
-
-  scene.modelCount = 1;
-  scene.models = &model;
 
   int8_t modelIndex = 0;
   int8_t modelsTotal = 4;
