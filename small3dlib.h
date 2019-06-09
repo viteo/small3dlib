@@ -177,9 +177,14 @@ typedef uint16_t S3L_Index;
   is an expensive operation! Possible values:
  
   - 0: No perspective correction. Fastest, ugly.
-  - 1: Per-pixel perspective correction, nice but very expensive.*/
+  - 1: Per-pixel perspective correction, nice but very expensive.
+  - 2: Approximation (computing only at every S3L_PC_APPROX_LENGTHth pixel). */
 
   #define S3L_PERSPECTIVE_CORRECTION 0 
+#endif
+
+#ifndef S3L_PC_APPROX_LENGTH
+  #define S3L_PC_APPROX_LENGTH 32
 #endif
 
 #if S3L_PERSPECTIVE_CORRECTION
@@ -695,7 +700,7 @@ static inline int8_t S3L_stencilTest(
 #endif
 
 #define S3L_COMPUTE_LERP_DEPTH\
-  (S3L_COMPUTE_DEPTH && (S3L_PERSPECTIVE_CORRECTION != 1))
+  (S3L_COMPUTE_DEPTH && (S3L_PERSPECTIVE_CORRECTION == 0))
 
 #define S3L_SIN_TABLE_LENGTH 128
 
@@ -1758,7 +1763,7 @@ void S3L_drawTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION != 0
   /* PC is done by linearly interpolating reciprocals from which the corrected
      velues can be computed. See
      http://www.lysator.liu.se/~mikaelk/doc/perspectivetexture/ */
@@ -1842,7 +1847,7 @@ void S3L_drawTriangle(
 #if !S3L_FLAT
       S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
-  #if S3L_PERSPECTIVE_CORRECTION == 1
+  #if S3L_PERSPECTIVE_CORRECTION != 0
       S3L_Unit lOverZ, lRecipZ, rOverZ, rRecipZ, lT, rT;
 
       lT = S3L_getFastLerpValue(lSideFLS);
@@ -1869,6 +1874,7 @@ void S3L_drawTriangle(
 
       b0FLS.stepScaled = rSideFLS.valueScaled / rowLength;
       b1FLS.stepScaled = -1 * lSideFLS.valueScaled / rowLength;
+
   #endif
 #endif
 
@@ -1881,7 +1887,7 @@ void S3L_drawTriangle(
       {
         lXClipped = 0;
 
-#if S3L_PERSPECTIVE_CORRECTION != 1 && !S3L_FLAT
+#if S3L_PERSPECTIVE_CORRECTION == 0 && !S3L_FLAT
         b0FLS.valueScaled -= lX * b0FLS.stepScaled;
         b1FLS.valueScaled -= lX * b1FLS.stepScaled;
 
@@ -1891,7 +1897,7 @@ void S3L_drawTriangle(
 #endif
       }
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
+#if S3L_PERSPECTIVE_CORRECTION != 0
       S3L_ScreenCoord i = lXClipped - lX;  /* helper var to save one
                                                   substraction in the inner
                                                   loop */
@@ -1912,6 +1918,29 @@ void S3L_drawTriangle(
 
       // draw the row -- inner loop:
 
+#if S3L_PERSPECTIVE_CORRECTION == 2
+      S3L_FastLerpState depthPC, b0PC, b1PC;
+
+      depthPC.valueScaled = 
+        ((S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) / 
+        S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,i,rowLength)))
+        << S3L_FAST_LERP_QUALITY;
+
+       b0PC.valueScaled = 
+           ( 
+             S3L_interpolateFrom0(rOverZ,i,rowLength)
+             * depthPC.valueScaled
+           ) / S3L_FRACTIONS_PER_UNIT;
+
+       b1PC.valueScaled =
+           ( 
+             (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
+             * depthPC.valueScaled
+           ) / S3L_FRACTIONS_PER_UNIT;
+
+      int8_t rowCount = S3L_PC_APPROX_LENGTH;
+#endif
+
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
         int8_t testsPassed = 1;
@@ -1926,6 +1955,42 @@ void S3L_drawTriangle(
   #if S3L_PERSPECTIVE_CORRECTION == 1
         p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
           S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,i,rowLength));
+  #elif S3L_PERSPECTIVE_CORRECTION == 2
+        if (rowCount >= S3L_PC_APPROX_LENGTH)
+        {
+          rowCount = 0;
+
+          S3L_Unit nextI = i + S3L_PC_APPROX_LENGTH;
+
+          S3L_Unit nextDepth =
+            (
+            (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+            S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,nextI,rowLength))
+            ) << S3L_FAST_LERP_QUALITY;
+
+          depthPC.stepScaled =
+            (nextDepth - depthPC.valueScaled) / S3L_PC_APPROX_LENGTH;
+
+          S3L_Unit nextValue = 
+           ( 
+             S3L_interpolateFrom0(rOverZ,nextI,rowLength)
+             * nextDepth
+           ) / S3L_FRACTIONS_PER_UNIT;
+
+          b0PC.stepScaled =
+            (nextValue - b0PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+
+          nextValue = 
+           ( 
+             (lOverZ - S3L_interpolateFrom0(lOverZ,nextI,rowLength))
+             * nextDepth
+           ) / S3L_FRACTIONS_PER_UNIT;
+
+          b1PC.stepScaled =
+            (nextValue - b1PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+        }
+
+        p.depth = S3L_getFastLerpValue(depthPC);
   #else
         p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
@@ -1942,7 +2007,10 @@ void S3L_drawTriangle(
         if (testsPassed)
         {
 #if !S3L_FLAT
-  #if S3L_PERSPECTIVE_CORRECTION == 1
+  #if S3L_PERSPECTIVE_CORRECTION == 0
+          *barycentric0 = S3L_getFastLerpValue(b0FLS);
+          *barycentric1 = S3L_getFastLerpValue(b1FLS);
+  #elif S3L_PERSPECTIVE_CORRECTION == 1
           *barycentric0 =
            ( 
              S3L_interpolateFrom0(rOverZ,i,rowLength)
@@ -1954,21 +2022,27 @@ void S3L_drawTriangle(
              (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
              * p.depth
            ) / S3L_FRACTIONS_PER_UNIT;
-  #else
-          *barycentric0 = S3L_getFastLerpValue(b0FLS);
-          *barycentric1 = S3L_getFastLerpValue(b1FLS);
+  #elif S3L_PERSPECTIVE_CORRECTION == 2
+          *barycentric0 = S3L_getFastLerpValue(b0PC);
+          *barycentric1 = S3L_getFastLerpValue(b1PC);
   #endif
 
           *barycentric2 =
             S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 #endif
-
           S3L_PIXEL_FUNCTION(&p);
         }
 
 #if !S3L_FLAT
-  #if S3L_PERSPECTIVE_CORRECTION == 1
-           i++;
+  #if S3L_PERSPECTIVE_CORRECTION != 0
+          i++;
+    #if S3L_PERSPECTIVE_CORRECTION == 2
+          rowCount++;
+     
+          S3L_stepFastLerp(depthPC);
+          S3L_stepFastLerp(b0PC);
+          S3L_stepFastLerp(b1PC);
+    #endif
   #else
           S3L_stepFastLerp(b0FLS);
           S3L_stepFastLerp(b1FLS);
