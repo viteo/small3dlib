@@ -53,6 +53,9 @@ features:
 
 bugs:
 
+- Determining CW/CCW for a triangle is not 100% exact, sometimes leaves holes in
+  models (some very thin triangles)!
+
 repeated:
 
 - valgrind (and similar) checks
