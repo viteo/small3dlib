@@ -143,7 +143,9 @@ typedef int32_t S3L_Unit;
 /** How many fractions a spatial unit is split into. This is NOT SUPPOSED TO
 BE REDEFINED, so rather don't do it (otherwise things may overflow etc.). */
 
-#define S3L_FRACTIONS_PER_UNIT 512 
+#define S3L_FRACTIONS_PER_UNIT 512
+
+#define S3L_UNIT_MINUS_ONE (S3L_FRACTIONS_PER_UNIT - 1) 
 
 typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
@@ -446,8 +448,10 @@ typedef struct
   S3L_Unit barycentric[3]; /**< Barycentric coords corresponds to the three
                               vertices. These serve to locate the pixel on a
                               triangle and interpolate values between it's
-                              three points. The sum of the three coordinates
-                              will always be exactly S3L_FRACTIONS_PER_UNIT. */
+                              three points. Each one goes from 0 to
+                              S3L_UNIT_MINUS_ONE (inclidung) and the sum of the
+                              three coordinates will always be exactly
+                              S3L_UNIT_MINUS_ONE. */
   S3L_Index triangleIndex;  ///< Triangle index.
   S3L_Index modelIndex;
   S3L_Unit depth;         ///< Depth (only if depth is turned on).
@@ -1651,9 +1655,9 @@ void S3L_drawTriangle(
 
 #if S3L_FLAT
   p.depth = (tPointPP->z + lPointPP->z + rPointPP->z) / 3;
-  *barycentric0 = S3L_FRACTIONS_PER_UNIT / 3;
-  *barycentric1 = S3L_FRACTIONS_PER_UNIT / 3;
-  *barycentric2 = S3L_FRACTIONS_PER_UNIT - 2 * (S3L_FRACTIONS_PER_UNIT / 3);
+  *barycentric0 = S3L_UNIT_MINUS_ONE / 3;
+  *barycentric1 = S3L_UNIT_MINUS_ONE / 3;
+  *barycentric2 = S3L_UNIT_MINUS_ONE - 2 * (S3L_UNIT_MINUS_ONE / 3);
 #endif
 
   p.triangleSize[0] = rPointSx - lPointSx;
@@ -1720,7 +1724,7 @@ void S3L_drawTriangle(
   #define initDepthFLS(s,p1,p2)\
     s##DepthFLS.valueScaled = p1##PointPP->z << S3L_FAST_LERP_QUALITY;\
     s##DepthFLS.stepScaled = ((p2##PointPP->z << S3L_FAST_LERP_QUALITY) -\
-      s##DepthFLS.valueScaled) / (s##Dy != 0 ? s##Dy : 1); 
+      s##DepthFLS.valueScaled) / (s##Dy != 0 ? s##Dy : 1);
 #else
   #define initDepthFLS(s,p1,p2) ;
 #endif
@@ -1735,12 +1739,12 @@ void S3L_drawTriangle(
     s##Dx = p2##PointSx - p1##PointSx;\
     s##Dy = p2##PointSy - p1##PointSy;\
     initDepthFLS(s,p1,p2)\
-    s##SideFLS.stepScaled = (S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY)\
+    s##SideFLS.stepScaled = (S3L_UNIT_MINUS_ONE << S3L_FAST_LERP_QUALITY)\
                       / (s##Dy != 0 ? s##Dy : 1);\
     s##SideFLS.valueScaled = 0;\
     if (!down)\
     {\
-      s##SideFLS.valueScaled = S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY;\
+      s##SideFLS.valueScaled = S3L_UNIT_MINUS_ONE << S3L_FAST_LERP_QUALITY;\
       s##SideFLS.stepScaled *= -1;\
     }\
     s##Inc = s##Dx >= 0 ? 1 : -1;\
@@ -1815,7 +1819,7 @@ void S3L_drawTriangle(
         S3L_Unit *tmp = barycentric##b0;\
         barycentric##b0 = barycentric##b1;\
         barycentric##b1 = tmp;\
-        s0##SideFLS.valueScaled = (S3L_FRACTIONS_PER_UNIT\
+        s0##SideFLS.valueScaled = (S3L_UNIT_MINUS_ONE\
            << S3L_FAST_LERP_QUALITY) - s0##SideFLS.valueScaled;\
         s0##SideFLS.stepScaled *= -1;\
         manageSplitPerspective(s0,s1)
@@ -1922,7 +1926,7 @@ void S3L_drawTriangle(
       S3L_FastLerpState depthPC, b0PC, b1PC;
 
       depthPC.valueScaled = 
-        ((S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) / 
+        ((S3L_UNIT_MINUS_ONE * S3L_FRACTIONS_PER_UNIT) / 
         S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,i,rowLength)))
         << S3L_FAST_LERP_QUALITY;
 
@@ -1953,7 +1957,7 @@ void S3L_drawTriangle(
 
 #if S3L_COMPUTE_DEPTH
   #if S3L_PERSPECTIVE_CORRECTION == 1
-        p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+        p.depth = (S3L_UNIT_MINUS_ONE * S3L_FRACTIONS_PER_UNIT) /
           S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,i,rowLength));
   #elif S3L_PERSPECTIVE_CORRECTION == 2
         if (rowCount >= S3L_PC_APPROX_LENGTH)
@@ -1964,7 +1968,7 @@ void S3L_drawTriangle(
 
           S3L_Unit nextDepth =
             (
-            (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+            (S3L_UNIT_MINUS_ONE * S3L_FRACTIONS_PER_UNIT) /
             S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,nextI,rowLength))
             ) << S3L_FAST_LERP_QUALITY;
 
@@ -2028,7 +2032,7 @@ void S3L_drawTriangle(
   #endif
 
           *barycentric2 =
-            S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
+            S3L_UNIT_MINUS_ONE - *barycentric0 - *barycentric1;
 #endif
           S3L_PIXEL_FUNCTION(&p);
         }

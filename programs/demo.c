@@ -11,7 +11,7 @@
 
 #define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 0
-#define S3L_PERSPECTIVE_CORRECTION 2
+#define S3L_PERSPECTIVE_CORRECTION 1
 #define S3L_SORT 2
 #define S3L_STENCIL_BUFFER 1
 #define S3L_Z_BUFFER 0
@@ -78,6 +78,18 @@ S3L_Unit uv0[2], uv1[2], uv2[2];
 
 void drawPixel(S3L_PixelInfo *p)
 {
+
+/*
+if (p->barycentric[0] < 0 || p->barycentric[0] > 512)
+  printf("%d %d %d\n",p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+
+if (p->barycentric[1] < 0 || p->barycentric[1] > 512)
+  printf("%d %d %d\n",p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+
+if (p->barycentric[2] < 0 || p->barycentric[2] > 512)
+  printf("%d %d %d\n",p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+*/
+
   if (p->triangleIndex != previousTriangle)
   {
     int16_t index;
