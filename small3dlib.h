@@ -1763,7 +1763,7 @@ void S3L_drawTriangle(
   initSide(r,t,r,1)
   initSide(l,t,l,1)
 
-#if S3L_PERSPECTIVE_CORRECTION != 0
+#if S3L_PERSPECTIVE_CORRECTION
   /* PC is done by linearly interpolating reciprocals from which the corrected
      velues can be computed. See
      http://www.lysator.liu.se/~mikaelk/doc/perspectivetexture/ */
@@ -1847,7 +1847,7 @@ void S3L_drawTriangle(
 #if !S3L_FLAT
       S3L_Unit rowLength = S3L_nonZero(rX - lX - 1); // prevent zero div
 
-  #if S3L_PERSPECTIVE_CORRECTION != 0
+  #if S3L_PERSPECTIVE_CORRECTION
       S3L_Unit lOverZ, lRecipZ, rOverZ, rRecipZ, lT, rT;
 
       lT = S3L_getFastLerpValue(lSideFLS);
@@ -1887,7 +1887,7 @@ void S3L_drawTriangle(
       {
         lXClipped = 0;
 
-#if S3L_PERSPECTIVE_CORRECTION == 0 && !S3L_FLAT
+#if !S3L_PERSPECTIVE_CORRECTION && !S3L_FLAT
         b0FLS.valueScaled -= lX * b0FLS.stepScaled;
         b1FLS.valueScaled -= lX * b1FLS.stepScaled;
 
@@ -1897,7 +1897,7 @@ void S3L_drawTriangle(
 #endif
       }
 
-#if S3L_PERSPECTIVE_CORRECTION != 0
+#if S3L_PERSPECTIVE_CORRECTION
       S3L_ScreenCoord i = lXClipped - lX;  /* helper var to save one
                                                   substraction in the inner
                                                   loop */
@@ -2034,7 +2034,7 @@ void S3L_drawTriangle(
         }
 
 #if !S3L_FLAT
-  #if S3L_PERSPECTIVE_CORRECTION != 0
+  #if S3L_PERSPECTIVE_CORRECTION
           i++;
     #if S3L_PERSPECTIVE_CORRECTION == 2
           rowCount++;

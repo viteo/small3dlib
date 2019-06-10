@@ -12,6 +12,8 @@ features:
 
 - function to set/clear stencil buffer -- can be useful
 
+- Optimize persp. correction!
+
 - Create and use the same function for determining CW/CCW AND left/right vertex
   determination in triangle drawing.
 
