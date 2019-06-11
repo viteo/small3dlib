@@ -472,7 +472,7 @@ static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
   conditions (each fall into <0,S3L_FRACTIONS_PER_UNIT>, sum =
   S3L_FRACTIONS_PER_UNIT). Note that doing this per-pixel can slow the program
   down significantly. */
-static inline void S3LcorrectBarycentricCoords(S3L_Unit barycentric[3]);
+static inline void S3L_correctBarycentricCoords(S3L_Unit barycentric[3]);
 
 // general helper functions
 static inline S3L_Unit S3L_abs(S3L_Unit value);
@@ -555,8 +555,6 @@ void S3L_drawTriangle(
   S3L_Vec4 point0,
   S3L_Vec4 point1,
   S3L_Vec4 point2,
-  const S3L_DrawConfig *config,
-  const S3L_Camera *camera,
   S3L_Index modelIndex,
   S3L_Index triangleIndex);
 
@@ -631,6 +629,8 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 //=============================================================================
 // privates
 
+#define S3L_UNUSED(what) (void)(what) ///< helper macro for unused vars
+
 #define S3L_HALF_RESOLUTION_X (S3L_RESOLUTION_X >> 1)
 #define S3L_HALF_RESOLUTION_Y (S3L_RESOLUTION_Y >> 1)
 
@@ -674,6 +674,9 @@ S3L_Unit S3L_zBufferRead(S3L_ScreenCoord x, S3L_ScreenCoord y)
 #if S3L_Z_BUFFER
   return S3L_zBuffer[y * S3L_RESOLUTION_X + x];
 #else
+  S3L_UNUSED(x);
+  S3L_UNUSED(y);
+
   return 0;
 #endif
 }
@@ -682,6 +685,10 @@ void S3L_zBufferWrite(S3L_ScreenCoord x, S3L_ScreenCoord y, S3L_Unit value)
 {
 #if S3L_Z_BUFFER
   S3L_zBuffer[y * S3L_RESOLUTION_X + x] = value;
+#else
+  S3L_UNUSED(x);
+  S3L_UNUSED(y);
+  S3L_UNUSED(value);
 #endif
 }
 
@@ -1593,8 +1600,6 @@ void S3L_drawTriangle(
   S3L_Vec4 point0,
   S3L_Vec4 point1,
   S3L_Vec4 point2,
-  const S3L_DrawConfig *config,
-  const S3L_Camera *camera,
   S3L_Index modelIndex,
   S3L_Index triangleIndex)
 {
@@ -2324,8 +2329,8 @@ void S3L_drawScene(S3L_Scene scene)
       {
 #if S3L_SORT == 0
         // without sorting draw right away
-        S3L_drawTriangle(transformed0,transformed1,transformed2,
-          &(model->config),&(scene.camera),modelIndex,triangleIndex);
+        S3L_drawTriangle(transformed0,transformed1,transformed2,modelIndex,
+          triangleIndex);
 #else
         if (S3L_sortArrayLength >= S3L_MAX_TRIANGES_DRAWN)
           break;
@@ -2406,8 +2411,8 @@ void S3L_drawScene(S3L_Scene scene)
     _S3L_projectVertex(model,triangleIndex,2,&matFinal,
       &transformed2,scene.camera.focalLength);
 
-    S3L_drawTriangle(transformed0,transformed1,transformed2,
-      &(model->config),&(scene.camera),modelIndex,triangleIndex);
+    S3L_drawTriangle(transformed0,transformed1,transformed2,modelIndex,
+      triangleIndex);
   }
 #endif
 }
