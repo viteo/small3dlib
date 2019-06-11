@@ -1990,36 +1990,72 @@ void S3L_drawTriangle(
   #elif S3L_PERSPECTIVE_CORRECTION == 2
         if (rowCount >= S3L_PC_APPROX_LENGTH)
         {
+          // init the linear interpolation to the next PC correct value
+
           rowCount = 0;
 
           S3L_Unit nextI = i + S3L_PC_APPROX_LENGTH;
 
-          S3L_Unit nextDepth =
-            (
-            (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
-            S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,nextI,rowLength))
-            ) << S3L_FAST_LERP_QUALITY;
+          if (nextI >= rowLength)
+          {
+            /* A special case where we'd be interpolating outside the triangle.
+               It seems like a valid approach at first, but it creates a bug
+               in a case when the rasaterized triangle is near screen 0 and can
+               actually never reach the extrapolated screen position. So we
+               have to clamp to the actual end of the triangle here. */
 
-          depthPC.stepScaled =
-            (nextDepth - depthPC.valueScaled) / S3L_PC_APPROX_LENGTH;
+            S3L_Unit maxI = S3L_nonZero(rowLength - i);
 
-          S3L_Unit nextValue = 
-           ( 
-             S3L_interpolateFrom0(rOverZ,nextI,rowLength)
-             * nextDepth
-           ) / S3L_FRACTIONS_PER_UNIT;
+            S3L_Unit nextDepthScaled =
+              (
+              (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+              S3L_nonZero(rRecipZ)
+              ) << S3L_FAST_LERP_QUALITY;
 
-          b0PC.stepScaled =
-            (nextValue - b0PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+            depthPC.stepScaled =
+              (nextDepthScaled - depthPC.valueScaled) / maxI;
 
-          nextValue = 
-           ( 
-             (lOverZ - S3L_interpolateFrom0(lOverZ,nextI,rowLength))
-             * nextDepth
-           ) / S3L_FRACTIONS_PER_UNIT;
+            S3L_Unit nextValue = 
+             ( 
+               rOverZ
+               * nextDepthScaled
+             ) / S3L_FRACTIONS_PER_UNIT;
 
-          b1PC.stepScaled =
-            (nextValue - b1PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+            b0PC.stepScaled =
+              (nextValue - b0PC.valueScaled) / maxI;
+
+            b1PC.stepScaled =
+              -1 * b1PC.valueScaled / maxI;
+          }
+          else
+          {
+            S3L_Unit nextDepthScaled =
+              (
+              (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+              S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,nextI,rowLength))
+              ) << S3L_FAST_LERP_QUALITY;
+
+            depthPC.stepScaled =
+              (nextDepthScaled - depthPC.valueScaled) / S3L_PC_APPROX_LENGTH;
+
+            S3L_Unit nextValue = 
+             ( 
+               S3L_interpolateFrom0(rOverZ,nextI,rowLength)
+               * nextDepthScaled
+             ) / S3L_FRACTIONS_PER_UNIT;
+
+            b0PC.stepScaled =
+              (nextValue - b0PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+
+            nextValue = 
+             ( 
+               (lOverZ - S3L_interpolateFrom0(lOverZ,nextI,rowLength))
+               * nextDepthScaled
+             ) / S3L_FRACTIONS_PER_UNIT;
+
+            b1PC.stepScaled =
+              (nextValue - b1PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+          }
         }
 
         p.depth = S3L_getFastLerpValue(depthPC);
