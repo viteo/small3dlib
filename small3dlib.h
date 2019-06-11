@@ -448,9 +448,11 @@ typedef struct
                               triangle and interpolate values between it's
                               three points. Each one goes from 0 to
                               S3L_FRACTIONS_PER_UNIT (inclidung), but due to
-                              rounding error may fall outside this range. The
-                              sum of the three coordinates will always be
-                              exactly S3L_FRACTIONS_PER_UNIT. */
+                              rounding error may fall outside this range (you
+                              can use S3L_correctBarycentricCoords to fix this
+                              for the price of some performance). The sum of
+                              the three coordinates will always be exactly
+                              S3L_FRACTIONS_PER_UNIT. */
   S3L_Index triangleIndex;  ///< Triangle index.
   S3L_Index modelIndex;
   S3L_Unit depth;         ///< Depth (only if depth is turned on).
@@ -465,6 +467,12 @@ typedef struct
                               (fragment) to the user-defined drawing func. */
 
 static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
+
+/** Corrects barycentric coordinates so that they exactly meet the defined
+  conditions (each fall into <0,S3L_FRACTIONS_PER_UNIT>, sum =
+  S3L_FRACTIONS_PER_UNIT). Note that doing this per-pixel can slow the program
+  down significantly. */
+static inline void S3LcorrectBarycentricCoords(S3L_Unit barycentric[3]);
 
 // general helper functions
 static inline S3L_Unit S3L_abs(S3L_Unit value);
@@ -1136,6 +1144,22 @@ S3L_Unit S3L_asin(S3L_Unit x)
 S3L_Unit S3L_cos(S3L_Unit x)
 {
   return S3L_sin(x - S3L_FRACTIONS_PER_UNIT / 4);
+}
+
+void S3L_correctBarycentricCoords(S3L_Unit barycentric[3])
+{
+  barycentric[0] = S3L_clamp(barycentric[0],0,S3L_FRACTIONS_PER_UNIT);
+  barycentric[1] = S3L_clamp(barycentric[1],0,S3L_FRACTIONS_PER_UNIT);
+
+  S3L_Unit d = S3L_FRACTIONS_PER_UNIT - barycentric[0] - barycentric[1];
+
+  if (d < 0)
+  {
+    barycentric[0] += d;
+    barycentric[2] = 0;
+  }
+  else
+    barycentric[2] = d;
 }
 
 void S3L_makeTranslationMat(
