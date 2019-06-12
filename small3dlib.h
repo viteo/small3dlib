@@ -1652,11 +1652,7 @@ void S3L_drawTriangle(
       tPointSy = y##t;\
       tPointPP = &point##t;\
       barycentric2 = &(p.barycentric[t]);\
-      int32_t aDx = x##a - x##t;\
-      int32_t bDx = x##b - x##t;\
-      int32_t aDy = S3L_nonZero(y##a - y##t);\
-      int32_t bDy = S3L_nonZero(y##b - y##t);\
-      if ((aDx << 8) / aDy < (bDx << 8) / bDy)\
+      if (S3L_triangleWinding(x##t,y##t,x##a,y##a,x##b,y##b) >= 0)\
       {\
         lPointSx = x##a; lPointSy = y##a;\
         rPointSx = x##b; rPointSy = y##b;\
@@ -1948,6 +1944,8 @@ void S3L_drawTriangle(
       if (rXClipped < lXClipped &&
           lXClipped < S3L_RESOLUTION_X && rXClipped >= 0)
       {
+        // TODO: After the change to computing the L/R, is this needed anymore?
+
         /* This can sometimes happen because of numerical errors in sorting
         left vs right triangle point, which are compared based on SLOPE, not
         x coordinates. Here we swap the values to prevents not drawing the
