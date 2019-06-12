@@ -290,6 +290,16 @@ void S3L_normalizeVec2(S3L_Vec4 *v);
 void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result);
 static inline S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b);
 
+/** Determines the winding of triangle, returns 1 (CW, clockwise), -1 (CCW,
+  counterclockwise) or 0 (points lie on a single line). */
+static inline int8_t S3L_triangleWinding(
+  S3L_ScreenCoord x0,
+  S3L_ScreenCoord y0, 
+  S3L_ScreenCoord x1,
+  S3L_ScreenCoord y1,
+  S3L_ScreenCoord x2,
+  S3L_ScreenCoord y2);
+
 #define S3L_logVec4(v)\
   printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
 
@@ -2228,6 +2238,21 @@ static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   vector->y = (vector->y * focalLength) / vector->z;
 }
 
+int8_t S3L_triangleWinding(
+  S3L_ScreenCoord x0,
+  S3L_ScreenCoord y0, 
+  S3L_ScreenCoord x1,
+  S3L_ScreenCoord y1,
+  S3L_ScreenCoord x2,
+  S3L_ScreenCoord y2)
+{
+  int32_t winding =
+    (y1 - y0) * (x2 - x1) - (x1 - x0) * (y2 - y1);
+    // ^ cross product for points with z == 0
+
+  return winding > 0 ? 1 : (winding < 0 ? -1 : 0);
+}
+
 /**
   Checks if given triangle (in Projection Plane space) is at least partially
   visible, i.e. returns false if the triangle is either completely outside
@@ -2262,8 +2287,8 @@ static inline int8_t S3L_triangleIsVisible(
 
   if (backfaceCulling != 0)
   {
-    int32_t winding = // determines CW or CCW
-      (p1.y - p0.y) * (p2.x - p1.x) - (p1.x - p0.x) * (p2.y - p1.y); 
+    int8_t winding =
+      S3L_triangleWinding(p0.x,p0.y,p1.x,p1.y,p2.x,p2.y);
 
     if ((backfaceCulling == 1 && winding < 0) ||
         (backfaceCulling == 2 && winding > 0))
