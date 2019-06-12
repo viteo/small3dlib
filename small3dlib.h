@@ -1941,21 +1941,6 @@ void S3L_drawTriangle(
                                                   loop */
 #endif
 
-      if (rXClipped < lXClipped &&
-          lXClipped < S3L_RESOLUTION_X && rXClipped >= 0)
-      {
-        // TODO: After the change to computing the L/R, is this needed anymore?
-
-        /* This can sometimes happen because of numerical errors in sorting
-        left vs right triangle point, which are compared based on SLOPE, not
-        x coordinates. Here we swap the values to prevents not drawing the
-        triagle. */
-
-        S3L_ScreenCoord tmp = rXClipped;
-        rXClipped = lXClipped;
-        lXClipped = tmp;
-      }
-
       // draw the row -- inner loop:
 
 #if S3L_PERSPECTIVE_CORRECTION == 2
