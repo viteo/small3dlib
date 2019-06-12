@@ -36,10 +36,7 @@ features:
 - perspective correction modes:
   - none                                    DONE
   - full                                    DONE
-  - triangle subdivision (each triangle side will be subdivided after reaching
-    a defined length, which will be measured by Chebyshev or similarly fast
-    distance).
-  - also offer some approximation function?
+  - approximate                             DONE
 
 - predefined 3D shapes:
   - cube                                    DONE
@@ -52,21 +49,28 @@ features:
   specified with a define (S3L_COMPUTE_DEPTH), which may be turned on
   automatically for some modes (e.g. Z-buffer). It should be computed by the
   fast lerp and passed in the PixelInfo struct.    DONE
+
 - Python tool to convert obj to C array            DONE
-- create demos
+
+- Python tool to convert texture images to C array DONE
+
+- create demos:
+  - model viewer                                   DONE 
+  - game-like demo (GTA-style, Quake style etc.)
+  - offline HQ (lerp texuring, normal mapping, reflections, ...) rendering
+    to PPM image file
+
 - drawModel: create an option that would use a cache to not transform the same
   point twice
+
 - Optional rendering stats (FPS, rendered triangles, ...).
+
 - profiling functions for optimization
 
 bugs:
 
 - Determining CW/CCW for a triangle is not 100% exact, sometimes leaves holes in
   models (some very thin triangles)!
-
-- With PC = 2, triangles that are at a too sharp angle can get very weird values
-  of barycentric AND DEPTH (which messes up the z-buffer). Seems to only affect
-  triangles facing right (not left).
 
 - Barycentric coodinates can get wrong in these ways:
   - Any of them can exceed the range <0,511>
