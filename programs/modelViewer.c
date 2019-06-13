@@ -484,6 +484,8 @@ int main()
           noise = !noise;
         else if (event.key.keysym.scancode == SDL_SCANCODE_W)
           wire = !wire;
+        else if (event.key.keysym.scancode == SDL_SCANCODE_B)
+          model.config.backfaceCulling = (model.config.backfaceCulling + 1) % 3;
         else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
         {
           modelIndex = (modelIndex + 1) % modelsTotal;
