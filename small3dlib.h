@@ -557,9 +557,8 @@ static inline void S3L_mapProjectionPlaneToScreen(
   S3L_ScreenCoord *screenY);
 
 /** Draws a triangle according to given config. The vertices are specified in
-  projection-plane space (NOT screen space!) -- they wll be mapped to screen
-  space by thies function. If perspective correction is enabled, each vertex
-  has to have a depth (Z position in camera space) specified in the Z
+  Screen Space space (pixels). If perspective correction is enabled, each
+  vertex has to have a depth (Z position in camera space) specified in the Z
   component. */
 void S3L_drawTriangle(
   S3L_Vec4 point0,
@@ -1624,21 +1623,9 @@ void S3L_drawTriangle(
   point2.z = point2.z >= S3L_NEAR ? point2.z : S3L_NEAR;
 #endif
 
-  S3L_Vec4 *tPointPP, *lPointPP, *rPointPP; /* points in projction plane space
-                                               (in Units, normalized by
+  S3L_Vec4 *tPointSS, *lPointSS, *rPointSS; /* points in Screen Space (in
+                                               S3L_Units, normalized by
                                                S3L_FRACTIONS_PER_UNIT) */
-
-  S3L_ScreenCoord x0, y0, x1, y1, x2, y2;   /* points in screen space (pixel
-                                               coordinates) */
-
-  S3L_mapProjectionPlaneToScreen(point0,&x0,&y0);
-  S3L_mapProjectionPlaneToScreen(point1,&x1,&y1);
-  S3L_mapProjectionPlaneToScreen(point2,&x2,&y2);
-
-  S3L_ScreenCoord
-    tPointSx, tPointSy,   // top point coords, in screen space
-    lPointSx, lPointSy,   // left point coords, in screen space
-    rPointSx, rPointSy;   // right point coords, in screen space
 
   S3L_Unit *barycentric0; // bar. coord that gets higher from L to R
   S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
@@ -1648,38 +1635,33 @@ void S3L_drawTriangle(
 
   #define assignPoints(t,a,b)\
     {\
-      tPointSx = x##t;\
-      tPointSy = y##t;\
-      tPointPP = &point##t;\
+      tPointSS = &point##t;\
       barycentric2 = &(p.barycentric[t]);\
-      if (S3L_triangleWinding(x##t,y##t,x##a,y##a,x##b,y##b) >= 0)\
+      if (S3L_triangleWinding(point##t.x,point##t.y,point##a.x,point##a.y,\
+        point##b.x,point##b.y) >= 0)\
       {\
-        lPointSx = x##a; lPointSy = y##a;\
-        rPointSx = x##b; rPointSy = y##b;\
-        lPointPP = &point##a; rPointPP = &point##b;\
+        lPointSS = &point##a; rPointSS = &point##b;\
         barycentric0 = &(p.barycentric[b]);\
         barycentric1 = &(p.barycentric[a]);\
       }\
       else\
       {\
-        lPointSx = x##b; lPointSy = y##b;\
-        rPointSx = x##a; rPointSy = y##a;\
-        lPointPP = &point##b; rPointPP = &point##a;\
+        lPointSS = &point##b; rPointSS = &point##a;\
         barycentric0 = &(p.barycentric[a]);\
         barycentric1 = &(p.barycentric[b]);\
       }\
     }
 
-  if (y0 <= y1)
+  if (point0.y <= point1.y)
   {
-    if (y0 <= y2)
+    if (point0.y <= point2.y)
       assignPoints(0,1,2)
     else
       assignPoints(2,0,1)
   }
   else
   {
-    if (y1 <= y2)
+    if (point1.y <= point2.y)
       assignPoints(1,0,2)
     else
       assignPoints(2,0,1)
@@ -1688,14 +1670,15 @@ void S3L_drawTriangle(
   #undef assignPoints
 
 #if S3L_FLAT
-  p.depth = (tPointPP->z + lPointPP->z + rPointPP->z) / 3;
+  p.depth = (tPointSS->z + lPointSS->z + rPointSS->z) / 3;
   *barycentric0 = S3L_FRACTIONS_PER_UNIT / 3;
   *barycentric1 = S3L_FRACTIONS_PER_UNIT / 3;
   *barycentric2 = S3L_FRACTIONS_PER_UNIT - 2 * (S3L_FRACTIONS_PER_UNIT / 3);
 #endif
 
-  p.triangleSize[0] = rPointSx - lPointSx;
-  p.triangleSize[1] = (rPointSy > lPointSy ? rPointSy : lPointSy) - tPointSy;
+  p.triangleSize[0] = rPointSS->x - lPointSS->x;
+  p.triangleSize[1] = (rPointSS->y > lPointSS->y ? rPointSS->y : lPointSS->y)
+                        - tPointSS->y;
 
   // now draw the triangle line by line:
 
@@ -1704,20 +1687,20 @@ void S3L_drawTriangle(
   int splitOnLeft;        /* whether splitY is the y coord. of left or right 
                              point */
 
-  if (rPointSy <= lPointSy)
+  if (rPointSS->y <= lPointSS->y)
   {
-    splitY = rPointSy;
+    splitY = rPointSS->y;
     splitOnLeft = 0;
-    endY = lPointSy;
+    endY = lPointSS->y;
   }
   else
   {
-    splitY = lPointSy;
+    splitY = lPointSS->y;
     splitOnLeft = 1;
-    endY = rPointSy;
+    endY = rPointSS->y;
   }
 
-  S3L_ScreenCoord currentY = tPointSy;
+  S3L_ScreenCoord currentY = tPointSS->y;
 
   /* We'll be using an algorithm similar to Bresenham line algorithm. The
      specifics of this algorithm are among others:
@@ -1756,8 +1739,8 @@ void S3L_drawTriangle(
   S3L_FastLerpState lDepthFLS, rDepthFLS;
 
   #define initDepthFLS(s,p1,p2)\
-    s##DepthFLS.valueScaled = p1##PointPP->z << S3L_FAST_LERP_QUALITY;\
-    s##DepthFLS.stepScaled = ((p2##PointPP->z << S3L_FAST_LERP_QUALITY) -\
+    s##DepthFLS.valueScaled = p1##PointSS->z << S3L_FAST_LERP_QUALITY;\
+    s##DepthFLS.stepScaled = ((p2##PointSS->z << S3L_FAST_LERP_QUALITY) -\
       s##DepthFLS.valueScaled) / (s##Dy != 0 ? s##Dy : 1);
 #else
   #define initDepthFLS(s,p1,p2) ;
@@ -1769,9 +1752,9 @@ void S3L_drawTriangle(
      p2 - point to (t, l or r)
      down - whether the side coordinate goes top-down or vice versa */
   #define initSide(s,p1,p2,down)\
-    s##X = p1##PointSx;\
-    s##Dx = p2##PointSx - p1##PointSx;\
-    s##Dy = p2##PointSy - p1##PointSy;\
+    s##X = p1##PointSS->x;\
+    s##Dx = p2##PointSS->x - p1##PointSS->x;\
+    s##Dy = p2##PointSS->y - p1##PointSS->y;\
     initDepthFLS(s,p1,p2)\
     s##SideFLS.stepScaled = (S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY)\
                       / (s##Dy != 0 ? s##Dy : 1);\
@@ -1813,13 +1796,13 @@ void S3L_drawTriangle(
                                                  the above after split. */
 
   tPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-    / S3L_nonZero(tPointPP->z);
+    / S3L_nonZero(tPointSS->z);
 
   lPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-    / S3L_nonZero(lPointPP->z);
+    / S3L_nonZero(lPointSS->z);
 
   rPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-    / S3L_nonZero(rPointPP->z);
+    / S3L_nonZero(rPointSS->z);
 
   lRecip0 = tPointRecipZ;
   lRecip1 = lPointRecipZ;
@@ -2237,10 +2220,9 @@ int8_t S3L_triangleWinding(
 }
 
 /**
-  Checks if given triangle (in Projection Plane space) is at least partially
-  visible, i.e. returns false if the triangle is either completely outside
-  the frustum (left, right, top, bottom, near) or is invisible due to
-  backface culling.
+  Checks if given triangle (in Screen Space) is at least partially visible,
+  i.e. returns false if the triangle is either completely outside the frustum
+  (left, right, top, bottom, near) or is invisible due to backface culling.
 */
 static inline int8_t S3L_triangleIsVisible(
   S3L_Vec4 p0,
@@ -2252,17 +2234,16 @@ static inline int8_t S3L_triangleIsVisible(
     (p0.c cmp (v) && p1.c cmp (v) && p2.c cmp (v))
 
   if ( // outside frustum?
-
 #if S3L_STRICT_NEAR_CULLING
       p0.z <= S3L_NEAR || p1.z <= S3L_NEAR || p2.z <= S3L_NEAR ||
       // ^ partially in front of NEAR?
 #else
       clipTest(z,<=,S3L_NEAR) || // completely in front of NEAR?
 #endif
-      clipTest(x,<,-1 * S3L_FRACTIONS_PER_UNIT) ||
-      clipTest(x,>,S3L_FRACTIONS_PER_UNIT) ||
-      clipTest(y,<,-1 * S3L_PROJECTION_PLANE_HEIGHT / 2) ||
-      clipTest(y,>,S3L_PROJECTION_PLANE_HEIGHT / 2)
+      clipTest(x,<,0) ||
+      clipTest(x,>=,S3L_RESOLUTION_X) ||
+      clipTest(y,<,0) ||
+      clipTest(y,>,S3L_RESOLUTION_Y)
     )
     return 0;
 
@@ -2273,8 +2254,8 @@ static inline int8_t S3L_triangleIsVisible(
     int8_t winding =
       S3L_triangleWinding(p0.x,p0.y,p1.x,p1.y,p2.x,p2.y);
 
-    if ((backfaceCulling == 1 && winding < 0) ||
-        (backfaceCulling == 2 && winding > 0))
+    if ((backfaceCulling == 1 && winding > 0) ||
+        (backfaceCulling == 2 && winding < 0))
       return 0;
   }
 
@@ -2317,6 +2298,13 @@ void _S3L_projectVertex(
     on NEAR, the triangle will be culled. */ 
 
   S3L_perspectiveDivide(result,focalLength);
+      
+  S3L_ScreenCoord sX, sY;
+      
+  S3L_mapProjectionPlaneToScreen(*result,&sX,&sY);
+   
+  result->x = sX;
+  result->y = sY;
 }
 
 void S3L_drawScene(S3L_Scene scene)
