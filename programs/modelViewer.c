@@ -132,6 +132,7 @@ S3L_Vec4 toLight;
 int8_t light = 1;
 int8_t fog = 0;
 int8_t noise = 0;
+int8_t wire = 0;
 int8_t transparency = 0;
 int8_t mode = 0;
 S3L_Vec4 n0, n1, n2, nt;
@@ -235,6 +236,12 @@ void drawPixel(S3L_PixelInfo *p)
 
     previousTriangle = p->triangleIndex;
   }
+
+  if (wire)
+    if (p->barycentric[0] != 0 &&
+        p->barycentric[1] != 0 &&
+        p->barycentric[2] != 0)
+      return;
 
   uint8_t r,g,b;
 
@@ -475,6 +482,8 @@ int main()
           fog = !fog;
         else if (event.key.keysym.scancode == SDL_SCANCODE_N)
           noise = !noise;
+        else if (event.key.keysym.scancode == SDL_SCANCODE_W)
+          wire = !wire;
         else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
         {
           modelIndex = (modelIndex + 1) % modelsTotal;
