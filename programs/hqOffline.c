@@ -3,11 +3,14 @@
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
+#define S3L_PERSPECTIVE_CORRECTION 1
+
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
 
 #include "../small3dlib.h"
 #include <stdio.h>
+#include <math.h>
 
 uint8_t frameBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3];
 
@@ -37,10 +40,14 @@ int8_t heightMap[GRID_W * GRID_H] =
 #define GRID_TRIANGLES ((GRID_W - 1) * (GRID_H - 1) * 2)
 
 S3L_Unit terrainVertices[GRID_W * GRID_H * 3];
-S3L_Index terrainTriangles[GRID_TRIANGLES * 3];
 S3L_Unit terrainNormals[GRID_W * GRID_H * 3];
 
-#define MODELS 1
+S3L_Unit waterVertices[GRID_W * GRID_H * 3];
+S3L_Unit waterNormals[GRID_W * GRID_H * 3];
+
+S3L_Index gridTriangles[GRID_TRIANGLES * 3];
+
+#define MODELS 2
 
 S3L_Model3D models[MODELS];
 S3L_Scene scene;
@@ -53,31 +60,33 @@ S3L_Vec4 n0, n1, n2;
 
 void drawPixel(S3L_PixelInfo *p)
 {
+  S3L_Unit *normals = p->modelIndex == 0 ? terrainNormals : waterNormals;
+
   if (p->triangleIndex != previousTriangle)
   {
     int index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
-    n0.x = terrainNormals[index];
+    n0.x = normals[index];
     index++;
-    n0.y = terrainNormals[index];
+    n0.y = normals[index];
     index++;
-    n0.z = terrainNormals[index];
+    n0.z = normals[index];
 
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
 
-    n1.x = terrainNormals[index];
+    n1.x = normals[index];
     index++;
-    n1.y = terrainNormals[index];
+    n1.y = normals[index];
     index++;
-    n1.z = terrainNormals[index];
+    n1.z = normals[index];
  
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
 
-    n2.x = terrainNormals[index];
+    n2.x = normals[index];
     index++;
-    n2.y = terrainNormals[index];
+    n2.y = normals[index];
     index++;
-    n2.z = terrainNormals[index];
+    n2.z = normals[index];
   }
 
   S3L_Vec4 normal;
@@ -92,17 +101,40 @@ void drawPixel(S3L_PixelInfo *p)
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
   S3L_normalizeVec3(&normal);
-
  
   uint8_t light = 127 - 127 * (S3L_dotProductVec3(lightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT));
 
   uint8_t color[3];
 
-  color[0] = light;
-  color[1] = S3L_clamp(p->depth / 64,0,255);
-  color[2] = light;
-
   int index = (p->y * S3L_RESOLUTION_X + p->x) * 3;
+
+  if (p->modelIndex == MODELS - 1)
+  {
+    S3L_Unit waterDepth = p->previousZ - p->depth;
+
+    float transparency = waterDepth / ((float) (S3L_FRACTIONS_PER_UNIT / 2));
+
+    transparency = transparency > 1.0 ? 1.0 : transparency;
+  
+    float transparency2 = 1.0 - transparency;
+
+    uint8_t previousColor[3];
+
+    previousColor[0] = frameBuffer[index];
+    previousColor[1] = frameBuffer[index + 1];
+    previousColor[2] = frameBuffer[index + 2];
+
+    color[0] = transparency2 * previousColor[0];
+    color[1] = transparency2 * previousColor[1];
+    color[2] = transparency2 * previousColor[2] + transparency * 200;
+  }
+  else
+  {
+    color[0] = light;
+    color[1] = light;
+    color[2] = light / 2 + p->modelIndex * 127;
+  }
+
 
   frameBuffer[index] = color[0];
   frameBuffer[index + 1] = color[1];
@@ -119,6 +151,11 @@ void createGeometry()
        terrainVertices[i] = (x - GRID_W / 2) * S3L_FRACTIONS_PER_UNIT;
        terrainVertices[i + 1] = heightMap[i / 3] * S3L_FRACTIONS_PER_UNIT / 4;
        terrainVertices[i + 2] = (y - GRID_H / 2) * S3L_FRACTIONS_PER_UNIT;
+
+       waterVertices[i] = terrainVertices[i] * 2;
+       waterVertices[i + 1] = 0;
+       waterVertices[i + 2] = terrainVertices[i + 2] * 2;
+
        i += 3;
      }
 
@@ -134,16 +171,24 @@ void createGeometry()
       indices[2] = indices[0] + GRID_W;
       indices[3] = indices[2] + 1;
 
-      terrainTriangles[i + 0] = indices[0];
-      terrainTriangles[i + 1] = indices[1];
-      terrainTriangles[i + 2] = indices[2];
+      gridTriangles[i + 0] = indices[0];
+      gridTriangles[i + 1] = indices[1];
+      gridTriangles[i + 2] = indices[2];
 
-      terrainTriangles[i + 3] = indices[2];
-      terrainTriangles[i + 4] = indices[1];
-      terrainTriangles[i + 5] = indices[3];
+      gridTriangles[i + 3] = indices[2];
+      gridTriangles[i + 4] = indices[1];
+      gridTriangles[i + 5] = indices[3];
 
       i += 6; 
     }
+}
+
+void animateWater(int t)
+{
+  for (int i = 1; i < GRID_W * GRID_H * 3; i += 3)
+    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 2 + sin(i) * S3L_FRACTIONS_PER_UNIT / 4;
+
+  S3L_computeModelNormals(models[MODELS - 1],waterNormals,0);
 }
 
 void clearFrameBuffer()
@@ -179,13 +224,22 @@ int main()
   S3L_initModel3D(
     terrainVertices,
     GRID_W * GRID_H,
-    terrainTriangles,
+    gridTriangles,
+    GRID_TRIANGLES,  
+    &(models[0]));
+
+  S3L_computeModelNormals(models[0],terrainNormals,0);
+
+  S3L_initModel3D(
+    waterVertices,
+    GRID_W * GRID_H,
+    gridTriangles,
     GRID_TRIANGLES,  
     &(models[MODELS - 1]));
 
-  S3L_computeModelNormals(models[MODELS - 1],terrainNormals,0);
-
   S3L_initScene(models,MODELS,&scene);
+
+  animateWater(0);
 
   scene.camera.transform.translation.x = 4 * S3L_FRACTIONS_PER_UNIT;
   scene.camera.transform.translation.y = 6 * S3L_FRACTIONS_PER_UNIT;
