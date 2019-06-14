@@ -290,6 +290,11 @@ void S3L_normalizeVec2(S3L_Vec4 *v);
 void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result);
 static inline S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b);
 
+/** Computes a reflection direction (typically used e.g. for specular component
+  in Phong illumination). The input vectors must be normalized. The result will
+  be normalized as well. */
+void S3L_reflect(S3L_Vec4 toLight, S3L_Vec4 normal, S3L_Vec4 *result);
+
 /** Determines the winding of triangle, returns 1 (CW, clockwise), -1 (CCW,
   counterclockwise) or 0 (points lie on a single line). */
 static inline int8_t S3L_triangleWinding(
@@ -841,6 +846,15 @@ void S3L_initMat4(S3L_Mat4 *m)
 S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b)
 {
   return (a.x * b.x + a.y * b.y + a.z * b.z) / S3L_FRACTIONS_PER_UNIT;
+}
+
+void S3L_reflect(S3L_Vec4 toLight, S3L_Vec4 normal, S3L_Vec4 *result)
+{
+  S3L_Unit d = 2 * S3L_dotProductVec3(toLight,normal);
+
+  result->x = (normal.x * d) / S3L_FRACTIONS_PER_UNIT - toLight.x;
+  result->y = (normal.y * d) / S3L_FRACTIONS_PER_UNIT - toLight.y;
+  result->z = (normal.z * d) / S3L_FRACTIONS_PER_UNIT - toLight.z;
 }
 
 void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result)

@@ -5,6 +5,8 @@
 
 #define S3L_PERSPECTIVE_CORRECTION 1
 
+#define S3L_STRICT_NEAR_CULLING 0
+
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
 
@@ -54,9 +56,9 @@ S3L_Scene scene;
 
 int previousTriangle = -1;
 
-S3L_Vec4 lightDirection;
+S3L_Vec4 toLightDirection;
 
-S3L_Vec4 n0, n1, n2;
+S3L_Vec4 n0, n1, n2, v0, v1, v2;
 
 void drawPixel(S3L_PixelInfo *p)
 {
@@ -67,26 +69,35 @@ void drawPixel(S3L_PixelInfo *p)
     int index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
     n0.x = normals[index];
+    v0.x = scene.models[p->modelIndex].vertices[index];
     index++;
     n0.y = normals[index];
+    v0.y = scene.models[p->modelIndex].vertices[index];
     index++;
     n0.z = normals[index];
+    v0.z = scene.models[p->modelIndex].vertices[index];
 
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
 
     n1.x = normals[index];
+    v1.x = scene.models[p->modelIndex].vertices[index];
     index++;
     n1.y = normals[index];
+    v1.y = scene.models[p->modelIndex].vertices[index];
     index++;
     n1.z = normals[index];
+    v1.z = scene.models[p->modelIndex].vertices[index];
  
     index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
 
     n2.x = normals[index];
+    v2.x = scene.models[p->modelIndex].vertices[index];
     index++;
     n2.y = normals[index];
+    v2.y = scene.models[p->modelIndex].vertices[index];
     index++;
     n2.z = normals[index];
+    v2.z = scene.models[p->modelIndex].vertices[index];
   }
 
   S3L_Vec4 normal;
@@ -101,8 +112,23 @@ void drawPixel(S3L_PixelInfo *p)
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
   S3L_normalizeVec3(&normal);
+
+  S3L_Vec4 reflected;
+
+  S3L_Vec4 toCameraDirection;
+
+  toCameraDirection.x = scene.camera.transform.translation.x - S3L_interpolateBarycentric(v0.x,v1.x,v2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  toCameraDirection.y = scene.camera.transform.translation.y - S3L_interpolateBarycentric(v0.y,v1.y,v2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  toCameraDirection.z = scene.camera.transform.translation.z - S3L_interpolateBarycentric(v0.z,v1.z,v2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+
+  S3L_normalizeVec3(&toCameraDirection);
+
+  S3L_reflect(toLightDirection,normal,&reflected);
  
-  float light = 0.5 - (S3L_dotProductVec3(lightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+  float diffuse = 0.5 - (S3L_dotProductVec3(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+  float specular = 0.5 + (S3L_dotProductVec3(reflected,toCameraDirection) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+
+  float light = diffuse + pow(specular,15.0);
 
   uint8_t color[3];
 
@@ -124,15 +150,15 @@ void drawPixel(S3L_PixelInfo *p)
     previousColor[1] = frameBuffer[index + 1];
     previousColor[2] = frameBuffer[index + 2];
 
-    color[0] = transparency2 * previousColor[0] + transparency * 100 * light;
-    color[1] = transparency2 * previousColor[1] + transparency * 100 * light;
-    color[2] = transparency2 * previousColor[2] + transparency * 255 * light;
+    color[0] = S3L_clamp(transparency2 * previousColor[0] + transparency * 100 * light,0,255);
+    color[1] = S3L_clamp(transparency2 * previousColor[1] + transparency * 100 * light,0,255);
+    color[2] = S3L_clamp(transparency2 * previousColor[2] + transparency * 255 * light,0,255);
   }
   else
   {
-    color[0] = 255 * light;
-    color[1] = 100 * light;
-    color[2] = 50 * light;
+    color[0] = S3L_clamp(255 * light,0,255);
+    color[1] = S3L_clamp(100 * light,0,255);
+    color[2] = S3L_clamp(50 * light,0,255);
   }
 
 /*
@@ -157,9 +183,9 @@ void createGeometry()
        terrainVertices[i + 1] = heightMap[i / 3] * S3L_FRACTIONS_PER_UNIT / 4;
        terrainVertices[i + 2] = (y - GRID_H / 2) * S3L_FRACTIONS_PER_UNIT;
 
-       waterVertices[i] = terrainVertices[i] * 2;
+       waterVertices[i] = terrainVertices[i] * 8;
        waterVertices[i + 1] = 0;
-       waterVertices[i + 2] = terrainVertices[i + 2] * 2;
+       waterVertices[i + 2] = terrainVertices[i + 2] * 8;
 
        i += 3;
      }
@@ -191,7 +217,7 @@ void createGeometry()
 void animateWater(int t)
 {
   for (int i = 1; i < GRID_W * GRID_H * 3; i += 3)
-    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 2 + sin(i) * S3L_FRACTIONS_PER_UNIT / 4;
+    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 2 + sin(i) * S3L_FRACTIONS_PER_UNIT / 2;
 
   S3L_computeModelNormals(models[MODELS - 1],waterNormals,0);
 }
@@ -219,12 +245,12 @@ int main()
 {
   createGeometry(); 
 
-  lightDirection.x = 10;
-  lightDirection.y = 10;
-  lightDirection.z = 10;
-  lightDirection.w = 0;
+  toLightDirection.x = 10;
+  toLightDirection.y = 10;
+  toLightDirection.z = 10;
+  toLightDirection.w = 0;
 
-  S3L_normalizeVec3(&lightDirection);
+  S3L_normalizeVec3(&toLightDirection);
 
   S3L_initModel3D(
     terrainVertices,
@@ -250,9 +276,9 @@ int main()
   
   for (int i = 0; i < 20; ++i)
   {
-    scene.camera.transform.translation.x = i * S3L_FRACTIONS_PER_UNIT / 16;
+    scene.camera.transform.translation.x = i * S3L_FRACTIONS_PER_UNIT / 4;
     scene.camera.transform.translation.y = 8 * S3L_FRACTIONS_PER_UNIT;
-    scene.camera.transform.translation.z = -10 * S3L_FRACTIONS_PER_UNIT;
+    scene.camera.transform.translation.z = -10 * S3L_FRACTIONS_PER_UNIT + i * S3L_FRACTIONS_PER_UNIT / 4;
 
     S3L_Vec4 target;
     
