@@ -1789,20 +1789,27 @@ void S3L_drawTriangle(
      velues can be computed. See
      http://www.lysator.liu.se/~mikaelk/doc/perspectivetexture/ */
 
+#if S3L_PERSPECTIVE_CORRECTION == 1
+  #define Z_RECIP_NUMERATOR\
+  (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
+#elif S3L_PERSPECTIVE_CORRECTION == 2
+  #define Z_RECIP_NUMERATOR\
+  (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
+#endif
+  /* ^ This numerator is a number by which we divide values for the
+     reciprocals. For PC == 2 it has to be lower because linear interpolation
+     scaling would make it overflow -- this results in lower depth precision
+     in bigger distance for PC == 2. */
+
   S3L_Unit
     tPointRecipZ, lPointRecipZ, rPointRecipZ, /* Reciprocals of the depth of 
                                                  each triangle point. */
     lRecip0, lRecip1, rRecip0, rRecip1;       /* Helper variables for swapping
                                                  the above after split. */
 
-  tPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-    / S3L_nonZero(tPointSS->z);
-
-  lPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-    / S3L_nonZero(lPointSS->z);
-
-  rPointRecipZ = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-    / S3L_nonZero(rPointSS->z);
+  tPointRecipZ = Z_RECIP_NUMERATOR / S3L_nonZero(tPointSS->z);
+  lPointRecipZ = Z_RECIP_NUMERATOR / S3L_nonZero(lPointSS->z);
+  rPointRecipZ = Z_RECIP_NUMERATOR / S3L_nonZero(rPointSS->z);
 
   lRecip0 = tPointRecipZ;
   lRecip1 = lPointRecipZ;
@@ -1930,7 +1937,7 @@ void S3L_drawTriangle(
       S3L_FastLerpState depthPC, b0PC, b1PC;
 
       depthPC.valueScaled = 
-        ((S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) / 
+        (Z_RECIP_NUMERATOR / 
         S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,i,rowLength)))
         << S3L_FAST_LERP_QUALITY;
 
@@ -1938,13 +1945,13 @@ void S3L_drawTriangle(
            ( 
              S3L_interpolateFrom0(rOverZ,i,rowLength)
              * depthPC.valueScaled
-           ) / S3L_FRACTIONS_PER_UNIT;
+           ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
 
        b1PC.valueScaled =
            ( 
              (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
              * depthPC.valueScaled
-           ) / S3L_FRACTIONS_PER_UNIT;
+           ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
 
       int8_t rowCount = S3L_PC_APPROX_LENGTH;
 #endif
@@ -1961,7 +1968,7 @@ void S3L_drawTriangle(
 
 #if S3L_COMPUTE_DEPTH
   #if S3L_PERSPECTIVE_CORRECTION == 1
-        p.depth = (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+        p.depth = Z_RECIP_NUMERATOR /
           S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,i,rowLength));
   #elif S3L_PERSPECTIVE_CORRECTION == 2
         if (rowCount >= S3L_PC_APPROX_LENGTH)
@@ -1984,7 +1991,7 @@ void S3L_drawTriangle(
 
             S3L_Unit nextDepthScaled =
               (
-              (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+              Z_RECIP_NUMERATOR /
               S3L_nonZero(rRecipZ)
               ) << S3L_FAST_LERP_QUALITY;
 
@@ -1995,7 +2002,7 @@ void S3L_drawTriangle(
              ( 
                rOverZ
                * nextDepthScaled
-             ) / S3L_FRACTIONS_PER_UNIT;
+             ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
 
             b0PC.stepScaled =
               (nextValue - b0PC.valueScaled) / maxI;
@@ -2007,7 +2014,7 @@ void S3L_drawTriangle(
           {
             S3L_Unit nextDepthScaled =
               (
-              (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT) /
+              Z_RECIP_NUMERATOR /
               S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,nextI,rowLength))
               ) << S3L_FAST_LERP_QUALITY;
 
@@ -2018,7 +2025,7 @@ void S3L_drawTriangle(
              ( 
                S3L_interpolateFrom0(rOverZ,nextI,rowLength)
                * nextDepthScaled
-             ) / S3L_FRACTIONS_PER_UNIT;
+             ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
 
             b0PC.stepScaled =
               (nextValue - b0PC.valueScaled) / S3L_PC_APPROX_LENGTH;
@@ -2027,7 +2034,7 @@ void S3L_drawTriangle(
              ( 
                (lOverZ - S3L_interpolateFrom0(lOverZ,nextI,rowLength))
                * nextDepthScaled
-             ) / S3L_FRACTIONS_PER_UNIT;
+             ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
 
             b1PC.stepScaled =
               (nextValue - b1PC.valueScaled) / S3L_PC_APPROX_LENGTH;
@@ -2059,13 +2066,13 @@ void S3L_drawTriangle(
            ( 
              S3L_interpolateFrom0(rOverZ,i,rowLength)
              * p.depth
-           ) / S3L_FRACTIONS_PER_UNIT;
+           ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
 
           *barycentric1 =
            ( 
              (lOverZ - S3L_interpolateFrom0(lOverZ,i,rowLength))
              * p.depth
-           ) / S3L_FRACTIONS_PER_UNIT;
+           ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
   #elif S3L_PERSPECTIVE_CORRECTION == 2
           *barycentric0 = S3L_getFastLerpValue(b0PC);
           *barycentric1 = S3L_getFastLerpValue(b1PC);
@@ -2110,7 +2117,8 @@ void S3L_drawTriangle(
   #undef manageSplit
   #undef initPC
   #undef initSide
-  #undef stepSide 
+  #undef stepSide
+  #undef Z_RECIP_NUMERATOR 
 }
 
 void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)

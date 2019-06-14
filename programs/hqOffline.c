@@ -141,10 +141,6 @@ color[1] = S3L_clamp(127 + normal.y / 4,0,255);
 color[2] = S3L_clamp(127 + normal.z / 4,0,255);
 */
 
-color[0] = S3L_clamp(p->depth - 8000,0,255);
-color[1] = color[0];
-color[2] = color[1];
-
   frameBuffer[index] = color[0];
   frameBuffer[index + 1] = color[1];
   frameBuffer[index + 2] = color[2];
