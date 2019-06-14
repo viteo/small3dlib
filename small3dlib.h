@@ -930,7 +930,7 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
 
       n.x = 0;
 
-      for (uint8_t i = 0; i < MAX_NORMALS; ++i)
+      for (uint8_t i = 0; i < normalCount; ++i)
       {
         n.x += ns[i].x;
         n.y += ns[i].y;
