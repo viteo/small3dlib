@@ -135,7 +135,6 @@ void drawPixel(S3L_PixelInfo *p)
     color[2] = light / 2 + p->modelIndex * 127;
   }
 
-
   frameBuffer[index] = color[0];
   frameBuffer[index + 1] = color[1];
   frameBuffer[index + 2] = color[2];
