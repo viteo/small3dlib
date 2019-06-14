@@ -3,7 +3,7 @@
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
-#define S3L_PERSPECTIVE_CORRECTION 0
+#define S3L_PERSPECTIVE_CORRECTION 1
 
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
@@ -135,9 +135,15 @@ void drawPixel(S3L_PixelInfo *p)
     color[2] = light / 2 + p->modelIndex * 127;
   }
 
+/*
 color[0] = S3L_clamp(127 + normal.x / 4,0,255);
 color[1] = S3L_clamp(127 + normal.y / 4,0,255);
 color[2] = S3L_clamp(127 + normal.z / 4,0,255);
+*/
+
+color[0] = S3L_clamp(p->depth - 8000,0,255);
+color[1] = color[0];
+color[2] = color[1];
 
   frameBuffer[index] = color[0];
   frameBuffer[index + 1] = color[1];
@@ -240,7 +246,7 @@ int main()
     GRID_TRIANGLES,  
     &(models[MODELS - 1]));
 
-  S3L_initScene(models,/*MODELS*/1,&scene);
+  S3L_initScene(models,MODELS,&scene);
 
   animateWater(0);
 
