@@ -69,9 +69,6 @@ features:
 
 bugs:
 
-- Determining CW/CCW for a triangle is not 100% exact, sometimes leaves holes
-  in models (some very thin triangles)!
-
 - Barycentric coodinates can get wrong in these ways:
   - Any of them can exceed the range <0,511>
   - b0 + b1 can be > 511, which causes b2 (= 511 - b0 - b1) to be negative!

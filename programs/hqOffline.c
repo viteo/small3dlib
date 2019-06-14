@@ -1,5 +1,5 @@
-#define S3L_RESOLUTION_X 1280
-#define S3L_RESOLUTION_Y 1024
+#define S3L_RESOLUTION_X 800
+#define S3L_RESOLUTION_Y 600
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
@@ -102,7 +102,7 @@ void drawPixel(S3L_PixelInfo *p)
 
   S3L_normalizeVec3(&normal);
  
-  uint8_t light = 127 - 127 * (S3L_dotProductVec3(lightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT));
+  float light = 0.5 - (S3L_dotProductVec3(lightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
 
   uint8_t color[3];
 
@@ -112,7 +112,7 @@ void drawPixel(S3L_PixelInfo *p)
   {
     S3L_Unit waterDepth = p->previousZ - p->depth;
 
-    float transparency = waterDepth / ((float) (S3L_FRACTIONS_PER_UNIT / 2));
+    float transparency = waterDepth / ((float) (S3L_FRACTIONS_PER_UNIT / 3));
 
     transparency = transparency > 1.0 ? 1.0 : transparency;
   
@@ -124,15 +124,15 @@ void drawPixel(S3L_PixelInfo *p)
     previousColor[1] = frameBuffer[index + 1];
     previousColor[2] = frameBuffer[index + 2];
 
-    color[0] = transparency2 * previousColor[0];
-    color[1] = transparency2 * previousColor[1];
-    color[2] = transparency2 * previousColor[2] + transparency * 200;
+    color[0] = transparency2 * previousColor[0] + transparency * 100 * light;
+    color[1] = transparency2 * previousColor[1] + transparency * 100 * light;
+    color[2] = transparency2 * previousColor[2] + transparency * 255 * light;
   }
   else
   {
-    color[0] = light;
-    color[1] = light;
-    color[2] = light / 2 + p->modelIndex * 127;
+    color[0] = 255 * light;
+    color[1] = 100 * light;
+    color[2] = 50 * light;
   }
 
 /*
@@ -203,7 +203,7 @@ void clearFrameBuffer()
 
 void saveImage(char *fileName)
 {
-  printf("saving image file: %s",fileName);
+  printf("saving image file: %s\n",fileName);
 
   FILE *f = fopen(fileName,"w");
   
@@ -246,19 +246,33 @@ int main()
 
   animateWater(0);
 
-  scene.camera.transform.translation.x = 4 * S3L_FRACTIONS_PER_UNIT;
-  scene.camera.transform.translation.y = 8 * S3L_FRACTIONS_PER_UNIT;
-  scene.camera.transform.translation.z = -10 * S3L_FRACTIONS_PER_UNIT;
-  scene.camera.transform.rotation.x = -S3L_FRACTIONS_PER_UNIT / 8;
-  scene.camera.transform.rotation.y = -S3L_FRACTIONS_PER_UNIT / 8;
+  char fileName[] = "test00.ppm";
+  
+  for (int i = 0; i < 20; ++i)
+  {
+    scene.camera.transform.translation.x = i * S3L_FRACTIONS_PER_UNIT / 16;
+    scene.camera.transform.translation.y = 8 * S3L_FRACTIONS_PER_UNIT;
+    scene.camera.transform.translation.z = -10 * S3L_FRACTIONS_PER_UNIT;
 
-  clearFrameBuffer();
+    S3L_Vec4 target;
+    
+    target.x = 0;
+    target.y = 0;
+    target.z = 0;
 
-  S3L_newFrame();
+    S3L_lookAt(scene.camera.transform.translation,target,&scene.camera.transform);
 
-  S3L_drawScene(scene);
+    clearFrameBuffer();
 
-  saveImage("test.ppm");
+    S3L_newFrame();
+
+    S3L_drawScene(scene);
+
+    fileName[4] = '0' + (i / 10);
+    fileName[5] = '0' + (i % 10);
+
+    saveImage(fileName);
+  }
 
   return 0;
 }
