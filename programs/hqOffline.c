@@ -21,22 +21,24 @@ uint8_t frameBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3];
 
 int8_t heightMap[GRID_W * GRID_H] =
 {
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,1,0,0,1,1,1,0,0,0,0,0,
-  0,0,0,0,0,1,0,1,3,3,1,1,0,0,0,0,
-  0,0,0,1,1,1,1,3,3,4,2,1,1,0,0,0,
-  0,0,0,0,1,1,3,4,4,6,5,2,1,1,0,0,
-  0,0,1,2,2,3,4,4,4,6,6,4,3,1,0,0,
-  0,1,2,4,5,5,6,6,6,6,6,5,5,3,1,0,
-  0,0,2,4,6,7,8,7,7,6,6,6,6,6,2,0,
-  0,0,3,4,7,8,8,9,8,7,6,6,6,6,2,0,
-  0,0,0,2,4,7,7,7,7,6,6,6,4,3,0,0,
-  0,0,0,1,3,6,6,6,6,6,6,6,2,0,0,0,
-  0,0,0,0,3,6,6,6,6,6,6,2,0,0,0,0,
-  0,0,0,1,1,2,3,5,5,5,2,0,0,0,0,0,
-  0,0,1,2,0,0,2,4,4,2,2,0,0,0,0,0,
-  0,0,0,0,0,0,1,3,3,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#define e -1
+  e,e,e,e,e,e,e,e,e,e,e,e,e,e,e,e,
+  e,0,0,0,0,1,0,0,1,1,1,0,0,0,0,e,
+  e,0,0,0,0,1,0,1,2,1,1,1,0,0,0,e,
+  e,0,0,1,1,1,1,3,2,1,1,1,1,0,0,e,
+  e,0,0,0,1,1,2,4,3,2,1,2,1,1,0,e,
+  e,0,1,2,2,2,2,4,4,2,2,2,2,1,0,e,
+  e,1,2,2,3,3,6,6,6,3,6,3,5,3,1,e,
+  e,0,2,2,3,7,8,7,7,6,6,6,6,6,2,e,
+  e,0,3,3,3,8,8,9,8,7,2,3,6,6,2,e,
+  e,0,0,2,3,4,7,7,7,6,1,1,4,3,0,e,
+  e,0,0,1,3,6,3,5,6,6,3,1,2,0,0,e,
+  e,0,0,0,3,3,3,6,6,6,6,1,0,0,0,e,
+  e,0,0,1,1,2,3,5,5,5,2,0,0,0,0,e,
+  e,0,1,2,0,0,2,4,4,2,2,0,0,0,0,e,
+  e,0,0,0,0,0,1,3,3,0,0,0,0,0,0,e,
+  e,e,e,e,e,e,e,e,e,e,e,e,e,e,e,e
+#undef e
 };
 
 #define GRID_TRIANGLES ((GRID_W - 1) * (GRID_H - 1) * 2)
@@ -127,8 +129,12 @@ void drawPixel(S3L_PixelInfo *p)
  
   float diffuse = 0.5 - (S3L_dotProductVec3(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
   float specular = 0.5 + (S3L_dotProductVec3(reflected,toCameraDirection) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+  float fog = (p->depth / ((float) S3L_FRACTIONS_PER_UNIT * 20));
+ 
+  if (fog > 1.0)
+    fog = 1.0;
 
-  float light = diffuse + pow(specular,15.0);
+  float light = 0.3 * fog + 0.6 * diffuse + 0.5 * pow(specular,15.0);
 
   uint8_t color[3];
 
@@ -180,7 +186,7 @@ void createGeometry()
     for (int x = 0; x < GRID_W; ++x)
      {
        terrainVertices[i] = (x - GRID_W / 2) * S3L_FRACTIONS_PER_UNIT;
-       terrainVertices[i + 1] = heightMap[i / 3] * S3L_FRACTIONS_PER_UNIT / 4;
+       terrainVertices[i + 1] = (heightMap[i / 3] - 1) * S3L_FRACTIONS_PER_UNIT / 4;
        terrainVertices[i + 2] = (y - GRID_H / 2) * S3L_FRACTIONS_PER_UNIT;
 
        waterVertices[i] = terrainVertices[i] * 8;
@@ -217,14 +223,14 @@ void createGeometry()
 void animateWater(int t)
 {
   for (int i = 1; i < GRID_W * GRID_H * 3; i += 3)
-    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 2 + sin(i) * S3L_FRACTIONS_PER_UNIT / 2;
+    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 4 + sin(i) * S3L_FRACTIONS_PER_UNIT / 2;
 
   S3L_computeModelNormals(models[MODELS - 1],waterNormals,0);
 }
 
 void clearFrameBuffer()
 {
-  memset(frameBuffer,0,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3 * sizeof(uint8_t));
+  memset(frameBuffer,255,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3 * sizeof(uint8_t));
 }
 
 void saveImage(char *fileName)
