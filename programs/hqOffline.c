@@ -126,31 +126,16 @@ if (p->modelIndex == MODELS - 1)
 
 float dist, dx, dy;
 
-#define wave(x0,y0,f,i)\
-  dx = position.x - x0 + frame * 20;\
-  dy = position.z - y0 + frame * 20;\
-  dist = sqrt(dx * dx + dy * dy);\
-  normal.x += S3L_sin(dist * f) * i;\
-  normal.y += S3L_cos(dist * f) * i;
+dist = position.x + position.z + frame * 5;
+normal.x += S3L_sin(dist / 2) / 8;
+normal.y += S3L_cos(dist / 2) / 8;
 
-wave(S3L_FRACTIONS_PER_UNIT * 50,S3L_FRACTIONS_PER_UNIT * 60,1,0.1)
-wave(S3L_FRACTIONS_PER_UNIT * 20,-S3L_FRACTIONS_PER_UNIT * 30,2,0.05)
-wave(-S3L_FRACTIONS_PER_UNIT * 30,S3L_FRACTIONS_PER_UNIT * 45,4,0.05)
+dist = position.x - 2 * position.z + frame * 10;
+normal.x += S3L_sin(dist) / 64;
+normal.y += S3L_cos(dist) / 64;
 
 
-#undef wave
 
-/*
-float dist = sqrt(position.x * position.x + position.z * position.z);
-
-normal.x += S3L_sin(dist) / 4;
-normal.y += S3L_cos(dist) / 4;
-*/
-
-/*
-  normal.x += S3L_sin((position.x + position.z) / 16) / 4 + S3L_sin((position.x + position.z / 2) / 3) / 8;
-  normal.z += S3L_sin(position.z / 16) / 4 + S3L_sin(position.z / 3) / 8;
-*/
 }
 
   S3L_normalizeVec3(&normal);
@@ -196,9 +181,13 @@ normal.y += S3L_cos(dist) / 4;
     previousColor[1] = frameBuffer[index + 1];
     previousColor[2] = frameBuffer[index + 2];
 
-color[0] = 100;
-color[1] = 100;
-color[2] = 200;
+
+float fresnel = 0.5 + (S3L_dotProductVec3(toCameraDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+float fresnel2 = 1.0 - fresnel;
+
+color[0] = fresnel2 * 150 + fresnel * 0;
+color[1] = fresnel2 * 230 + fresnel * 10;
+color[2] = fresnel2 * 255 + fresnel * 100;
 
     color[0] = S3L_clamp(transparency2 * previousColor[0] + transparency * color[0] * light,0,255);
     color[1] = S3L_clamp(transparency2 * previousColor[1] + transparency * color[1] * light,0,255);
@@ -331,8 +320,8 @@ int main()
     animateWater();
 
     scene.camera.transform.translation.x = -i * S3L_FRACTIONS_PER_UNIT / 4;
-    scene.camera.transform.translation.y = 8 * S3L_FRACTIONS_PER_UNIT;
-    scene.camera.transform.translation.z = -10 * S3L_FRACTIONS_PER_UNIT + i * S3L_FRACTIONS_PER_UNIT / 4;
+    scene.camera.transform.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;
+    scene.camera.transform.translation.z = -8 * S3L_FRACTIONS_PER_UNIT + i * S3L_FRACTIONS_PER_UNIT / 4;
 
     S3L_Vec4 target;
     
