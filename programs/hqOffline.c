@@ -16,6 +16,8 @@
 
 uint8_t frameBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3];
 
+int frame = 0;
+
 #define GRID_W 16
 #define GRID_H 16
 
@@ -102,6 +104,12 @@ void drawPixel(S3L_PixelInfo *p)
     v2.z = scene.models[p->modelIndex].vertices[index];
   }
 
+  S3L_Vec4 position;
+
+  position.x = S3L_interpolateBarycentric(v0.x,v1.x,v2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  position.y = S3L_interpolateBarycentric(v0.y,v1.y,v2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  position.z = S3L_interpolateBarycentric(v0.z,v1.z,v2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+
   S3L_Vec4 normal;
 
   normal.x = S3L_interpolateBarycentric(n0.x, n1.x, n2.x,
@@ -113,15 +121,47 @@ void drawPixel(S3L_PixelInfo *p)
   normal.z = S3L_interpolateBarycentric(n0.z, n1.z, n2.z,
     p->barycentric[0], p->barycentric[1], p->barycentric[2]);
 
+if (p->modelIndex == MODELS - 1)
+{
+
+float dist, dx, dy;
+
+#define wave(x0,y0,f,i)\
+  dx = position.x - x0 + frame * 20;\
+  dy = position.z - y0 + frame * 20;\
+  dist = sqrt(dx * dx + dy * dy);\
+  normal.x += S3L_sin(dist * f) * i;\
+  normal.y += S3L_cos(dist * f) * i;
+
+wave(S3L_FRACTIONS_PER_UNIT * 50,S3L_FRACTIONS_PER_UNIT * 60,1,0.1)
+wave(S3L_FRACTIONS_PER_UNIT * 20,-S3L_FRACTIONS_PER_UNIT * 30,2,0.05)
+wave(-S3L_FRACTIONS_PER_UNIT * 30,S3L_FRACTIONS_PER_UNIT * 45,4,0.05)
+
+
+#undef wave
+
+/*
+float dist = sqrt(position.x * position.x + position.z * position.z);
+
+normal.x += S3L_sin(dist) / 4;
+normal.y += S3L_cos(dist) / 4;
+*/
+
+/*
+  normal.x += S3L_sin((position.x + position.z) / 16) / 4 + S3L_sin((position.x + position.z / 2) / 3) / 8;
+  normal.z += S3L_sin(position.z / 16) / 4 + S3L_sin(position.z / 3) / 8;
+*/
+}
+
   S3L_normalizeVec3(&normal);
 
   S3L_Vec4 reflected;
 
   S3L_Vec4 toCameraDirection;
 
-  toCameraDirection.x = scene.camera.transform.translation.x - S3L_interpolateBarycentric(v0.x,v1.x,v2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-  toCameraDirection.y = scene.camera.transform.translation.y - S3L_interpolateBarycentric(v0.y,v1.y,v2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-  toCameraDirection.z = scene.camera.transform.translation.z - S3L_interpolateBarycentric(v0.z,v1.z,v2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  toCameraDirection.x = scene.camera.transform.translation.x - position.x;
+  toCameraDirection.y = scene.camera.transform.translation.y - position.y; 
+  toCameraDirection.z = scene.camera.transform.translation.z - position.z;
 
   S3L_normalizeVec3(&toCameraDirection);
 
@@ -134,7 +174,7 @@ void drawPixel(S3L_PixelInfo *p)
   if (fog > 1.0)
     fog = 1.0;
 
-  float light = 0.3 * fog + 0.6 * diffuse + 0.5 * pow(specular,15.0);
+  float light = 0.3 * fog + 0.6 * diffuse + 0.5 * pow(specular,20.0);
 
   uint8_t color[3];
 
@@ -142,7 +182,7 @@ void drawPixel(S3L_PixelInfo *p)
 
   if (p->modelIndex == MODELS - 1)
   {
-    S3L_Unit waterDepth = p->previousZ - p->depth;
+    S3L_Unit waterDepth = (p->previousZ - p->depth);
 
     float transparency = waterDepth / ((float) (S3L_FRACTIONS_PER_UNIT / 3));
 
@@ -156,9 +196,17 @@ void drawPixel(S3L_PixelInfo *p)
     previousColor[1] = frameBuffer[index + 1];
     previousColor[2] = frameBuffer[index + 2];
 
-    color[0] = S3L_clamp(transparency2 * previousColor[0] + transparency * 100 * light,0,255);
-    color[1] = S3L_clamp(transparency2 * previousColor[1] + transparency * 100 * light,0,255);
-    color[2] = S3L_clamp(transparency2 * previousColor[2] + transparency * 255 * light,0,255);
+color[0] = 100;
+color[1] = 100;
+color[2] = 200;
+
+    color[0] = S3L_clamp(transparency2 * previousColor[0] + transparency * color[0] * light,0,255);
+    color[1] = S3L_clamp(transparency2 * previousColor[1] + transparency * color[1] * light,0,255);
+    color[2] = S3L_clamp(transparency2 * previousColor[2] + transparency * color[2] * light,0,255);
+
+
+
+
   }
   else
   {
@@ -220,10 +268,10 @@ void createGeometry()
     }
 }
 
-void animateWater(int t)
+void animateWater()
 {
   for (int i = 1; i < GRID_W * GRID_H * 3; i += 3)
-    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 4 + sin(i) * S3L_FRACTIONS_PER_UNIT / 2;
+    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 4 + sin(frame * 0.2) * S3L_FRACTIONS_PER_UNIT / 4;
 
   S3L_computeModelNormals(models[MODELS - 1],waterNormals,0);
 }
@@ -276,13 +324,13 @@ int main()
 
   S3L_initScene(models,MODELS,&scene);
 
-  animateWater(0);
-
   char fileName[] = "test00.ppm";
   
   for (int i = 0; i < 20; ++i)
   {
-    scene.camera.transform.translation.x = i * S3L_FRACTIONS_PER_UNIT / 4;
+    animateWater();
+
+    scene.camera.transform.translation.x = -i * S3L_FRACTIONS_PER_UNIT / 4;
     scene.camera.transform.translation.y = 8 * S3L_FRACTIONS_PER_UNIT;
     scene.camera.transform.translation.z = -10 * S3L_FRACTIONS_PER_UNIT + i * S3L_FRACTIONS_PER_UNIT / 4;
 
@@ -304,6 +352,8 @@ int main()
     fileName[5] = '0' + (i % 10);
 
     saveImage(fileName);
+
+    frame++;
   }
 
   return 0;
