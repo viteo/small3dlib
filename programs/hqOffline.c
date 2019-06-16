@@ -93,7 +93,9 @@ void sampleTexture(uint8_t *texture, int w, int h, float x, float y, uint8_t col
 
 void drawPixel(S3L_PixelInfo *p)
 {
-  S3L_correctBarycentricCoords(p->barycentric);
+  int16_t color[3];
+
+  float u, v;
 
   S3L_Unit *normals = p->modelIndex == 0 ? terrainNormals : waterNormals;
 
@@ -133,52 +135,63 @@ void drawPixel(S3L_PixelInfo *p)
     v2.z = scene.models[p->modelIndex].vertices[index];
   }
 
+  S3L_correctBarycentricCoords(p->barycentric);
+
   S3L_Vec4 position;
+  S3L_Vec4 normal;
+  S3L_Vec4 toCameraDirection;
+  S3L_Vec4 reflected;
+  S3L_Unit blend = 0;
 
   position.x = S3L_interpolateBarycentric(v0.x,v1.x,v2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
   position.y = S3L_interpolateBarycentric(v0.y,v1.y,v2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
   position.z = S3L_interpolateBarycentric(v0.z,v1.z,v2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
 
-  S3L_Vec4 normal;
-
-  normal.x = S3L_interpolateBarycentric(n0.x, n1.x, n2.x,
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-  normal.y = S3L_interpolateBarycentric(n0.y, n1.y, n2.y,
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-  normal.z = S3L_interpolateBarycentric(n0.z, n1.z, n2.z,
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-if (p->modelIndex == MODELS - 1)
-{
-
-float dist, dx, dy;
-
-dist = position.x + position.z + frame * 5;
-normal.x += S3L_sin(dist / 2) / 8;
-normal.z += S3L_cos(dist / 2) / 8;
-
-dist = position.x - 2 * position.z + frame * 10;
-normal.x += S3L_sin(dist) / 64;
-normal.z += S3L_cos(dist) / 64;
-
-
-
-}
-
-  S3L_normalizeVec3(&normal);
-
-  S3L_Vec4 reflected;
-
-  S3L_Vec4 toCameraDirection;
+  normal.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  normal.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  normal.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
 
   toCameraDirection.x = scene.camera.transform.translation.x - position.x;
   toCameraDirection.y = scene.camera.transform.translation.y - position.y; 
   toCameraDirection.z = scene.camera.transform.translation.z - position.z;
-
   S3L_normalizeVec3(&toCameraDirection);
 
+  if (p->modelIndex == MODELS - 1)
+  {
+    float dist, dx, dy;
+
+    // create wavy normal map for water
+
+    dist = position.x + position.z + frame * 5;
+    normal.x += S3L_sin(dist) / 8;
+    normal.z += S3L_cos(dist) / 8;
+
+    dist = position.x - 2 * position.z + frame * 10;
+    normal.x += S3L_sin(dist) / 16;
+    normal.z += S3L_cos(dist) / 16;
+  }
+  else
+  {
+    u = position.x / ((float) S3L_FRACTIONS_PER_UNIT * 2);
+    v = position.z / ((float) S3L_FRACTIONS_PER_UNIT * 2);
+ 
+    uint8_t textureNormal[3];
+    uint8_t textureNormal2[3];
+
+    sampleTexture(sandNormalTexture,SANDNORMAL_TEXTURE_WIDTH,SANDNORMAL_TEXTURE_HEIGHT,u,v,textureNormal);
+    sampleTexture(grassNormalTexture,GRASSNORMAL_TEXTURE_WIDTH,GRASSNORMAL_TEXTURE_HEIGHT,u / 2,v / 2,textureNormal2);
+
+    blend = S3L_clamp(position.y * 4 - S3L_FRACTIONS_PER_UNIT,0,S3L_FRACTIONS_PER_UNIT);
+
+    textureNormal[0] = S3L_interpolateByUnit(textureNormal[0],textureNormal2[0],blend);
+    textureNormal[1] = S3L_interpolateByUnit(textureNormal[1],textureNormal2[1],blend);
+    textureNormal[2] = S3L_interpolateByUnit(textureNormal[2],textureNormal2[2],blend);
+
+    normal.x += (((int16_t) textureNormal[0]) - 128);
+    normal.z += (((int16_t) textureNormal[1]) - 128);
+  }
+
+  S3L_normalizeVec3(&normal);
   S3L_reflect(toLightDirection,normal,&reflected);
  
   float diffuse = 0.5 - (S3L_dotProductVec3(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
@@ -190,7 +203,6 @@ normal.z += S3L_cos(dist) / 64;
 
   float light = 0.3 * fog + 0.6 * diffuse + 0.5 * pow(specular,20.0);
 
-  uint8_t color[3];
 
   int index = (p->y * S3L_RESOLUTION_X + p->x) * 3;
 
@@ -211,74 +223,37 @@ normal.z += S3L_cos(dist) / 64;
     previousColor[2] = frameBuffer[index + 2];
 
 
-float fresnel = 0.5 + (S3L_dotProductVec3(toCameraDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
-float fresnel2 = 1.0 - fresnel;
+    float fresnel = 0.5 + (S3L_dotProductVec3(toCameraDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+    float fresnel2 = 1.0 - fresnel;
 
-color[0] = fresnel2 * 150 + fresnel * 0;
-color[1] = fresnel2 * 230 + fresnel * 10;
-color[2] = fresnel2 * 255 + fresnel * 100;
+    color[0] = fresnel2 * 150 + fresnel * 0;
+    color[1] = fresnel2 * 230 + fresnel * 10;
+    color[2] = fresnel2 * 255 + fresnel * 100;
 
-    color[0] = S3L_clamp(transparency2 * previousColor[0] + transparency * color[0] * light,0,255);
-    color[1] = S3L_clamp(transparency2 * previousColor[1] + transparency * color[1] * light,0,255);
-    color[2] = S3L_clamp(transparency2 * previousColor[2] + transparency * color[2] * light,0,255);
-
-
-
-
+    color[0] = transparency2 * previousColor[0] + transparency * color[0] * light;
+    color[1] = transparency2 * previousColor[1] + transparency * color[1] * light;
+    color[2] = transparency2 * previousColor[2] + transparency * color[2] * light;
   }
   else
   {
+    uint8_t textureColor[3];
+    uint8_t textureColor2[3];
 
-uint8_t textureColor[3];
-uint8_t textureNormal[3];
+    sampleTexture(sandTexture,SAND_TEXTURE_WIDTH,SAND_TEXTURE_HEIGHT,u,v,textureColor);
+    sampleTexture(grassTexture,GRASS_TEXTURE_WIDTH,GRASS_TEXTURE_HEIGHT,u / 2,v / 2,textureColor2);
 
-uint8_t textureColor2[3];
-uint8_t textureNormal2[3];
+    textureColor[0] = S3L_interpolateByUnit(textureColor[0],textureColor2[0],blend);
+    textureColor[1] = S3L_interpolateByUnit(textureColor[1],textureColor2[1],blend);
+    textureColor[2] = S3L_interpolateByUnit(textureColor[2],textureColor2[2],blend);
 
-float x = position.x / ((float) S3L_FRACTIONS_PER_UNIT * 2);
-float y = position.z / ((float) S3L_FRACTIONS_PER_UNIT * 2);
-
-sampleTexture(sandTexture,SAND_TEXTURE_WIDTH,SAND_TEXTURE_HEIGHT,x,y,textureColor);
-sampleTexture(sandNormalTexture,SANDNORMAL_TEXTURE_WIDTH,SANDNORMAL_TEXTURE_HEIGHT,x,y,textureNormal);
-
-sampleTexture(grassTexture,GRASS_TEXTURE_WIDTH,GRASS_TEXTURE_HEIGHT,x / 2,y / 2,textureColor2);
-sampleTexture(grassNormalTexture,GRASSNORMAL_TEXTURE_WIDTH,GRASSNORMAL_TEXTURE_HEIGHT,x / 2,y / 2,textureNormal2);
-
-S3L_Unit t = S3L_clamp(position.y * 4 - S3L_FRACTIONS_PER_UNIT,0,S3L_FRACTIONS_PER_UNIT);
-
-textureColor[0] = S3L_interpolateByUnit(textureColor[0],textureColor2[0],t);
-textureColor[1] = S3L_interpolateByUnit(textureColor[1],textureColor2[1],t);
-textureColor[2] = S3L_interpolateByUnit(textureColor[2],textureColor2[2],t);
-
-textureNormal[0] = S3L_interpolateByUnit(textureNormal[0],textureNormal2[0],t);
-textureNormal[1] = S3L_interpolateByUnit(textureNormal[1],textureNormal2[1],t);
-textureNormal[2] = S3L_interpolateByUnit(textureNormal[2],textureNormal2[2],t);
-
-normal.x += (((int16_t) textureNormal[0]) - 128) * 4;
-normal.z += (((int16_t) textureNormal[1]) - 128) * 4;
-
-S3L_normalizeVec3(&normal);
-  
-diffuse = 0.5 - (S3L_dotProductVec3(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
-specular = 0.5 + (S3L_dotProductVec3(reflected,toCameraDirection) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
-fog = (p->depth / ((float) S3L_FRACTIONS_PER_UNIT * 20));
-
-light = 0.3 * fog + 0.6 * diffuse + 0.5 * pow(specular,20.0);
-
-    color[0] = S3L_clamp(((int16_t) textureColor[0]) * light,0,255);
-    color[1] = S3L_clamp(((int16_t) textureColor[1]) * light,0,255);
-    color[2] = S3L_clamp(((int16_t) textureColor[2]) * light,0,255);
+    color[0] = textureColor[0] * light;
+    color[1] = textureColor[1] * light;
+    color[2] = textureColor[2] * light;
   }
 
-/*
-color[0] = S3L_clamp(127 + normal.x / 4,0,255);
-color[1] = S3L_clamp(127 + normal.y / 4,0,255);
-color[2] = S3L_clamp(127 + normal.z / 4,0,255);
-*/
-
-  frameBuffer[index] = color[0];
-  frameBuffer[index + 1] = color[1];
-  frameBuffer[index + 2] = color[2];
+  frameBuffer[index] = S3L_clamp(color[0],0,255);
+  frameBuffer[index + 1] = S3L_clamp(color[1],0,255);
+  frameBuffer[index + 2] = S3L_clamp(color[2],0,255);
 }
 
 void createGeometry()
