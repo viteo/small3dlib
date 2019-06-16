@@ -48,6 +48,15 @@ int8_t heightMap[GRID_W * GRID_H] =
 #undef e
 };
 
+float interpolate(float a, float b, float t)
+{
+  return a * (1.0 - t) + b * t;
+}
+
+#define ISLAND_MODEL_INDEX 0
+#define WATER_MODEL_INDEX 1   // must be last, for transparency
+#define MODELS_TOTAL (WATER_MODEL_INDEX + 1)
+
 #define GRID_TRIANGLES ((GRID_W - 1) * (GRID_H - 1) * 2)
 
 S3L_Unit terrainVertices[GRID_W * GRID_H * 3];
@@ -58,9 +67,7 @@ S3L_Unit waterNormals[GRID_W * GRID_H * 3];
 
 S3L_Index gridTriangles[GRID_TRIANGLES * 3];
 
-#define MODELS 2
-
-S3L_Model3D models[MODELS];
+S3L_Model3D models[MODELS_TOTAL];
 S3L_Scene scene;
 
 int previousTriangle = -1;
@@ -156,7 +163,7 @@ void drawPixel(S3L_PixelInfo *p)
   toCameraDirection.z = scene.camera.transform.translation.z - position.z;
   S3L_normalizeVec3(&toCameraDirection);
 
-  if (p->modelIndex == MODELS - 1)
+  if (p->modelIndex == WATER_MODEL_INDEX)
   {
     float dist, dx, dy;
 
@@ -170,7 +177,7 @@ void drawPixel(S3L_PixelInfo *p)
     normal.x += S3L_sin(dist) / 16;
     normal.z += S3L_cos(dist) / 16;
   }
-  else
+  else // island
   {
     u = position.x / ((float) S3L_FRACTIONS_PER_UNIT * 2);
     v = position.z / ((float) S3L_FRACTIONS_PER_UNIT * 2);
@@ -206,15 +213,16 @@ void drawPixel(S3L_PixelInfo *p)
 
   int index = (p->y * S3L_RESOLUTION_X + p->x) * 3;
 
-  if (p->modelIndex == MODELS - 1)
+  if (p->modelIndex == WATER_MODEL_INDEX)
   {
     S3L_Unit waterDepth = (p->previousZ - p->depth) / 2;
 
     float transparency = waterDepth / ((float) (S3L_FRACTIONS_PER_UNIT / 3));
 
     transparency = transparency > 1.0 ? 1.0 : transparency;
-  
-    float transparency2 = 1.0 - transparency;
+
+    if (transparency < 0.2)
+      transparency = transparency + 1.0 - transparency / 0.2;
 
     uint8_t previousColor[3];
 
@@ -222,19 +230,17 @@ void drawPixel(S3L_PixelInfo *p)
     previousColor[1] = frameBuffer[index + 1];
     previousColor[2] = frameBuffer[index + 2];
 
-
     float fresnel = 0.5 + (S3L_dotProductVec3(toCameraDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
-    float fresnel2 = 1.0 - fresnel;
 
-    color[0] = fresnel2 * 150 + fresnel * 0;
-    color[1] = fresnel2 * 230 + fresnel * 10;
-    color[2] = fresnel2 * 255 + fresnel * 100;
+    color[0] = interpolate(150,0,fresnel);
+    color[1] = interpolate(230,10,fresnel);
+    color[2] = interpolate(255,100,fresnel);
 
-    color[0] = transparency2 * previousColor[0] + transparency * color[0] * light;
-    color[1] = transparency2 * previousColor[1] + transparency * color[1] * light;
-    color[2] = transparency2 * previousColor[2] + transparency * color[2] * light;
+    color[0] = interpolate(previousColor[0],color[0] * light,transparency);
+    color[1] = interpolate(previousColor[1],color[1] * light,transparency);
+    color[2] = interpolate(previousColor[2],color[2] * light,transparency);
   }
-  else
+  else   // island
   {
     uint8_t textureColor[3];
     uint8_t textureColor2[3];
@@ -303,7 +309,7 @@ void animateWater()
   for (int i = 1; i < GRID_W * GRID_H * 3; i += 3)
     waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 4 + sin(frame * 0.2) * S3L_FRACTIONS_PER_UNIT / 4;
 
-  S3L_computeModelNormals(models[MODELS - 1],waterNormals,0);
+  S3L_computeModelNormals(models[MODELS_TOTAL - 1],waterNormals,0);
 }
 
 void clearFrameBuffer()
@@ -341,7 +347,7 @@ int main()
     GRID_W * GRID_H,
     gridTriangles,
     GRID_TRIANGLES,  
-    &(models[0]));
+    &(models[ISLAND_MODEL_INDEX]));
 
   S3L_computeModelNormals(models[0],terrainNormals,0);
 
@@ -350,9 +356,9 @@ int main()
     GRID_W * GRID_H,
     gridTriangles,
     GRID_TRIANGLES,  
-    &(models[MODELS - 1]));
+    &(models[WATER_MODEL_INDEX]));
 
-  S3L_initScene(models,MODELS,&scene);
+  S3L_initScene(models,MODELS_TOTAL,&scene);
 
   char fileName[] = "test00.ppm";
   
