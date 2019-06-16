@@ -950,7 +950,8 @@ S3L_Model3D cityModel =
   .vertices = cityVertices,
   .vertexCount = CITY_VERTEX_COUNT,
   .triangles = cityTriangleIndices,
-  .triangleCount = CITY_TRIANGLE_COUNT
+  .triangleCount = CITY_TRIANGLE_COUNT,
+  .customTransformMatrix = 0
 };
 
 #endif // guard

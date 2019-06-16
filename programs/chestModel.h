@@ -758,7 +758,8 @@ S3L_Model3D chestModel =
   .vertices = chestVertices,
   .vertexCount = CHEST_VERTEX_COUNT,
   .triangles = chestTriangleIndices,
-  .triangleCount = CHEST_TRIANGLE_COUNT
+  .triangleCount = CHEST_TRIANGLE_COUNT,
+  .customTransformMatrix = 0
 };
 
 #endif // guard

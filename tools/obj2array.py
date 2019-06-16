@@ -185,13 +185,14 @@ if COMPACT:
   print("{.vertices=" +
     NAME + "Vertices,.vertexCount=" + str(len(vertices)) +
     ",.triangles=" + NAME.upper() + "TriangleIndices,\n.triangleCount=" +
-    str(len(triangles)) + "};");
+    str(len(triangles)) + ",.customTransformMatrix=0};");
 else:
   print("{")
   print("  .vertices = " + NAME + "Vertices,") 
   print("  .vertexCount = " + NAME.upper() + "_VERTEX_COUNT,")
   print("  .triangles = " + NAME + "TriangleIndices,")
-  print("  .triangleCount = " + NAME.upper() + "_TRIANGLE_COUNT")
+  print("  .triangleCount = " + NAME.upper() + "_TRIANGLE_COUNT,")
+  print("  .customTransformMatrix = 0")
   print("};")
 
 if GUARDS:

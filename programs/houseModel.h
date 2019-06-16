@@ -722,7 +722,8 @@ S3L_Model3D houseModel =
   .vertices = houseVertices,
   .vertexCount = HOUSE_VERTEX_COUNT,
   .triangles = houseTriangleIndices,
-  .triangleCount = HOUSE_TRIANGLE_COUNT
+  .triangleCount = HOUSE_TRIANGLE_COUNT,
+  .customTransformMatrix = 0
 };
 
 #endif // guard

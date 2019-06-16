@@ -399,7 +399,8 @@ S3L_Model3D cat1Model =
   .vertices = cat1Vertices,
   .vertexCount = CAT1_VERTEX_COUNT,
   .triangles = cat1TriangleIndices,
-  .triangleCount = CAT1_TRIANGLE_COUNT
+  .triangleCount = CAT1_TRIANGLE_COUNT,
+  .customTransformMatrix = 0
 };
 
 #endif // guard

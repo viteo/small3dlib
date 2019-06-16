@@ -46,7 +46,8 @@ S3L_Model3D plantModel =
   .vertices = plantVertices,
   .vertexCount = PLANT_VERTEX_COUNT,
   .triangles = plantTriangleIndices,
-  .triangleCount = PLANT_TRIANGLE_COUNT
+  .triangleCount = PLANT_TRIANGLE_COUNT,
+  .customTransformMatrix = 0
 };
 
 #endif // guard
