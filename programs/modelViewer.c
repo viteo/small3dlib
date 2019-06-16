@@ -432,6 +432,12 @@ int main()
 
   S3L_initScene(&model,1,&scene);
 
+  S3L_initModel3D(houseVertices,HOUSE_VERTEX_COUNT,houseTriangleIndices,HOUSE_TRIANGLE_COUNT,&houseModel);
+  S3L_initModel3D(chestVertices,CHEST_VERTEX_COUNT,chestTriangleIndices,CHEST_TRIANGLE_COUNT,&chestModel);
+  S3L_initModel3D(plantVertices,PLANT_VERTEX_COUNT,plantTriangleIndices,PLANT_TRIANGLE_COUNT,&plantModel);
+  S3L_initModel3D(cat1Vertices,CAT1_VERTEX_COUNT,cat1TriangleIndices,CAT1_TRIANGLE_COUNT,&cat1Model);
+  S3L_initModel3D(cat2Vertices,CAT2_VERTEX_COUNT,cat1TriangleIndices,CAT1_TRIANGLE_COUNT,&cat2Model);
+
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
 
   catModel = cat1Model;

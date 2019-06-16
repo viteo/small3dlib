@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "grassTexture.h"
+
 uint8_t frameBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3];
 
 int frame = 0;
@@ -63,6 +65,21 @@ int previousTriangle = -1;
 S3L_Vec4 toLightDirection;
 
 S3L_Vec4 n0, n1, n2, v0, v1, v2;
+
+void sampleTexture(uint8_t *texture, int w, int h, float x, float y, char color[3])
+{
+  x = fmod(x,1.0);
+  y = fmod(y,1.0);
+
+  int intX = x * w;
+  int intY = y * h;
+
+  int index = S3L_clamp((intY * w + intX) * 3,0,w * h - 1);
+
+  color[0] = texture[index];
+  color[1] = texture[index + 1];
+  color[2] = texture[index + 2];
+}
 
 void drawPixel(S3L_PixelInfo *p)
 {
@@ -199,9 +216,16 @@ color[2] = fresnel2 * 255 + fresnel * 100;
   }
   else
   {
-    color[0] = S3L_clamp(255 * light,0,255);
-    color[1] = S3L_clamp(100 * light,0,255);
-    color[2] = S3L_clamp(50 * light,0,255);
+
+char textureColor[3];
+
+sampleTexture(grassTexture,GRASS_TEXTURE_WIDTH,GRASS_TEXTURE_HEIGHT,
+position.x / ((float) S3L_FRACTIONS_PER_UNIT),
+position.z / ((float) S3L_FRACTIONS_PER_UNIT),textureColor);
+
+    color[0] = S3L_clamp(textureColor[0] * light,0,255);
+    color[1] = S3L_clamp(textureColor[1] * light,0,255);
+    color[2] = S3L_clamp(textureColor[2] * light,0,255);
   }
 
 /*

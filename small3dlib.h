@@ -431,6 +431,10 @@ typedef struct
   const S3L_Index *triangles;
   S3L_Index triangleCount;
   S3L_Transform3D transform;
+  S3L_Mat4 *customTransformMatrix; /**< This can be used to override the
+                                     transform (if != 0) with a custom
+                                     transform matrix, which is more
+                                     general. */
   S3L_DrawConfig config;
 } S3L_Model3D;                ///< Represents a 3D model.
 
@@ -1458,7 +1462,8 @@ void S3L_initModel3D(
   model->vertexCount = vertexCount;
   model->triangles = triangles;
   model->triangleCount = triangleCount;
-  
+  model->customTransformMatrix = 0;  
+
   S3L_initTransoform3D(&(model->transform));
   S3L_initDrawConfig(&(model->config));
 }
@@ -2355,7 +2360,17 @@ void S3L_drawScene(S3L_Scene scene)
     previousModel = modelIndex;
 #endif
 
-    S3L_makeWorldMatrix(scene.models[modelIndex].transform,&matFinal);
+    if (scene.models[modelIndex].customTransformMatrix == 0)
+      S3L_makeWorldMatrix(scene.models[modelIndex].transform,&matFinal);
+    else
+    {
+      S3L_Mat4 *m = scene.models[modelIndex].customTransformMatrix;
+
+      for (int8_t j = 0; j < 4; ++j)
+        for (int8_t i = 0; i < 4; ++i)
+           matFinal[i][j] = (*m)[i][j];
+    }
+
     S3L_mat4Xmat4(&matFinal,&matCamera);
 
     S3L_Index triangleCount = scene.models[modelIndex].triangleCount;
