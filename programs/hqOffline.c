@@ -104,6 +104,8 @@ void drawPixel(S3L_PixelInfo *p)
 
   float u, v;
 
+  float diffuseIntensity, specularIntensity, specularPower;
+
   S3L_Unit *normals = p->modelIndex == 0 ? terrainNormals : waterNormals;
 
   if (p->triangleIndex != previousTriangle)
@@ -165,6 +167,10 @@ void drawPixel(S3L_PixelInfo *p)
 
   if (p->modelIndex == WATER_MODEL_INDEX)
   {
+    diffuseIntensity = 0.6;
+    specularIntensity = 0.8;
+    specularPower = 40.0;
+
     float dist, dx, dy;
 
     // create wavy normal map for water
@@ -179,6 +185,10 @@ void drawPixel(S3L_PixelInfo *p)
   }
   else // island
   {
+    diffuseIntensity = 0.5;
+    specularIntensity = 0.3;
+    specularPower = 2.0;
+
     u = position.x / ((float) S3L_FRACTIONS_PER_UNIT * 2);
     v = position.z / ((float) S3L_FRACTIONS_PER_UNIT * 2);
  
@@ -208,8 +218,7 @@ void drawPixel(S3L_PixelInfo *p)
   if (fog > 1.0)
     fog = 1.0;
 
-  float light = 0.3 * fog + 0.6 * diffuse + 0.5 * pow(specular,20.0);
-
+  float light = 0.9 * fog + diffuseIntensity * diffuse + specularIntensity * pow(specular,specularPower);
 
   int index = (p->y * S3L_RESOLUTION_X + p->x) * 3;
 
@@ -240,7 +249,7 @@ void drawPixel(S3L_PixelInfo *p)
     color[1] = interpolate(previousColor[1],color[1] * light,transparency);
     color[2] = interpolate(previousColor[2],color[2] * light,transparency);
   }
-  else   // island
+  else // island
   {
     uint8_t textureColor[3];
     uint8_t textureColor2[3];
@@ -273,9 +282,9 @@ void createGeometry()
        terrainVertices[i + 1] = (heightMap[i / 3] - 1) * S3L_FRACTIONS_PER_UNIT / 4;
        terrainVertices[i + 2] = (y - GRID_H / 2) * S3L_FRACTIONS_PER_UNIT;
 
-       waterVertices[i] = terrainVertices[i] * 8;
+       waterVertices[i] = terrainVertices[i];
        waterVertices[i + 1] = 0;
-       waterVertices[i + 2] = terrainVertices[i + 2] * 8;
+       waterVertices[i + 2] = terrainVertices[i + 2];
 
        i += 3;
      }
@@ -362,13 +371,13 @@ int main()
 
   char fileName[] = "test00.ppm";
   
-  for (int i = 0; i < 10; ++i)
+  for (int i = 0; i < 50; ++i)
   {
     animateWater();
 
-    scene.camera.transform.translation.x = i * S3L_FRACTIONS_PER_UNIT / 4;
-    scene.camera.transform.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;
-    scene.camera.transform.translation.z = -9 * S3L_FRACTIONS_PER_UNIT;
+    scene.camera.transform.translation.x = S3L_sin(i * 5) * 3;  //   i * S3L_FRACTIONS_PER_UNIT / 2;
+    scene.camera.transform.translation.y = 5 * S3L_FRACTIONS_PER_UNIT + S3L_sin(i * 5) * 3;
+    scene.camera.transform.translation.z = S3L_cos(i * 4) * 10;  //-9 * S3L_FRACTIONS_PER_UNIT + i * S3L_FRACTIONS_PER_UNIT / 2;
 
     S3L_Vec4 target;
     
