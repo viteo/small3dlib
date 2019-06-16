@@ -15,6 +15,9 @@
 #include <math.h>
 
 #include "grassTexture.h"
+#include "grassNormalTexture.h"
+#include "sandTexture.h"
+#include "sandNormalTexture.h"
 
 uint8_t frameBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3];
 
@@ -154,11 +157,11 @@ float dist, dx, dy;
 
 dist = position.x + position.z + frame * 5;
 normal.x += S3L_sin(dist / 2) / 8;
-normal.y += S3L_cos(dist / 2) / 8;
+normal.z += S3L_cos(dist / 2) / 8;
 
 dist = position.x - 2 * position.z + frame * 10;
 normal.x += S3L_sin(dist) / 64;
-normal.y += S3L_cos(dist) / 64;
+normal.z += S3L_cos(dist) / 64;
 
 
 
@@ -193,7 +196,7 @@ normal.y += S3L_cos(dist) / 64;
 
   if (p->modelIndex == MODELS - 1)
   {
-    S3L_Unit waterDepth = (p->previousZ - p->depth);
+    S3L_Unit waterDepth = (p->previousZ - p->depth) / 2;
 
     float transparency = waterDepth / ((float) (S3L_FRACTIONS_PER_UNIT / 3));
 
@@ -227,10 +230,40 @@ color[2] = fresnel2 * 255 + fresnel * 100;
   {
 
 uint8_t textureColor[3];
+uint8_t textureNormal[3];
 
-sampleTexture(grassTexture,GRASS_TEXTURE_WIDTH,GRASS_TEXTURE_HEIGHT,
-position.x / ((float) S3L_FRACTIONS_PER_UNIT * 4),
-position.z / ((float) S3L_FRACTIONS_PER_UNIT * 4),textureColor);
+uint8_t textureColor2[3];
+uint8_t textureNormal2[3];
+
+float x = position.x / ((float) S3L_FRACTIONS_PER_UNIT * 2);
+float y = position.z / ((float) S3L_FRACTIONS_PER_UNIT * 2);
+
+sampleTexture(sandTexture,SAND_TEXTURE_WIDTH,SAND_TEXTURE_HEIGHT,x,y,textureColor);
+sampleTexture(sandNormalTexture,SANDNORMAL_TEXTURE_WIDTH,SANDNORMAL_TEXTURE_HEIGHT,x,y,textureNormal);
+
+sampleTexture(grassTexture,GRASS_TEXTURE_WIDTH,GRASS_TEXTURE_HEIGHT,x / 2,y / 2,textureColor2);
+sampleTexture(grassNormalTexture,GRASSNORMAL_TEXTURE_WIDTH,GRASSNORMAL_TEXTURE_HEIGHT,x / 2,y / 2,textureNormal2);
+
+S3L_Unit t = S3L_clamp(position.y * 4 - S3L_FRACTIONS_PER_UNIT,0,S3L_FRACTIONS_PER_UNIT);
+
+textureColor[0] = S3L_interpolateByUnit(textureColor[0],textureColor2[0],t);
+textureColor[1] = S3L_interpolateByUnit(textureColor[1],textureColor2[1],t);
+textureColor[2] = S3L_interpolateByUnit(textureColor[2],textureColor2[2],t);
+
+textureNormal[0] = S3L_interpolateByUnit(textureNormal[0],textureNormal2[0],t);
+textureNormal[1] = S3L_interpolateByUnit(textureNormal[1],textureNormal2[1],t);
+textureNormal[2] = S3L_interpolateByUnit(textureNormal[2],textureNormal2[2],t);
+
+normal.x += (((int16_t) textureNormal[0]) - 128) * 4;
+normal.z += (((int16_t) textureNormal[1]) - 128) * 4;
+
+S3L_normalizeVec3(&normal);
+  
+diffuse = 0.5 - (S3L_dotProductVec3(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+specular = 0.5 + (S3L_dotProductVec3(reflected,toCameraDirection) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+fog = (p->depth / ((float) S3L_FRACTIONS_PER_UNIT * 20));
+
+light = 0.3 * fog + 0.6 * diffuse + 0.5 * pow(specular,20.0);
 
     color[0] = S3L_clamp(((int16_t) textureColor[0]) * light,0,255);
     color[1] = S3L_clamp(((int16_t) textureColor[1]) * light,0,255);
@@ -348,13 +381,13 @@ int main()
 
   char fileName[] = "test00.ppm";
   
-  for (int i = 0; i < 40; ++i)
+  for (int i = 0; i < 10; ++i)
   {
     animateWater();
 
-    scene.camera.transform.translation.x = -i * S3L_FRACTIONS_PER_UNIT / 4;
+    scene.camera.transform.translation.x = i * S3L_FRACTIONS_PER_UNIT / 4;
     scene.camera.transform.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;
-    scene.camera.transform.translation.z = -8 * S3L_FRACTIONS_PER_UNIT + i * S3L_FRACTIONS_PER_UNIT / 4;
+    scene.camera.transform.translation.z = -9 * S3L_FRACTIONS_PER_UNIT;
 
     S3L_Vec4 target;
     
