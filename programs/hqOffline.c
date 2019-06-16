@@ -66,15 +66,22 @@ S3L_Vec4 toLightDirection;
 
 S3L_Vec4 n0, n1, n2, v0, v1, v2;
 
-void sampleTexture(uint8_t *texture, int w, int h, float x, float y, char color[3])
+void sampleTexture(uint8_t *texture, int w, int h, float x, float y, uint8_t color[3])
 {
   x = fmod(x,1.0);
   y = fmod(y,1.0);
 
   int intX = x * w;
+
+  if (intX < 0)
+    intX = w + intX;
+
   int intY = y * h;
 
-  int index = S3L_clamp((intY * w + intX) * 3,0,w * h - 1);
+  if (intY < 0)
+    intY = h + intY;
+
+  int index = S3L_clamp((intY * w + intX) * 3,0,w * h * 3 - 1);
 
   color[0] = texture[index];
   color[1] = texture[index + 1];
@@ -83,6 +90,8 @@ void sampleTexture(uint8_t *texture, int w, int h, float x, float y, char color[
 
 void drawPixel(S3L_PixelInfo *p)
 {
+  S3L_correctBarycentricCoords(p->barycentric);
+
   S3L_Unit *normals = p->modelIndex == 0 ? terrainNormals : waterNormals;
 
   if (p->triangleIndex != previousTriangle)
@@ -217,15 +226,15 @@ color[2] = fresnel2 * 255 + fresnel * 100;
   else
   {
 
-char textureColor[3];
+uint8_t textureColor[3];
 
 sampleTexture(grassTexture,GRASS_TEXTURE_WIDTH,GRASS_TEXTURE_HEIGHT,
-position.x / ((float) S3L_FRACTIONS_PER_UNIT),
-position.z / ((float) S3L_FRACTIONS_PER_UNIT),textureColor);
+position.x / ((float) S3L_FRACTIONS_PER_UNIT * 4),
+position.z / ((float) S3L_FRACTIONS_PER_UNIT * 4),textureColor);
 
-    color[0] = S3L_clamp(textureColor[0] * light,0,255);
-    color[1] = S3L_clamp(textureColor[1] * light,0,255);
-    color[2] = S3L_clamp(textureColor[2] * light,0,255);
+    color[0] = S3L_clamp(((int16_t) textureColor[0]) * light,0,255);
+    color[1] = S3L_clamp(((int16_t) textureColor[1]) * light,0,255);
+    color[2] = S3L_clamp(((int16_t) textureColor[2]) * light,0,255);
   }
 
 /*
@@ -339,7 +348,7 @@ int main()
 
   char fileName[] = "test00.ppm";
   
-  for (int i = 0; i < 20; ++i)
+  for (int i = 0; i < 40; ++i)
   {
     animateWater();
 
