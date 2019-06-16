@@ -150,13 +150,13 @@ void drawPixel(S3L_PixelInfo *p)
   S3L_Vec4 reflected;
   S3L_Unit blend = 0;
 
-  position.x = S3L_interpolateBarycentric(v0.x,v1.x,v2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-  position.y = S3L_interpolateBarycentric(v0.y,v1.y,v2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-  position.z = S3L_interpolateBarycentric(v0.z,v1.z,v2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  position.x = S3L_interpolateBarycentric(v0.x,v1.x,v2.x,p->barycentric);
+  position.y = S3L_interpolateBarycentric(v0.y,v1.y,v2.y,p->barycentric);
+  position.z = S3L_interpolateBarycentric(v0.z,v1.z,v2.z,p->barycentric);
 
-  normal.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-  normal.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-  normal.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+  normal.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,p->barycentric);
+  normal.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric);
+  normal.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric);
 
   toCameraDirection.x = scene.camera.transform.translation.x - position.x;
   toCameraDirection.y = scene.camera.transform.translation.y - position.y; 

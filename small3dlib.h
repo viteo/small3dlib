@@ -556,9 +556,7 @@ static inline S3L_Unit S3L_interpolateBarycentric(
   S3L_Unit value0,
   S3L_Unit value1,
   S3L_Unit value2,
-  S3L_Unit barycentric0,
-  S3L_Unit barycentric1,
-  S3L_Unit barycentric2);
+  S3L_Unit barycentric[3]);
 
 static inline void S3L_mapProjectionPlaneToScreen(
   S3L_Vec4 point,
@@ -1517,15 +1515,13 @@ static inline S3L_Unit S3L_interpolateBarycentric(
   S3L_Unit value0,
   S3L_Unit value1,
   S3L_Unit value2,
-  S3L_Unit barycentric0,
-  S3L_Unit barycentric1,
-  S3L_Unit barycentric2)
+  S3L_Unit barycentric[3])
 {
   return
     (
-      (value0 * barycentric0) +
-      (value1 * barycentric1) +
-      (value2 * barycentric2)
+      (value0 * barycentric[0]) +
+      (value1 * barycentric[1]) +
+      (value2 * barycentric[2])
     ) / S3L_FRACTIONS_PER_UNIT;
 }
 

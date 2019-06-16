@@ -253,11 +253,8 @@ void drawPixel(S3L_PixelInfo *p)
     {
       S3L_Unit uv[2];
 
-      uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],
-        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-      uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],
-        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+      uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],p->barycentric);
+      uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],p->barycentric);
 
       sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
 
@@ -280,14 +277,9 @@ void drawPixel(S3L_PixelInfo *p)
     {
       S3L_Vec4 n;
 
-      n.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,
-        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-      n.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,
-        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-      n.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,
-        p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+      n.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,p->barycentric);
+      n.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric);
+      n.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric);
 
       S3L_normalizeVec3(&n);
 
@@ -327,8 +319,7 @@ void drawPixel(S3L_PixelInfo *p)
 
   if (light)
   {
-    int16_t l = S3L_interpolateBarycentric(l0,l1,l2,
-      p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+    int16_t l = S3L_interpolateBarycentric(l0,l1,l2,p->barycentric);
 
     r = S3L_clamp((((int16_t) r) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
     g = S3L_clamp((((int16_t) g) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
