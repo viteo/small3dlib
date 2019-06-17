@@ -76,6 +76,7 @@ S3L_Model3D models[MODELS_TOTAL];
 S3L_Scene scene;
 
 int previousTriangle = -1;
+int previousModel = -1;
 
 S3L_Vec4 toLightDirection;
 
@@ -140,9 +141,24 @@ void drawPixel(S3L_PixelInfo *p)
 
   float diffuseIntensity, specularIntensity, specularPower;
 
-  S3L_Unit *normals = p->modelIndex == 0 ? terrainNormals : waterNormals;
+  S3L_Unit *normals;
 
-  if (p->triangleIndex != previousTriangle)
+  switch (p->modelIndex)
+  {
+    case 0:
+    case 1:
+    case 2:
+            normals = treeNormals; break;
+
+    case ISLAND_MODEL_INDEX:
+            normals = terrainNormals; break;
+
+    case WATER_MODEL_INDEX:
+    default:
+            normals = waterNormals; break;
+  } 
+
+  if (p->triangleIndex != previousTriangle || p->modelIndex != previousModel)
   {
     int index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
@@ -176,6 +192,9 @@ void drawPixel(S3L_PixelInfo *p)
     index++;
     n2.z = normals[index];
     v2.z = scene.models[p->modelIndex].vertices[index];
+
+    previousTriangle = p->triangleIndex;
+    previousModel = p->modelIndex;
   }
 
   S3L_correctBarycentricCoords(p->barycentric);
@@ -352,7 +371,7 @@ void animateWater()
   for (int i = 1; i < GRID_W * GRID_H * 3; i += 3)
     waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 4 + sin(frame * 0.2) * S3L_FRACTIONS_PER_UNIT / 4;
 
-  S3L_computeModelNormals(models[MODELS_TOTAL - 1],waterNormals,0);
+  S3L_computeModelNormals(models[WATER_MODEL_INDEX],waterNormals,0);
 }
 
 void clearFrameBuffer()
@@ -391,9 +410,11 @@ int main()
   models[1] = treeModel;
   models[2] = treeModel;
 
-  S3L_setTransform3D(0,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,&(models[0].transform));
-  S3L_setTransform3D(S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,&(models[1].transform));
-  S3L_setTransform3D(-S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,&(models[2].transform));
+  S3L_Unit scale = S3L_FRACTIONS_PER_UNIT / 4;
+
+  S3L_setTransform3D(0,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,scale,scale,scale,&(models[0].transform));
+  S3L_setTransform3D(S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,scale,scale,scale,&(models[1].transform));
+  S3L_setTransform3D(-S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,scale,scale,scale,&(models[2].transform));
 
   S3L_initModel3D(
     terrainVertices,
@@ -402,7 +423,7 @@ int main()
     GRID_TRIANGLES,  
     &(models[ISLAND_MODEL_INDEX]));
 
-  S3L_computeModelNormals(models[0],terrainNormals,0);
+  S3L_computeModelNormals(models[ISLAND_MODEL_INDEX],terrainNormals,0);
   S3L_computeModelNormals(treeModel,treeNormals,0);
 
   S3L_initModel3D(
@@ -416,7 +437,7 @@ int main()
 
   char fileName[] = "test00.ppm";
   
-  for (int i = 0; i < 5; ++i)  // render the frames
+  for (int i = 0; i < 50; ++i)  // render the frames
   {
     animateWater();
 
