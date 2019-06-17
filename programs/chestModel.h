@@ -753,13 +753,16 @@ const S3L_Index chestUVIndices[CHEST_UV_INDEX_COUNT * 3] = {
      47,     7,    32         // 693
 }; // chestUVIndices
 
-S3L_Model3D chestModel = 
+S3L_Model3D chestModel;
+
+void chestModelInit()
 {
-  .vertices = chestVertices,
-  .vertexCount = CHEST_VERTEX_COUNT,
-  .triangles = chestTriangleIndices,
-  .triangleCount = CHEST_TRIANGLE_COUNT,
-  .customTransformMatrix = 0
-};
+  S3L_initModel3D(
+    chestVertices,
+    CHEST_VERTEX_COUNT,
+    chestTriangleIndices,
+    CHEST_TRIANGLE_COUNT,
+    &chestModel);
+}
 
 #endif // guard

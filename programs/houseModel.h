@@ -717,13 +717,16 @@ const S3L_Index houseUVIndices[HOUSE_UV_INDEX_COUNT * 3] = {
     159,   162,   160         // 597
 }; // houseUVIndices
 
-S3L_Model3D houseModel = 
+S3L_Model3D houseModel;
+
+void houseModelInit()
 {
-  .vertices = houseVertices,
-  .vertexCount = HOUSE_VERTEX_COUNT,
-  .triangles = houseTriangleIndices,
-  .triangleCount = HOUSE_TRIANGLE_COUNT,
-  .customTransformMatrix = 0
-};
+  S3L_initModel3D(
+    houseVertices,
+    HOUSE_VERTEX_COUNT,
+    houseTriangleIndices,
+    HOUSE_TRIANGLE_COUNT,
+    &houseModel);
+}
 
 #endif // guard

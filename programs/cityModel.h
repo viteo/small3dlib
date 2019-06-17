@@ -945,13 +945,16 @@ const S3L_Index cityUVIndices[CITY_UV_INDEX_COUNT * 3] = {
     372,   376,   373         // 588
 }; // cityUVIndices
 
-S3L_Model3D cityModel = 
+S3L_Model3D cityModel;
+
+void cityModelInit()
 {
-  .vertices = cityVertices,
-  .vertexCount = CITY_VERTEX_COUNT,
-  .triangles = cityTriangleIndices,
-  .triangleCount = CITY_TRIANGLE_COUNT,
-  .customTransformMatrix = 0
-};
+  S3L_initModel3D(
+    cityVertices,
+    CITY_VERTEX_COUNT,
+    cityTriangleIndices,
+    CITY_TRIANGLE_COUNT,
+    &cityModel);
+}
 
 #endif // guard

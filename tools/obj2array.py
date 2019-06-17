@@ -179,21 +179,17 @@ else:
   print("#define " + NAME.upper() + "_DIRECT_UV_COUNT " + str(len(uvs2)))
   print(arrayString(NAME + "DirectUVs",uvs2,6,[U_SCALE,V_SCALE],5,False,"S3L_Unit",NAME.upper() + "_DIRECT_UV_COUNT * 6"))
 
-print("S3L_Model3D " + NAME + "Model = ")
+print("S3L_Model3D " + NAME + "Model;\n")
 
-if COMPACT:
-  print("{.vertices=" +
-    NAME + "Vertices,.vertexCount=" + str(len(vertices)) +
-    ",.triangles=" + NAME.upper() + "TriangleIndices,\n.triangleCount=" +
-    str(len(triangles)) + ",.customTransformMatrix=0};");
-else:
-  print("{")
-  print("  .vertices = " + NAME + "Vertices,") 
-  print("  .vertexCount = " + NAME.upper() + "_VERTEX_COUNT,")
-  print("  .triangles = " + NAME + "TriangleIndices,")
-  print("  .triangleCount = " + NAME.upper() + "_TRIANGLE_COUNT,")
-  print("  .customTransformMatrix = 0")
-  print("};")
+print("void " + NAME + "ModelInit()")
+print("{")
+print("  S3L_initModel3D(")
+print("    " + NAME + "Vertices,")
+print("    " + NAME.upper() + "_VERTEX_COUNT,")
+print("    " + NAME + "TriangleIndices,")
+print("    " + NAME.upper() + "_TRIANGLE_COUNT,")
+print("    &" + NAME + "Model);")
+print("}")
 
 if GUARDS:
   print("\n#endif // guard")

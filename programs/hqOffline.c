@@ -18,6 +18,8 @@
 #include "grassNormalTexture.h"
 #include "sandTexture.h"
 #include "sandNormalTexture.h"
+#include "treeModel.h"
+#include "treeTexture.h"
 
 uint8_t frameBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y * 3];
 
@@ -53,8 +55,9 @@ float interpolate(float a, float b, float t)
   return a * (1.0 - t) + b * t;
 }
 
-#define ISLAND_MODEL_INDEX 0
-#define WATER_MODEL_INDEX 1   // must be last, for transparency
+// 0, 1, 2 left for trees
+#define ISLAND_MODEL_INDEX 3
+#define WATER_MODEL_INDEX 4   // must be last, for transparency
 #define MODELS_TOTAL (WATER_MODEL_INDEX + 1)
 
 #define GRID_TRIANGLES ((GRID_W - 1) * (GRID_H - 1) * 2)
@@ -66,6 +69,8 @@ S3L_Unit waterVertices[GRID_W * GRID_H * 3];
 S3L_Unit waterNormals[GRID_W * GRID_H * 3];
 
 S3L_Index gridTriangles[GRID_TRIANGLES * 3];
+
+S3L_Unit treeNormals[TREE_VERTEX_COUNT * 3];
 
 S3L_Model3D models[MODELS_TOTAL];
 S3L_Scene scene;
@@ -380,6 +385,16 @@ int main()
 
   S3L_normalizeVec3(&toLightDirection);
 
+  treeModelInit();
+
+  models[0] = treeModel;
+  models[1] = treeModel;
+  models[2] = treeModel;
+
+  S3L_setTransform3D(0,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,&(models[0].transform));
+  S3L_setTransform3D(S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,&(models[1].transform));
+  S3L_setTransform3D(-S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT,&(models[2].transform));
+
   S3L_initModel3D(
     terrainVertices,
     GRID_W * GRID_H,
@@ -388,6 +403,7 @@ int main()
     &(models[ISLAND_MODEL_INDEX]));
 
   S3L_computeModelNormals(models[0],terrainNormals,0);
+  S3L_computeModelNormals(treeModel,treeNormals,0);
 
   S3L_initModel3D(
     waterVertices,
@@ -400,7 +416,7 @@ int main()
 
   char fileName[] = "test00.ppm";
   
-  for (int i = 0; i < 50; ++i)
+  for (int i = 0; i < 5; ++i)  // render the frames
   {
     animateWater();
 

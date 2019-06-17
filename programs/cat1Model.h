@@ -394,13 +394,16 @@ const S3L_Index cat1UVIndices[CAT1_UV_INDEX_COUNT * 3] = {
      84,    89,    49         // 339
 }; // cat1UVIndices
 
-S3L_Model3D cat1Model = 
+S3L_Model3D cat1Model;
+
+void cat1ModelInit()
 {
-  .vertices = cat1Vertices,
-  .vertexCount = CAT1_VERTEX_COUNT,
-  .triangles = cat1TriangleIndices,
-  .triangleCount = CAT1_TRIANGLE_COUNT,
-  .customTransformMatrix = 0
-};
+  S3L_initModel3D(
+    cat1Vertices,
+    CAT1_VERTEX_COUNT,
+    cat1TriangleIndices,
+    CAT1_TRIANGLE_COUNT,
+    &cat1Model);
+}
 
 #endif // guard

@@ -41,13 +41,16 @@ const S3L_Index plantUVIndices[PLANT_UV_INDEX_COUNT * 3] = {
       3,     7,     4         // 9
 }; // plantUVIndices
 
-S3L_Model3D plantModel = 
+S3L_Model3D plantModel;
+
+void plantModelInit()
 {
-  .vertices = plantVertices,
-  .vertexCount = PLANT_VERTEX_COUNT,
-  .triangles = plantTriangleIndices,
-  .triangleCount = PLANT_TRIANGLE_COUNT,
-  .customTransformMatrix = 0
-};
+  S3L_initModel3D(
+    plantVertices,
+    PLANT_VERTEX_COUNT,
+    plantTriangleIndices,
+    PLANT_TRIANGLE_COUNT,
+    &plantModel);
+}
 
 #endif // guard
