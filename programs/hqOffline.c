@@ -31,7 +31,7 @@ int8_t heightMap[GRID_W * GRID_H] =
 #define e -1
   e,e,e,e,e,e,e,e,e,e,e,e,e,e,e,e,
   e,0,0,0,0,1,0,0,1,1,1,0,0,0,0,e,
-  e,0,0,0,0,1,0,1,2,1,1,1,0,0,0,e,
+  e,0,0,0,0,1,0,1,1,1,1,1,0,0,0,e,
   e,0,0,1,1,1,1,3,2,1,1,1,1,0,0,e,
   e,0,0,0,1,1,2,4,3,2,1,2,1,1,0,e,
   e,0,1,2,2,2,2,4,4,2,2,2,2,1,0,e,
@@ -78,24 +78,53 @@ S3L_Vec4 n0, n1, n2, v0, v1, v2;
 
 void sampleTexture(uint8_t *texture, int w, int h, float x, float y, uint8_t color[3])
 {
+  // we do linear interpolation of the samples
+
   x = fmod(x,1.0);
   y = fmod(y,1.0);
 
-  int intX = x * w;
+  if (x < 0)
+    x = 1.0 + x;
 
-  if (intX < 0)
-    intX = w + intX;
+  if (y < 0)
+    y = 1.0 + y;
 
-  int intY = y * h;
+  x *= w;
+  y *= h;
 
-  if (intY < 0)
-    intY = h + intY;
+  int intX0 = x;
 
-  int index = S3L_clamp((intY * w + intX) * 3,0,w * h * 3 - 1);
+  float xFract = x - intX0;
 
-  color[0] = texture[index];
-  color[1] = texture[index + 1];
-  color[2] = texture[index + 2];
+  int intY0 = y;
+
+  float yFract = y - intY0;
+
+  int intX1 = (intX0 + 1) % w;
+  int intY1 = (intY0 + 1) % h;
+
+  int index;
+  int maxIndex = w * h * 3 - 1;
+
+  uint8_t c0[3], c1[3], c2[3], c3[3];
+
+  #define getColor(n,i0,i1)\
+    index = S3L_clamp((intY##i0 * w + intX##i1) * 3,0,maxIndex);\
+    c##n[0] = texture[index];\
+    c##n[1] = texture[index + 1];\
+    c##n[2] = texture[index + 2];\
+
+  getColor(0,0,0);
+  getColor(1,0,1);
+  getColor(2,1,0);
+  getColor(3,1,1);
+
+  #undef getColor
+
+  color[0] = interpolate(interpolate(c0[0],c1[0],xFract),interpolate(c2[0],c3[0],xFract),yFract);
+  color[1] = interpolate(interpolate(c0[1],c1[1],xFract),interpolate(c2[1],c3[1],xFract),yFract);
+  color[2] = interpolate(interpolate(c0[2],c1[2],xFract),interpolate(c2[2],c3[2],xFract),yFract);
+
 }
 
 void drawPixel(S3L_PixelInfo *p)
@@ -186,8 +215,8 @@ void drawPixel(S3L_PixelInfo *p)
   else // island
   {
     diffuseIntensity = 0.5;
-    specularIntensity = 0.3;
-    specularPower = 2.0;
+    specularIntensity = 0.7;
+    specularPower = 10.0;
 
     u = position.x / ((float) S3L_FRACTIONS_PER_UNIT * 2);
     v = position.z / ((float) S3L_FRACTIONS_PER_UNIT * 2);
@@ -375,9 +404,9 @@ int main()
   {
     animateWater();
 
-    scene.camera.transform.translation.x = S3L_sin(i * 5) * 3;  //   i * S3L_FRACTIONS_PER_UNIT / 2;
-    scene.camera.transform.translation.y = 5 * S3L_FRACTIONS_PER_UNIT + S3L_sin(i * 5) * 3;
-    scene.camera.transform.translation.z = S3L_cos(i * 4) * 10;  //-9 * S3L_FRACTIONS_PER_UNIT + i * S3L_FRACTIONS_PER_UNIT / 2;
+    scene.camera.transform.translation.x = S3L_sin(i * 5) * 3;
+    scene.camera.transform.translation.y = 5 * S3L_FRACTIONS_PER_UNIT + S3L_cos(i * 6) * 2;
+    scene.camera.transform.translation.z = S3L_cos(i * 4) * 10;
 
     S3L_Vec4 target;
     
