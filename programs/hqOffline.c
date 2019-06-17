@@ -1,3 +1,12 @@
+/*
+  Example program for small3dlib. This is an offline (non-realtime) program
+  which creates an animation of a scene with more complex shaders. The
+  animation is output in image files (PPM format).
+
+  author: Miloslav Ciz
+  licene: CC0 1.0
+*/
+
 #define S3L_RESOLUTION_X 800
 #define S3L_RESOLUTION_Y 600
 
@@ -81,6 +90,8 @@ int previousModel = -1;
 S3L_Vec4 toLightDirection;
 
 S3L_Vec4 n0, n1, n2, v0, v1, v2;
+
+S3L_Unit uv0[2], uv1[2], uv2[2];
 
 void sampleTexture(uint8_t *texture, int w, int h, float x, float y, uint8_t color[3])
 {
@@ -193,6 +204,28 @@ void drawPixel(S3L_PixelInfo *p)
     n2.z = normals[index];
     v2.z = scene.models[p->modelIndex].vertices[index];
 
+    if (p->modelIndex != WATER_MODEL_INDEX &&
+        p->modelIndex != ISLAND_MODEL_INDEX)
+    {
+      index = treeUVIndices[p->triangleIndex * 3] * 2;
+
+      uv0[0] = treeUVs[index];
+      index++;
+      uv0[1] = treeUVs[index];
+
+      index = treeUVIndices[p->triangleIndex * 3 + 1] * 2;
+
+      uv1[0] = treeUVs[index];
+      index++;
+      uv1[1] = treeUVs[index];
+
+      index = treeUVIndices[p->triangleIndex * 3 + 2] * 2;
+
+      uv2[0] = treeUVs[index];
+      index++;
+      uv2[1] = treeUVs[index];
+    }
+
     previousTriangle = p->triangleIndex;
     previousModel = p->modelIndex;
   }
@@ -236,7 +269,7 @@ void drawPixel(S3L_PixelInfo *p)
     normal.x += S3L_sin(dist) / 16;
     normal.z += S3L_cos(dist) / 16;
   }
-  else // island
+  else if (p->modelIndex == ISLAND_MODEL_INDEX)
   {
     diffuseIntensity = 0.5;
     specularIntensity = 0.7;
@@ -259,6 +292,15 @@ void drawPixel(S3L_PixelInfo *p)
 
     normal.x += (((int16_t) textureNormal[0]) - 128);
     normal.z += (((int16_t) textureNormal[1]) - 128);
+  }
+  else // tree
+  {
+    diffuseIntensity = 0.6;
+    specularIntensity = 0.2;
+    specularPower = 20.0;
+
+    u = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
+    v = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
   }
 
   S3L_normalizeVec3(&normal);
@@ -302,7 +344,7 @@ void drawPixel(S3L_PixelInfo *p)
     color[1] = interpolate(previousColor[1],color[1] * light,transparency);
     color[2] = interpolate(previousColor[2],color[2] * light,transparency);
   }
-  else // island
+  else if (p->modelIndex == ISLAND_MODEL_INDEX)
   {
     uint8_t textureColor[3];
     uint8_t textureColor2[3];
@@ -313,6 +355,16 @@ void drawPixel(S3L_PixelInfo *p)
     textureColor[0] = S3L_interpolateByUnit(textureColor[0],textureColor2[0],blend);
     textureColor[1] = S3L_interpolateByUnit(textureColor[1],textureColor2[1],blend);
     textureColor[2] = S3L_interpolateByUnit(textureColor[2],textureColor2[2],blend);
+
+    color[0] = textureColor[0] * light;
+    color[1] = textureColor[1] * light;
+    color[2] = textureColor[2] * light;
+  }
+  else // tree
+  {
+    uint8_t textureColor[3];
+
+    sampleTexture(treeTexture,TREE_TEXTURE_WIDTH,TREE_TEXTURE_HEIGHT,u,v,textureColor);
 
     color[0] = textureColor[0] * light;
     color[1] = textureColor[1] * light;
@@ -412,9 +464,9 @@ int main()
 
   S3L_Unit scale = S3L_FRACTIONS_PER_UNIT / 4;
 
-  S3L_setTransform3D(0,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,scale,scale,scale,&(models[0].transform));
-  S3L_setTransform3D(S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,scale,scale,scale,&(models[1].transform));
-  S3L_setTransform3D(-S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT * 2,0,0,0,0,scale,scale,scale,&(models[2].transform));
+  S3L_setTransform3D(0,1.2 * S3L_FRACTIONS_PER_UNIT,-1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[0].transform));
+  S3L_setTransform3D(0.95 * S3L_FRACTIONS_PER_UNIT,1.3 * S3L_FRACTIONS_PER_UNIT,0,0,0,0,scale,scale * 1.3,scale,&(models[1].transform));
+  S3L_setTransform3D(-2 * S3L_FRACTIONS_PER_UNIT,0.8 * S3L_FRACTIONS_PER_UNIT,1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[2].transform));
 
   S3L_initModel3D(
     terrainVertices,
