@@ -25,11 +25,12 @@
 
 #include "cityModel.h"
 #include "cityTexture.h"
+#include "carModel.h"
 
 #define TEXTURE_W 256
 #define TEXTURE_H 256
 
-S3L_Model3D model;
+S3L_Model3D models[2];
 
 S3L_Scene scene;
 
@@ -74,61 +75,60 @@ void sampleTexture(uint8_t *texture, int32_t u, int32_t v, uint8_t *r, uint8_t *
 }
 
 int16_t previousTriangle = -1;
+int16_t previousModel = -1;
 S3L_Unit uv0[2], uv1[2], uv2[2];
 
 void drawPixel(S3L_PixelInfo *p)
 {
-
-/*
- S3L_correctBarycentricCoords(p->barycentric);
-
-if (p->barycentric[0] < 0 || p->barycentric[0] > 512)
-  printf("%d %d %d\n",p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-
-if (p->barycentric[1] < 0 || p->barycentric[1] > 512)
-  printf("%d %d %d\n",p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-
-if (p->barycentric[2] < 0 || p->barycentric[2] > 512)
-  printf("%d %d %d\n",p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-*/
-
-  if (p->triangleIndex != previousTriangle)
+  if (p->triangleIndex != previousTriangle || p->modelIndex != previousModel)
   {
+    S3L_Index *uvIndices;
+    S3L_Unit *uvs;
+
+    if (p->modelIndex == 0)
+    {
+      uvIndices = cityUVIndices;
+      uvs = cityUVs;
+    }
+    else
+    {
+      uvIndices = carUVIndices;
+      uvs = carUVs;
+    }
+
     int16_t index;
 
     index = p->triangleIndex * 3;
 
-    int16_t i0 = cityUVIndices[index];
-    int16_t i1 = cityUVIndices[index + 1];
-    int16_t i2 = cityUVIndices[index + 2];
+    int16_t i0 = uvIndices[index];
+    int16_t i1 = uvIndices[index + 1];
+    int16_t i2 = uvIndices[index + 2];
 
     index = i0 * 2;
 
-    uv0[0] = cityUVs[index];
-    uv0[1] = cityUVs[index + 1];
+    uv0[0] = uvs[index];
+    uv0[1] = uvs[index + 1];
 
     index = i1 * 2;
 
-    uv1[0] = cityUVs[index];
-    uv1[1] = cityUVs[index + 1];
+    uv1[0] = uvs[index];
+    uv1[1] = uvs[index + 1];
 
     index = i2 * 2;
 
-    uv2[0] = cityUVs[index];
-    uv2[1] = cityUVs[index + 1];
+    uv2[0] = uvs[index];
+    uv2[1] = uvs[index + 1];
 
     previousTriangle = p->triangleIndex;
+    previousModel = p->modelIndex;
   }
 
   uint8_t r,g,b;
 
   S3L_Unit uv[2];
 
-  uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
-
-  uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+  uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],p->barycentric);
+  uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],p->barycentric);
 
   sampleTexture(cityTexture,uv[0] / 2,uv[1] / 2,&r,&g,&b);
   
@@ -154,9 +154,13 @@ int main()
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
 
-  S3L_initModel3D(cityVertices,CITY_VERTEX_COUNT,cityTriangleIndices,CITY_TRIANGLE_COUNT,&model);
+  cityModelInit();
+  carModelInit();
 
-  S3L_initScene(&model,1,&scene);
+  models[0] = cityModel;
+  models[1] = carModel;
+
+  S3L_initScene(models,2,&scene);
 
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
 
@@ -203,14 +207,14 @@ int main()
     if (!state[SDL_SCANCODE_LCTRL])
     {
       if (state[SDL_SCANCODE_LEFT])
-        model.transform.rotation.y += rotationStep;
+        models[0].transform.rotation.y += rotationStep;
       else if (state[SDL_SCANCODE_RIGHT])
-        model.transform.rotation.y -= rotationStep;
+        models[0].transform.rotation.y -= rotationStep;
       
       if (state[SDL_SCANCODE_DOWN])
-        model.transform.rotation.x += rotationStep;
+        models[0].transform.rotation.x += rotationStep;
       else if (state[SDL_SCANCODE_UP])
-        model.transform.rotation.x -= rotationStep;
+        models[0].transform.rotation.x -= rotationStep;
     }
     else
     {
