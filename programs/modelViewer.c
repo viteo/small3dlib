@@ -1,5 +1,5 @@
 /*
-  Example for small3dlib: model viewer.
+  Example for small3dlib: model viewer. See the program's help for more info.
 
   author: Miloslav Ciz
   license: CC0
@@ -40,6 +40,25 @@
 
 #define TEXTURE_W 128
 #define TEXTURE_H 128
+
+void printHelp()
+{
+  printf("Modelviewer: example program for small3dlib.\n\n");
+
+  printf("contols:\n");
+  printf("  arrows           rotate\n");
+  printf("  ctrl + U/D       go closer/further\n");
+  printf("  ctrl + L/R       zoom (FOV) closer/further\n");
+  printf("  space            next model\n");
+  printf("  0 - 5            set display mode\n");
+  printf("  w                toggle wireframe\n");
+  printf("  l                toggle light\n");
+  printf("  f                toggle fog\n");
+  printf("  b                change backface culling\n");
+  printf("  n                toggle noise\n");
+
+  printf("\nby Miloslav Ciz, released under CC0 1.0\n");
+}
 
 S3L_Unit houseNormals[HOUSE_VERTEX_COUNT * 3];
 S3L_Unit chestNormals[CHEST_VERTEX_COUNT * 3];
@@ -360,7 +379,7 @@ void draw()
 
 void setModel(uint8_t index)
 {
-  printf("Setting model nmber %d.\n",index);
+  printf("\nSetting model nmber %d.\n",index);
 
   #define modelCase(n,m)\
     case n:\
@@ -409,6 +428,8 @@ int16_t fps = 0;
 
 int main()
 {
+  printHelp();
+
   SDL_Window *window = SDL_CreateWindow("model viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
   SDL_Texture *textureSDL = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
@@ -423,11 +444,11 @@ int main()
 
   S3L_initScene(&model,1,&scene);
 
-  S3L_initModel3D(houseVertices,HOUSE_VERTEX_COUNT,houseTriangleIndices,HOUSE_TRIANGLE_COUNT,&houseModel);
-  S3L_initModel3D(chestVertices,CHEST_VERTEX_COUNT,chestTriangleIndices,CHEST_TRIANGLE_COUNT,&chestModel);
-  S3L_initModel3D(plantVertices,PLANT_VERTEX_COUNT,plantTriangleIndices,PLANT_TRIANGLE_COUNT,&plantModel);
-  S3L_initModel3D(cat1Vertices,CAT1_VERTEX_COUNT,cat1TriangleIndices,CAT1_TRIANGLE_COUNT,&cat1Model);
-  S3L_initModel3D(cat2Vertices,CAT2_VERTEX_COUNT,cat1TriangleIndices,CAT1_TRIANGLE_COUNT,&cat2Model);
+  houseModelInit();
+  chestModelInit();
+  plantModelInit();
+  cat1ModelInit();
+  cat2ModelInit();
 
   scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
 
@@ -463,7 +484,7 @@ int main()
     if (timeDiff >= 1.0)
     {
       nextPrintT = nowT;
-      printf("FPS: %d\n",fps);
+      printf("\nFPS: %d\n",fps);
       fps = 0;
     }
 
@@ -494,7 +515,7 @@ int main()
     uint8_t *state = SDL_GetKeyboardState(NULL);
 
     int16_t rotationStep = S3L_max(1,300 * frameDiff);
-    int16_t zoomStep = S3L_max(1,3000 * frameDiff);
+    int16_t moveStep = S3L_max(1,3000 * frameDiff);
     int16_t fovStep = S3L_max(1,1000 * frameDiff);
 
     if (!state[SDL_SCANCODE_LCTRL])
@@ -520,10 +541,10 @@ int main()
 
       if (state[SDL_SCANCODE_UP])
         scene.camera.transform.translation.z =
-          S3L_min(S3L_FRACTIONS_PER_UNIT, scene.camera.transform.translation.z + zoomStep);
+          S3L_min(S3L_FRACTIONS_PER_UNIT, scene.camera.transform.translation.z + moveStep);
       else if (state[SDL_SCANCODE_DOWN])
         scene.camera.transform.translation.z =
-          S3L_max(-S3L_FRACTIONS_PER_UNIT * 16, scene.camera.transform.translation.z - zoomStep);
+          S3L_max(-S3L_FRACTIONS_PER_UNIT * 16, scene.camera.transform.translation.z - moveStep);
     }
     
     if (state[SDL_SCANCODE_KP_0])
