@@ -206,15 +206,11 @@ int main()
     int16_t stepRotation = S3L_max(1,300 * frameDiff);
 
     if (state[SDL_SCANCODE_LEFT])
-    {
       models[1].transform.rotation.y += stepRotation;
-      S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
-    }
     else if (state[SDL_SCANCODE_RIGHT])
-    {
       models[1].transform.rotation.y -= stepRotation;
-      S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
-    }
+
+    S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
 
     if (state[SDL_SCANCODE_UP])
     {
@@ -226,6 +222,12 @@ int main()
       models[1].transform.translation.x -= (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
       models[1].transform.translation.z -= (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
     }
+
+    scene.camera.transform.translation.x = scene.models[1].transform.translation.x - carDirection.x;
+    scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
+    scene.camera.transform.translation.z = scene.models[1].transform.translation.z - carDirection.z;
+
+    scene.camera.transform.rotation.y = -1 * scene.models[1].transform.rotation.y;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
