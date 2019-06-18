@@ -75,12 +75,11 @@ void sampleTexture(uint8_t *texture, int32_t u, int32_t v, uint8_t *r, uint8_t *
 }
 
 int16_t previousTriangle = -1;
-int16_t previousModel = -1;
 S3L_Unit uv0[2], uv1[2], uv2[2];
 
 void drawPixel(S3L_PixelInfo *p)
 {
-  if (p->triangleIndex != previousTriangle || p->modelIndex != previousModel)
+  if (p->triangleID != previousTriangle)
   {
     S3L_Index *uvIndices;
     S3L_Unit *uvs;
@@ -119,8 +118,7 @@ void drawPixel(S3L_PixelInfo *p)
     uv2[0] = uvs[index];
     uv2[1] = uvs[index + 1];
 
-    previousTriangle = p->triangleIndex;
-    previousModel = p->modelIndex;
+    previousTriangle = p->triangleID;
   }
 
   uint8_t r,g,b;

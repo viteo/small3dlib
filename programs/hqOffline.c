@@ -85,7 +85,6 @@ S3L_Model3D models[MODELS_TOTAL];
 S3L_Scene scene;
 
 int previousTriangle = -1;
-int previousModel = -1;
 
 S3L_Vec4 toLightDirection;
 
@@ -169,7 +168,7 @@ void drawPixel(S3L_PixelInfo *p)
             normals = waterNormals; break;
   } 
 
-  if (p->triangleIndex != previousTriangle || p->modelIndex != previousModel)
+  if (p->triangleID != previousTriangle)
   {
     int index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
@@ -226,8 +225,7 @@ void drawPixel(S3L_PixelInfo *p)
       uv2[1] = treeUVs[index];
     }
 
-    previousTriangle = p->triangleIndex;
-    previousModel = p->modelIndex;
+    previousTriangle = p->triangleID;
   }
 
   S3L_correctBarycentricCoords(p->barycentric);

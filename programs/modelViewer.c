@@ -158,7 +158,7 @@ S3L_Vec4 n0, n1, n2, nt;
 
 void drawPixel(S3L_PixelInfo *p)
 {
-  if (p->triangleIndex != previousTriangle)
+  if (p->triangleID != previousTriangle)
   {
     int16_t index;
 
@@ -253,7 +253,7 @@ void drawPixel(S3L_PixelInfo *p)
       l2 = 256 + S3L_clamp(S3L_dotProductVec3(n2,toLight),-511,511) / 2;
     }
 
-    previousTriangle = p->triangleIndex;
+    previousTriangle = p->triangleID;
   }
 
   if (wire)

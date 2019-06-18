@@ -472,8 +472,11 @@ typedef struct
                               for the price of some performance). The sum of
                               the three coordinates will always be exactly
                               S3L_FRACTIONS_PER_UNIT. */
-  S3L_Index triangleIndex;  ///< Triangle index.
-  S3L_Index modelIndex;
+  S3L_Index modelIndex;    ///< Model index within the scene.
+  S3L_Index triangleIndex; ///< Triangle index within the model.
+  uint32_t triangleID;     /**< Unique ID of the triangle withing the whole
+                               scene. This can be used e.g. by a cache to
+                               quickly find out if a triangle has changed. */
   S3L_Unit depth;         ///< Depth (only if depth is turned on).
   S3L_Unit previousZ;     /**< Z-buffer value (not necessarily world depth in
                                S3L_Units!) that was in the z-buffer on the
@@ -1444,7 +1447,9 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
   p->barycentric[0] = S3L_FRACTIONS_PER_UNIT;
   p->barycentric[1] = 0;
   p->barycentric[2] = 0;
+  p->modelIndex = 0;
   p->triangleIndex = 0;
+  p->triangleID = 0;
   p->depth = 0;
   p->previousZ = 0;
 }
@@ -1631,6 +1636,7 @@ void S3L_drawTriangle(
   S3L_initPixelInfo(&p);
   p.modelIndex = modelIndex;
   p.triangleIndex = triangleIndex;
+  p.triangleID = modelIndex << 16 | triangleIndex;
 
 #if !S3L_STRICT_NEAR_CULLING
   point0.z = point0.z >= S3L_NEAR ? point0.z : S3L_NEAR;
