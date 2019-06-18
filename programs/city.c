@@ -224,10 +224,12 @@ int main()
     }
 
     scene.camera.transform.translation.x = scene.models[1].transform.translation.x - carDirection.x;
-    scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
+    scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 2;
     scene.camera.transform.translation.z = scene.models[1].transform.translation.z - carDirection.z;
 
-    scene.camera.transform.rotation.y = scene.models[1].transform.rotation.y;
+    S3L_lookAt(scene.models[1].transform.translation,&(scene.camera.transform));
+
+    scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
