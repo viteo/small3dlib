@@ -327,7 +327,7 @@ typedef struct
 
 static inline void S3L_initTransoform3D(S3L_Transform3D *t);
 
-void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t);
+void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t);
 
 void S3L_setTransform3D(
   S3L_Unit tx,
@@ -1352,12 +1352,12 @@ void S3L_initTransoform3D(S3L_Transform3D *t)
   t->scale.w = 0;
 }
 
-void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
+void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t)
 {
   S3L_Vec4 v;
 
-  v.x = pointTo.x - pointFrom.x;
-  v.y = pointTo.z - pointFrom.z;
+  v.x = pointTo.x - t->translation.x;
+  v.y = pointTo.z - t->translation.z;
 
   S3L_Unit dx = v.x;
   S3L_Unit l = S3L_vec2Length(v);
@@ -1369,7 +1369,7 @@ void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
   if (v.y < 0)
     t->rotation.y = S3L_FRACTIONS_PER_UNIT / 2 - t->rotation.y;
 
-  v.x = pointTo.y - pointFrom.y;
+  v.x = pointTo.y - t->translation.y;
   v.y = l;
  
   l = S3L_vec2Length(v);

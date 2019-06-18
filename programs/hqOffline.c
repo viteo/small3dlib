@@ -486,22 +486,46 @@ int main()
   S3L_initScene(models,MODELS_TOTAL,&scene);
 
   char fileName[] = "test00.ppm";
+
+  S3L_Transform3D transform0, transform1;
+  S3L_Vec4 target0, target1;
+
+  S3L_initTransoform3D(&transform0);
+  S3L_initTransoform3D(&transform1);
+
+  target0 = scene.models[0].transform.translation;
+  target1 = scene.models[2].transform.translation;
+
+  transform0.translation.x = 2 * S3L_FRACTIONS_PER_UNIT;
+  transform0.translation.y = 4 * S3L_FRACTIONS_PER_UNIT;
+  transform0.translation.z = -14 * S3L_FRACTIONS_PER_UNIT;
+
+  S3L_lookAt(target0,&transform0);
+
+  transform1.translation.x = 5 * S3L_FRACTIONS_PER_UNIT;
+  transform1.translation.y = 6 * S3L_FRACTIONS_PER_UNIT;
+  transform1.translation.z = 3 * S3L_FRACTIONS_PER_UNIT;
+
+  transform1.rotation.x = S3L_FRACTIONS_PER_UNIT / 8;
+
+  S3L_lookAt(target1,&transform1);
+
+  transform1.rotation.y = -S3L_FRACTIONS_PER_UNIT + transform1.rotation.y;
+
+  int frames = 100;
  
-  for (int i = 0; i < 100; ++i)  // render the frames
+  for (int i = 0; i < frames; ++i)  // render the frames
   {
     animateWater();
 
-    scene.camera.transform.translation.x = 2000;
-    scene.camera.transform.translation.y = 3000;
-    scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
+    float t = i / ((float) frames);
 
-    S3L_Vec4 target;
-    
-    target.x = 0;
-    target.y = 0;
-    target.z = 0;
+    scene.camera.transform.translation.x = interpolate(transform0.translation.x,transform1.translation.x,t);
+    scene.camera.transform.translation.y = interpolate(transform0.translation.y,transform1.translation.y,t);
+    scene.camera.transform.translation.z = interpolate(transform0.translation.z,transform1.translation.z,t);
 
-    S3L_lookAt(scene.camera.transform.translation,target,&scene.camera.transform);
+    scene.camera.transform.rotation.x = interpolate(transform0.rotation.x,transform1.rotation.x,t);
+    scene.camera.transform.rotation.y = interpolate(transform0.rotation.y,transform1.rotation.y,t);
 
     clearFrameBuffer();
 
