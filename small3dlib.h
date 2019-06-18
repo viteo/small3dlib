@@ -1420,7 +1420,7 @@ void S3L_rotationToDirections(
 {
   S3L_Mat4 m;
 
-  S3L_makeRotationMatrixZXY(-1 * rotation.x,-1 * rotation.y,-1 * rotation.z,&m);
+  S3L_makeRotationMatrixZXY(rotation.x,rotation.y,rotation.z,&m);
 
   if (forw != 0)
   {

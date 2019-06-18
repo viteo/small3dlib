@@ -74,7 +74,7 @@ void sampleTexture(uint8_t *texture, int32_t u, int32_t v, uint8_t *r, uint8_t *
   *b = texture[index];
 }
 
-int16_t previousTriangle = -1;
+uint32_t previousTriangle = -1;
 S3L_Unit uv0[2], uv1[2], uv2[2];
 
 void drawPixel(S3L_PixelInfo *p)
@@ -168,6 +168,10 @@ int main()
 
   nextPrintT = clock();
 
+  S3L_Vec4 carDirection;
+
+  S3L_initVec4(&carDirection);
+
   while (running)
   {
     clock_t frameStartT = clock();
@@ -198,37 +202,29 @@ int main()
 
     uint8_t *state = SDL_GetKeyboardState(NULL);
 
-    int16_t rotationStep = S3L_max(1,300 * frameDiff);
-    int16_t zoomStep = S3L_max(1,3000 * frameDiff);
-    int16_t fovStep = S3L_max(1,1000 * frameDiff);
+    int16_t step = S3L_max(1,3000 * frameDiff);
+    int16_t stepRotation = S3L_max(1,300 * frameDiff);
 
-    if (!state[SDL_SCANCODE_LCTRL])
+    if (state[SDL_SCANCODE_LEFT])
     {
-      if (state[SDL_SCANCODE_LEFT])
-        models[0].transform.rotation.y += rotationStep;
-      else if (state[SDL_SCANCODE_RIGHT])
-        models[0].transform.rotation.y -= rotationStep;
-      
-      if (state[SDL_SCANCODE_DOWN])
-        models[0].transform.rotation.x += rotationStep;
-      else if (state[SDL_SCANCODE_UP])
-        models[0].transform.rotation.x -= rotationStep;
+      models[1].transform.rotation.y += stepRotation;
+      S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
     }
-    else
+    else if (state[SDL_SCANCODE_RIGHT])
     {
-      if (state[SDL_SCANCODE_LEFT])
-        scene.camera.focalLength =
-          S3L_min(S3L_FRACTIONS_PER_UNIT * 5,scene.camera.focalLength + fovStep);
-      else if (state[SDL_SCANCODE_RIGHT])
-        scene.camera.focalLength =
-          S3L_max(S3L_FRACTIONS_PER_UNIT / 2,scene.camera.focalLength - fovStep);
+      models[1].transform.rotation.y -= stepRotation;
+      S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
+    }
 
-      if (state[SDL_SCANCODE_UP])
-        scene.camera.transform.translation.z =
-          S3L_min(S3L_FRACTIONS_PER_UNIT, scene.camera.transform.translation.z + zoomStep);
-      else if (state[SDL_SCANCODE_DOWN])
-        scene.camera.transform.translation.z =
-          S3L_max(-S3L_FRACTIONS_PER_UNIT * 16, scene.camera.transform.translation.z - zoomStep);
+    if (state[SDL_SCANCODE_UP])
+    {
+      models[1].transform.translation.x += (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
+      models[1].transform.translation.z += (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
+    }
+    else if (state[SDL_SCANCODE_DOWN])
+    {
+      models[1].transform.translation.x -= (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
+      models[1].transform.translation.z -= (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
     }
 
     SDL_RenderClear(renderer);

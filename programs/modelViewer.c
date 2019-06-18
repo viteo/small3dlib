@@ -144,7 +144,7 @@ void animate(double time)
   }
 }
 
-int16_t previousTriangle = -1;
+uint32_t previousTriangle = -1;
 S3L_Unit uv0[2], uv1[2], uv2[2];
 uint16_t l0, l1, l2;
 S3L_Vec4 toLight;
