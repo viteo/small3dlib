@@ -328,6 +328,8 @@ int main()
 
   S3L_initCamera(&scene.camera);
 
+  houseModelInit();
+
 //  scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 2;
 
 scene.camera.transform.translation.x = 105;
@@ -456,7 +458,8 @@ S3L_setTransform3D(-2039,173,6096,-2,-296,0,512,512,512,&(scene.camera.transform
       scene.camera.transform.rotation.z += 1;
 
     if (keys['p'])
-      S3L_lookAt(scene.camera.transform.translation,scene.models[0].transform.translation,&(scene.camera.transform));
+//      S3L_lookAt(scene.models[0].transform.translation,&(scene.camera.transform));
+      S3L_lookAt(scene.camera.transform.translation,&(scene.models[1].transform));
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,texture,NULL,NULL);

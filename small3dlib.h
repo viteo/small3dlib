@@ -1364,7 +1364,7 @@ void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t)
 
   dx = (v.x * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(l); // normalize
 
-  t->rotation.y = S3L_asin(dx);
+  t->rotation.y = -1 * S3L_asin(dx);
 
   if (v.y < 0)
     t->rotation.y = S3L_FRACTIONS_PER_UNIT / 2 - t->rotation.y;
@@ -1376,8 +1376,7 @@ void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t)
  
   dx = (v.x * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(l);
 
-  t->rotation.x = -1 * S3L_asin(dx);
-
+  t->rotation.x = S3L_asin(dx);
 }
 
 void S3L_setTransform3D(
@@ -2220,9 +2219,9 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
   S3L_Mat4 r;
 
   S3L_makeRotationMatrixZXY(
-    -1 * cameraTransform.rotation.x,
-    -1 * cameraTransform.rotation.y,
-    -1 * cameraTransform.rotation.z,
+    cameraTransform.rotation.x,
+    cameraTransform.rotation.y,
+    cameraTransform.rotation.z,
     &r);
 
   S3L_transposeMat4(&r); // transposing creates an inverse transform

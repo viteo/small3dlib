@@ -227,7 +227,7 @@ int main()
     scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
     scene.camera.transform.translation.z = scene.models[1].transform.translation.z - carDirection.z;
 
-    scene.camera.transform.rotation.y = -1 * scene.models[1].transform.rotation.y;
+    scene.camera.transform.rotation.y = scene.models[1].transform.rotation.y;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
