@@ -133,12 +133,6 @@ void houseTex(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
 
 void drawPixel(S3L_PixelInfo *p)
 {
-
-//setPixel(p->x,p->y,p->triangleIndex,p->triangleIndex,p->triangleIndex);
-setPixel(p->x,p->y,0,0,0);
-
-return;
-
   if (p->x < 0 || p ->x >= S3L_RESOLUTION_X || p->y < 0 || p->y >= S3L_RESOLUTION_Y)
   {
     offScreenPixels++;
@@ -183,13 +177,13 @@ if (p->modelIndex != 0)
     uv0[0],
     uv1[0],
     uv2[0],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+    p->barycentric);
 
   v = S3L_interpolateBarycentric(
     uv0[1],
     uv1[1],
     uv2[1],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+    p->barycentric);
 
   uint8_t r,g,b;
   houseTex(
@@ -211,9 +205,9 @@ n2.x = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 +
 n2.y = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3 + 1];
 n2.z = houseNormals[scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3 + 2];
 
-n.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-n.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
-n.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric[0],p->barycentric[1],p->barycentric[2]);
+n.x = S3L_interpolateBarycentric(n0.x,n1.x,n2.x,p->barycentric);
+n.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric);
+n.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric);
 
 S3L_Vec4 V;
 
@@ -239,13 +233,13 @@ else
     coords[0],
     coords[2],
     coords[4],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+    p->barycentric);
 
   v = S3L_interpolateBarycentric(
     coords[1],
     coords[3],
     coords[5],
-    p->barycentric[0], p->barycentric[1], p->barycentric[2]);
+    p->barycentric);
 
   uint8_t col = texturePixel(u,v);
   setPixel(p->x,p->y,col,col * 30,(2 - col) * 120);

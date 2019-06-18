@@ -73,7 +73,8 @@
              |
 
   Rotations use Euler angles and are generally in the extinsic Euler angles in
-  ZXY order (by Z, then by X, then by Y).
+  ZXY order (by Z, then by X, then by Y). Positive rotation about an axis
+  rotates CW (clock-wise) when looking in the direction of the axis.
 
   Coordinates of pixels on screen start typically at the top left, from [0,0].
 
@@ -1178,7 +1179,7 @@ S3L_Unit S3L_asin(S3L_Unit x)
 
 S3L_Unit S3L_cos(S3L_Unit x)
 {
-  return S3L_sin(x - S3L_FRACTIONS_PER_UNIT / 4);
+  return S3L_sin(x + S3L_FRACTIONS_PER_UNIT / 4);
 }
 
 void S3L_correctBarycentricCoords(S3L_Unit barycentric[3])
@@ -1237,6 +1238,10 @@ void S3L_makeRotationMatrixZXY(
   S3L_Unit byZ,
   S3L_Mat4 *m)
 {
+  byX *= -1;
+  byY *= -1;
+  byZ *= -1;
+
   S3L_Unit sx = S3L_sin(byX);
   S3L_Unit sy = S3L_sin(byY);
   S3L_Unit sz = S3L_sin(byZ);
@@ -1344,6 +1349,7 @@ void S3L_initTransoform3D(S3L_Transform3D *t)
   t->scale.x = S3L_FRACTIONS_PER_UNIT;
   t->scale.y = S3L_FRACTIONS_PER_UNIT;
   t->scale.z = S3L_FRACTIONS_PER_UNIT;
+  t->scale.w = 0;
 }
 
 void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
@@ -1370,7 +1376,8 @@ void S3L_lookAt(S3L_Vec4 pointFrom, S3L_Vec4 pointTo, S3L_Transform3D *t)
  
   dx = (v.x * S3L_FRACTIONS_PER_UNIT) / S3L_nonZero(l);
 
-  t->rotation.x = S3L_asin(dx);
+  t->rotation.x = -1 * S3L_asin(dx);
+
 }
 
 void S3L_setTransform3D(

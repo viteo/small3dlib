@@ -24,6 +24,9 @@ features:
   interpolation -- it will randomly picky one of three values, with greater
   probabilities at greater coords
 
+- change the default backface culling to the other one (and edit the obj tool
+  accordingly)
+
 - option to disable baycentric coordinates computing    DONE
 
 - Z-buffer:

@@ -486,14 +486,14 @@ int main()
   S3L_initScene(models,MODELS_TOTAL,&scene);
 
   char fileName[] = "test00.ppm";
-  
-  for (int i = 0; i < 50; ++i)  // render the frames
+ 
+  for (int i = 0; i < 100; ++i)  // render the frames
   {
     animateWater();
 
-    scene.camera.transform.translation.x = S3L_sin(i * 5) * 3;
-    scene.camera.transform.translation.y = 5 * S3L_FRACTIONS_PER_UNIT + S3L_cos(i * 6) * 2;
-    scene.camera.transform.translation.z = S3L_cos(i * 4) * 10;
+    scene.camera.transform.translation.x = 2000;
+    scene.camera.transform.translation.y = 3000;
+    scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
 
     S3L_Vec4 target;
     
