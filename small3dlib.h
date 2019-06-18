@@ -440,9 +440,9 @@ typedef struct
 } S3L_Model3D;                ///< Represents a 3D model.
 
 void S3L_initModel3D(
-  S3L_Unit *vertices,
+  const S3L_Unit *vertices,
   S3L_Unit vertexCount,
-  S3L_Index *triangles,
+  const S3L_Index *triangles,
   S3L_Index triangleCount,
   S3L_Model3D *model);
 
@@ -1462,9 +1462,9 @@ void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
 }
 
 void S3L_initModel3D(
-  S3L_Unit *vertices,
+  const S3L_Unit *vertices,
   S3L_Unit vertexCount,
-  S3L_Index *triangles,
+  const S3L_Index *triangles,
   S3L_Index triangleCount,
   S3L_Model3D *model)
 {
