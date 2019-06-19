@@ -32,6 +32,20 @@
 
 S3L_Model3D models[2];
 
+const uint8_t collisionMap[8 * 10] =
+{
+  1,1,1,1,1,1,1,1,
+  1,1,1,1,0,0,0,1,
+  1,1,1,1,0,1,0,1,
+  2,2,1,0,0,0,0,3,
+  1,2,1,0,1,1,3,1,
+  2,0,0,0,1,1,3,3,
+  1,0,1,0,0,1,1,1,
+  1,0,0,0,1,1,1,1,
+  1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1
+};
+
 S3L_Scene scene;
 
 uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
@@ -142,6 +156,16 @@ void draw()
   S3L_drawScene(scene);
 }
 
+static inline uint32_t collision(S3L_Vec4 worldPosition)
+{
+  worldPosition.x /= S3L_FRACTIONS_PER_UNIT;
+  worldPosition.z /= -S3L_FRACTIONS_PER_UNIT;    
+
+  uint16_t index = worldPosition.z * 8 + worldPosition.x;
+
+  return collisionMap[index];
+}
+
 int16_t fps = 0;
 
 int main()
@@ -154,6 +178,9 @@ int main()
 
   cityModelInit();
   carModelInit();
+
+  carModel.transform.translation.x += 7 * (S3L_FRACTIONS_PER_UNIT / 2);
+  carModel.transform.translation.z += -7 * (S3L_FRACTIONS_PER_UNIT / 2);
 
   models[0] = cityModel;
   models[1] = carModel;
@@ -212,6 +239,8 @@ int main()
 
     S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
 
+    S3L_Vec4 previousPos = models[1].transform.translation;
+
     if (state[SDL_SCANCODE_UP])
     {
       models[1].transform.translation.x += (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
@@ -221,6 +250,26 @@ int main()
     {
       models[1].transform.translation.x -= (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
       models[1].transform.translation.z -= (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
+    }
+
+    uint8_t coll = collision(models[1].transform.translation);
+
+    if (coll != 0)
+    {
+      if (coll == 1)
+      {
+        models[1].transform.translation = previousPos;
+      }
+      else if (coll == 2)
+      {
+        models[1].transform.translation.x += 5 * S3L_FRACTIONS_PER_UNIT;
+        models[1].transform.translation.z += 2 * S3L_FRACTIONS_PER_UNIT;
+      }
+      else
+      {
+        models[1].transform.translation.x -= 5 * S3L_FRACTIONS_PER_UNIT;
+        models[1].transform.translation.z -= 2 * S3L_FRACTIONS_PER_UNIT;
+      }
     }
 
     scene.camera.transform.translation.x = scene.models[1].transform.translation.x - carDirection.x;
