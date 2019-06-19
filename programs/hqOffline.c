@@ -510,7 +510,7 @@ int main()
 
   S3L_lookAt(target1,&transform1);
 
-  transform1.rotation.y = -S3L_FRACTIONS_PER_UNIT + transform1.rotation.y;
+  //transform1.rotation.y = -S3L_FRACTIONS_PER_UNIT + transform1.rotation.y;
 
   int frames = 100;
  
