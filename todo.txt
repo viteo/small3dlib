@@ -72,9 +72,6 @@ features:
 
 bugs:
 
-- Long triangle interpolation overflows -- e.g. in the city demo, can be seen
-  a lot at the blue skyscraper.
-
 repeated:
 
 - valgrind (and similar) checks

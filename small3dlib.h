@@ -268,7 +268,7 @@ typedef uint16_t S3L_Index;
   speed (it is a shift value), but it mustn't be too high to prevent
   overflow. */
 
-  #define S3L_FAST_LERP_QUALITY 8 
+  #define S3L_FAST_LERP_QUALITY 11 
 #endif
 
 /** Vector that consists of four scalars and can represent homogenous
