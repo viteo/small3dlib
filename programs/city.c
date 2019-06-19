@@ -30,6 +30,8 @@
 #define TEXTURE_W 256
 #define TEXTURE_H 256
 
+#define MAX_VELOCITY 1000
+
 S3L_Model3D models[2];
 
 const uint8_t collisionMap[8 * 10] =
@@ -198,6 +200,11 @@ int main()
   S3L_Vec4 carDirection;
 
   S3L_initVec4(&carDirection);
+  
+  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 3;
+  scene.camera.transform.rotation.x = -S3L_FRACTIONS_PER_UNIT / 32;
+
+  int16_t velocity = 0;
 
   while (running)
   {
@@ -229,8 +236,10 @@ int main()
 
     uint8_t *state = SDL_GetKeyboardState(NULL);
 
-    int16_t step = S3L_max(1,3000 * frameDiff);
-    int16_t stepRotation = S3L_max(1,300 * frameDiff);
+    int16_t step = velocity * frameDiff;
+    int16_t stepFriction = 300 * frameDiff;
+    int16_t stepRotation = 200 * frameDiff * velocity / ((float) MAX_VELOCITY);
+    int16_t stepVelocity = S3L_nonZero(1000 * frameDiff);
 
     if (state[SDL_SCANCODE_LEFT])
       models[1].transform.rotation.y += stepRotation;
@@ -242,15 +251,19 @@ int main()
     S3L_Vec4 previousPos = models[1].transform.translation;
 
     if (state[SDL_SCANCODE_UP])
-    {
-      models[1].transform.translation.x += (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
-      models[1].transform.translation.z += (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
-    }
+      velocity = S3L_min(MAX_VELOCITY,velocity + stepVelocity);
     else if (state[SDL_SCANCODE_DOWN])
+      velocity = S3L_max(-MAX_VELOCITY,velocity - stepVelocity);
+    else
     {
-      models[1].transform.translation.x -= (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
-      models[1].transform.translation.z -= (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
+      if (velocity > 0)
+        velocity = S3L_max(0,velocity - stepFriction);
+      else
+        velocity = S3L_min(0,velocity + stepFriction);
     }
+
+    models[1].transform.translation.x += (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
+    models[1].transform.translation.z += (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
 
     uint8_t coll = collision(models[1].transform.translation);
 
@@ -284,14 +297,13 @@ int main()
       }
     }
 
+    scene.camera.transform.translation.x =
+      scene.models[1].transform.translation.x - carDirection.x;
 
-    scene.camera.transform.translation.x = scene.models[1].transform.translation.x - carDirection.x;
-    scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 2;
-    scene.camera.transform.translation.z = scene.models[1].transform.translation.z - carDirection.z;
+    scene.camera.transform.translation.z =
+      scene.models[1].transform.translation.z - carDirection.z;
 
-    S3L_lookAt(scene.models[1].transform.translation,&(scene.camera.transform));
-
-    scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT;
+    scene.camera.transform.rotation.y = models[1].transform.rotation.y;
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
