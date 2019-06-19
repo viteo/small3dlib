@@ -258,7 +258,19 @@ int main()
     {
       if (coll == 1)
       {
-        models[1].transform.translation = previousPos;
+        S3L_Vec4 newPos = models[1].transform.translation;
+        newPos.x = previousPos.x;
+
+        if (collision(newPos))
+        {
+          newPos = models[1].transform.translation;
+          newPos.z = previousPos.z;
+
+          if (collision(newPos))
+            newPos = previousPos;
+        }
+
+        models[1].transform.translation = newPos;
       }
       else if (coll == 2)
       {
@@ -271,6 +283,7 @@ int main()
         models[1].transform.translation.z -= 2 * S3L_FRACTIONS_PER_UNIT;
       }
     }
+
 
     scene.camera.transform.translation.x = scene.models[1].transform.translation.x - carDirection.x;
     scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 2;
