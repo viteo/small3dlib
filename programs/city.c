@@ -14,7 +14,7 @@
 #define S3L_PERSPECTIVE_CORRECTION 2
 #define S3L_SORT 0
 #define S3L_STENCIL_BUFFER 0
-#define S3L_Z_BUFFER 1
+#define S3L_Z_BUFFER 2
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
@@ -30,7 +30,7 @@
 #define TEXTURE_W 256
 #define TEXTURE_H 256
 
-#define MAX_VELOCITY 1000
+#define MAX_VELOCITY 800
 
 S3L_Model3D models[2];
 
@@ -168,6 +168,24 @@ static inline uint32_t collision(S3L_Vec4 worldPosition)
   return collisionMap[index];
 }
 
+void handleCollision(S3L_Vec4 *pos, S3L_Vec4 previousPos)
+{
+        S3L_Vec4 newPos = *pos;
+        newPos.x = previousPos.x;
+          
+        if (collision(newPos))
+        {
+          newPos = *pos;
+          newPos.z = previousPos.z;
+
+          if (collision(newPos))
+            newPos = previousPos;
+        }
+
+        *pos = newPos;
+
+}
+
 int16_t fps = 0;
 
 int main()
@@ -201,8 +219,8 @@ int main()
 
   S3L_initVec4(&carDirection);
   
-  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 3;
-  scene.camera.transform.rotation.x = -S3L_FRACTIONS_PER_UNIT / 32;
+  scene.camera.transform.translation.y = (3 * S3L_FRACTIONS_PER_UNIT) / 5;
+  scene.camera.transform.rotation.x = -S3L_FRACTIONS_PER_UNIT / 16;
 
   int16_t velocity = 0;
 
@@ -238,7 +256,7 @@ int main()
 
     int16_t step = velocity * frameDiff;
     int16_t stepFriction = 300 * frameDiff;
-    int16_t stepRotation = 200 * frameDiff * S3L_abs(velocity) / ((float) MAX_VELOCITY);
+    int16_t stepRotation = 200 * frameDiff * S3L_max(0,velocity - 400) / ((float) MAX_VELOCITY);
     int16_t stepVelocity = S3L_nonZero(1000 * frameDiff);
 
     if (stepRotation == 0 && S3L_abs(velocity) >= 200)
@@ -250,19 +268,20 @@ int main()
     if (state[SDL_SCANCODE_LEFT])
     {
       models[1].transform.rotation.y += stepRotation;
-      models[1].transform.rotation.z = S3L_min(velocity / 64, models[1].transform.rotation.z + stepRotation);
+      models[1].transform.rotation.z = S3L_min(velocity / 64, models[1].transform.rotation.z + 1);
     }
     else if (state[SDL_SCANCODE_RIGHT])
     {
       models[1].transform.rotation.y -= stepRotation;
-      models[1].transform.rotation.z = S3L_max(-velocity / 64, models[1].transform.rotation.z - stepRotation);
+      models[1].transform.rotation.z = S3L_max(-velocity / 64, models[1].transform.rotation.z - 1);
     }
     else
       models[1].transform.rotation.z = (models[1].transform.rotation.z * 3) / 4;
 
     S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
 
-    S3L_Vec4 previousPos = models[1].transform.translation;
+    S3L_Vec4 previousCarPos = models[1].transform.translation;
+    S3L_Vec4 previousCamPos = scene.camera.transform.translation;
 
     int16_t friction = 0;
 
@@ -282,24 +301,8 @@ int main()
     {
       if (coll == 1)
       {
-        S3L_Vec4 newPos = models[1].transform.translation;
-        newPos.x = previousPos.x;
-          
+        handleCollision(&(models[1].transform.translation),previousCarPos);
         friction = 8;
-
-        if (collision(newPos))
-        {
-          newPos = models[1].transform.translation;
-          newPos.z = previousPos.z;
-
-          if (collision(newPos))
-          {
-            newPos = previousPos;
-            velocity = 0;
-          }
-        }
-
-        models[1].transform.translation = newPos;
       }
       else if (coll == 2)
       {
@@ -328,6 +331,9 @@ int main()
       scene.models[1].transform.translation.z - (carDirection.z * cameraDistance) / S3L_FRACTIONS_PER_UNIT;
 
     scene.camera.transform.rotation.y = models[1].transform.rotation.y;
+
+    if (collision(scene.camera.transform.translation))
+      handleCollision(&(scene.camera.transform.translation),previousCamPos);
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
