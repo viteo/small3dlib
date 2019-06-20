@@ -56,7 +56,24 @@ uint32_t frame = 0;
 
 void clearScreen()
 {
-  memset(pixels,255,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
+  uint32_t index = 0;
+
+  for (uint16_t y = 0; y < S3L_RESOLUTION_Y; ++y)
+  {
+    S3L_Unit t = S3L_min(S3L_FRACTIONS_PER_UNIT,((y * S3L_FRACTIONS_PER_UNIT) / S3L_RESOLUTION_Y) * 4);
+
+    uint32_t r = S3L_interpolateByUnit(200,242,t);
+    uint32_t g = S3L_interpolateByUnit(102,255,t);
+    uint32_t b = S3L_interpolateByUnit(255,230,t);
+
+    uint32_t color = (r << 24) | (g << 16 ) | (b << 8);
+
+    for (uint16_t x = 0; x < S3L_RESOLUTION_X; ++x)
+    {
+      pixels[index] = color;
+      index++;
+    }
+  }
 }
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
@@ -199,8 +216,9 @@ int main()
   cityModelInit();
   carModelInit();
 
-  carModel.transform.translation.x += 7 * (S3L_FRACTIONS_PER_UNIT / 2);
-  carModel.transform.translation.z += -7 * (S3L_FRACTIONS_PER_UNIT / 2);
+  carModel.transform.translation.x = 7 * (S3L_FRACTIONS_PER_UNIT / 2);
+  carModel.transform.translation.z = -7 * (S3L_FRACTIONS_PER_UNIT / 2);
+  carModel.transform.translation.y = (S3L_FRACTIONS_PER_UNIT / 32);
 
   models[0] = cityModel;
   models[1] = carModel;
@@ -331,9 +349,6 @@ int main()
       scene.models[1].transform.translation.z - (carDirection.z * cameraDistance) / S3L_FRACTIONS_PER_UNIT;
 
     scene.camera.transform.rotation.y = models[1].transform.rotation.y;
-
-    if (collision(scene.camera.transform.translation))
-      handleCollision(&(scene.camera.transform.translation),previousCamPos);
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
