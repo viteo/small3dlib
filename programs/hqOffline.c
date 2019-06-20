@@ -496,25 +496,23 @@ int main()
   target0 = scene.models[0].transform.translation;
   target1 = scene.models[2].transform.translation;
 
-  transform0.translation.x = 2 * S3L_FRACTIONS_PER_UNIT;
-  transform0.translation.y = 4 * S3L_FRACTIONS_PER_UNIT;
+  transform0.translation.x = -2 * S3L_FRACTIONS_PER_UNIT;
+  transform0.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;
   transform0.translation.z = -14 * S3L_FRACTIONS_PER_UNIT;
 
-  S3L_lookAt(target0,&transform0);
+  transform0.rotation.x = -S3L_FRACTIONS_PER_UNIT / 12;
+  transform1.rotation.y = S3L_FRACTIONS_PER_UNIT / 8;
 
   transform1.translation.x = 5 * S3L_FRACTIONS_PER_UNIT;
   transform1.translation.y = 6 * S3L_FRACTIONS_PER_UNIT;
   transform1.translation.z = 3 * S3L_FRACTIONS_PER_UNIT;
 
-  transform1.rotation.x = S3L_FRACTIONS_PER_UNIT / 8;
-
-  S3L_lookAt(target1,&transform1);
-
-  //transform1.rotation.y = -S3L_FRACTIONS_PER_UNIT + transform1.rotation.y;
+  transform1.rotation.x = transform0.rotation.x;
+  transform1.rotation.y = transform0.rotation.y;
 
   int frames = 100;
  
-  for (int i = 0; i < frames; ++i)  // render the frames
+  for (int i = 0; i < frames; ++i) // render the frames
   {
     animateWater();
 

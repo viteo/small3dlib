@@ -30,7 +30,10 @@
 #define TEXTURE_W 256
 #define TEXTURE_H 256
 
-#define MAX_VELOCITY 800
+#define MAX_VELOCITY 1000
+#define ACCELERATION 700
+#define TURN_SPEED 300
+#define FRICTION 600
 
 S3L_Model3D models[2];
 
@@ -273,9 +276,9 @@ int main()
     uint8_t *state = SDL_GetKeyboardState(NULL);
 
     int16_t step = velocity * frameDiff;
-    int16_t stepFriction = 300 * frameDiff;
-    int16_t stepRotation = 200 * frameDiff * S3L_max(0,velocity - 400) / ((float) MAX_VELOCITY);
-    int16_t stepVelocity = S3L_nonZero(1000 * frameDiff);
+    int16_t stepFriction = FRICTION * frameDiff;
+    int16_t stepRotation = TURN_SPEED * frameDiff * S3L_max(0,velocity - 200) / ((float) MAX_VELOCITY);
+    int16_t stepVelocity = S3L_nonZero(ACCELERATION * frameDiff);
 
     if (stepRotation == 0 && S3L_abs(velocity) >= 200)
       stepRotation = 1;
@@ -320,7 +323,7 @@ int main()
       if (coll == 1)
       {
         handleCollision(&(models[1].transform.translation),previousCarPos);
-        friction = 8;
+        friction = 2;
       }
       else if (coll == 2)
       {
@@ -340,7 +343,7 @@ int main()
       velocity = S3L_min(0,velocity + stepFriction * friction);
 
     S3L_Unit cameraDistance =
-      S3L_FRACTIONS_PER_UNIT / 2 + (S3L_abs(velocity) * (S3L_FRACTIONS_PER_UNIT / 2) / MAX_VELOCITY);
+      S3L_interpolate(S3L_FRACTIONS_PER_UNIT / 2,S3L_FRACTIONS_PER_UNIT,S3L_abs(velocity),MAX_VELOCITY);
 
     scene.camera.transform.translation.x =
       scene.models[1].transform.translation.x - (carDirection.x * cameraDistance) / S3L_FRACTIONS_PER_UNIT;
