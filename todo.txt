@@ -12,6 +12,9 @@ features:
 
 - function to set/clear stencil buffer -- can be useful
 
+- function to map one point in 3D space to screen, along with size (for mapping
+  billboards/sprites etc.)
+
 - Optimize persp. correction!
 
 - Create and use the same function for determining CW/CCW AND left/right vertex
