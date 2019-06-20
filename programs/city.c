@@ -238,29 +238,40 @@ int main()
 
     int16_t step = velocity * frameDiff;
     int16_t stepFriction = 300 * frameDiff;
-    int16_t stepRotation = 200 * frameDiff * velocity / ((float) MAX_VELOCITY);
+    int16_t stepRotation = 200 * frameDiff * S3L_abs(velocity) / ((float) MAX_VELOCITY);
     int16_t stepVelocity = S3L_nonZero(1000 * frameDiff);
 
+    if (stepRotation == 0 && S3L_abs(velocity) >= 200)
+      stepRotation = 1;
+
+    if (velocity < 0)
+      stepRotation *= -1;
+
     if (state[SDL_SCANCODE_LEFT])
+    {
       models[1].transform.rotation.y += stepRotation;
+      models[1].transform.rotation.z = S3L_min(velocity / 64, models[1].transform.rotation.z + stepRotation);
+    }
     else if (state[SDL_SCANCODE_RIGHT])
+    {
       models[1].transform.rotation.y -= stepRotation;
+      models[1].transform.rotation.z = S3L_max(-velocity / 64, models[1].transform.rotation.z - stepRotation);
+    }
+    else
+      models[1].transform.rotation.z = (models[1].transform.rotation.z * 3) / 4;
 
     S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
 
     S3L_Vec4 previousPos = models[1].transform.translation;
 
+    int16_t friction = 0;
+
     if (state[SDL_SCANCODE_UP])
-      velocity = S3L_min(MAX_VELOCITY,velocity + stepVelocity);
+      velocity = S3L_min(MAX_VELOCITY,velocity + (velocity < 0 ? (2 * stepVelocity) : stepVelocity));
     else if (state[SDL_SCANCODE_DOWN])
-      velocity = S3L_max(-MAX_VELOCITY,velocity - stepVelocity);
+      velocity = S3L_max(-MAX_VELOCITY,velocity - (velocity > 0 ? (2 * stepVelocity) : stepVelocity));
     else
-    {
-      if (velocity > 0)
-        velocity = S3L_max(0,velocity - stepFriction);
-      else
-        velocity = S3L_min(0,velocity + stepFriction);
-    }
+      friction = 1;
 
     models[1].transform.translation.x += (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
     models[1].transform.translation.z += (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
@@ -273,6 +284,8 @@ int main()
       {
         S3L_Vec4 newPos = models[1].transform.translation;
         newPos.x = previousPos.x;
+          
+        friction = 8;
 
         if (collision(newPos))
         {
@@ -280,7 +293,10 @@ int main()
           newPos.z = previousPos.z;
 
           if (collision(newPos))
+          {
             newPos = previousPos;
+            velocity = 0;
+          }
         }
 
         models[1].transform.translation = newPos;
@@ -296,6 +312,11 @@ int main()
         models[1].transform.translation.z -= 2 * S3L_FRACTIONS_PER_UNIT;
       }
     }
+
+    if (velocity > 0)
+      velocity = S3L_max(0,velocity - stepFriction * friction);
+    else
+      velocity = S3L_min(0,velocity + stepFriction * friction);
 
     scene.camera.transform.translation.x =
       scene.models[1].transform.translation.x - carDirection.x;
