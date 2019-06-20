@@ -318,11 +318,14 @@ int main()
     else
       velocity = S3L_min(0,velocity + stepFriction * friction);
 
+    S3L_Unit cameraDistance =
+      S3L_FRACTIONS_PER_UNIT / 2 + (S3L_abs(velocity) * (S3L_FRACTIONS_PER_UNIT / 2) / MAX_VELOCITY);
+
     scene.camera.transform.translation.x =
-      scene.models[1].transform.translation.x - carDirection.x;
+      scene.models[1].transform.translation.x - (carDirection.x * cameraDistance) / S3L_FRACTIONS_PER_UNIT;
 
     scene.camera.transform.translation.z =
-      scene.models[1].transform.translation.z - carDirection.z;
+      scene.models[1].transform.translation.z - (carDirection.z * cameraDistance) / S3L_FRACTIONS_PER_UNIT;
 
     scene.camera.transform.rotation.y = models[1].transform.rotation.y;
 
