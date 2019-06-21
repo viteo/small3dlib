@@ -12,7 +12,7 @@
 
 #define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 0
-#define S3L_PERSPECTIVE_CORRECTION 1
+#define S3L_PERSPECTIVE_CORRECTION 2
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
 
@@ -175,6 +175,18 @@ int main()
   scene.models[0] = levelWallsModel;
   scene.models[1] = levelFloorModel;
   scene.models[2] = levelCeilingModel;
+
+  S3L_Unit scale = S3L_FRACTIONS_PER_UNIT / 3;
+
+  S3L_Vec4 s;
+
+  s.x = scale;
+  s.y = scale;
+  s.z = scale;
+
+  scene.models[0].transform.scale = s;
+  scene.models[1].transform.scale = s;
+  scene.models[2].transform.scale = s;
 
   S3L_initTransoform3D(&modelTransform);
   S3L_initDrawConfig(&conf);
