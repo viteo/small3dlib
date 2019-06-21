@@ -152,7 +152,7 @@ void animate(double time)
 }
 
 uint32_t previousTriangle = -1;
-S3L_Unit uv0[2], uv1[2], uv2[2];
+S3L_Vec4 uv0, uv1, uv2;
 uint16_t l0, l1, l2;
 S3L_Vec4 toLight;
 int8_t light = 1;
@@ -171,56 +171,12 @@ void drawPixel(S3L_PixelInfo *p)
 
     if (mode == MODE_TEXTUERED)
     {
-      index = p->triangleIndex * 3;
-
-      int16_t i0 = uvIndices[index];
-      int16_t i1 = uvIndices[index + 1];
-      int16_t i2 = uvIndices[index + 2];
-
-      index = i0 * 2;
-
-      uv0[0] = uvs[index];
-      uv0[1] = uvs[index + 1];
-
-      index = i1 * 2;
-
-      uv1[0] = uvs[index];
-      uv1[1] = uvs[index + 1];
-
-      index = i2 * 2;
-
-      uv2[0] = uvs[index];
-      uv2[1] = uvs[index + 1];
+      S3L_getIndexedTriangleValues(p->triangleIndex,uvIndices,uvs,2,&uv0,&uv1,&uv2);
     }
     else if (mode == MODE_NORMAL_SHARP)
     {
-      index = p->triangleIndex * 3;
-
       S3L_Vec4 v0, v1, v2;
-
-      S3L_Index v = model.triangles[index] * 3;
-
-      v0.x = model.vertices[v];
-      v++;
-      v0.y = model.vertices[v];
-      v++;
-      v0.z = model.vertices[v];
-
-      v = model.triangles[index + 1] * 3;
-
-      v1.x = model.vertices[v];
-      v++;
-      v1.y = model.vertices[v];
-      v++;
-      v1.z = model.vertices[v];
-
-      v = model.triangles[index + 2] * 3;
-
-      v2.x = model.vertices[v];
-      v++;
-      v2.y = model.vertices[v];
-      v++;
-      v2.z = model.vertices[v];
+      S3L_getIndexedTriangleValues(p->triangleIndex,model.triangles,model.vertices,3,&v0,&v1,&v2);
 
       S3L_triangleNormal(v0,v1,v2,&nt);
 
@@ -231,29 +187,7 @@ void drawPixel(S3L_PixelInfo *p)
 
     if (light || mode == MODE_NORMAL_SMOOTH)
     {
-      index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
-
-      n0.x = normals[index];
-      index++;
-      n0.y = normals[index];
-      index++;
-      n0.z = normals[index];
-
-      index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
-
-      n1.x = normals[index];
-      index++;
-      n1.y = normals[index];
-      index++;
-      n1.z = normals[index];
-   
-      index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
-
-      n2.x = normals[index];
-      index++;
-      n2.y = normals[index];
-      index++;
-      n2.z = normals[index];
+      S3L_getIndexedTriangleValues(p->triangleIndex,model.triangles,normals,3,&n0,&n1,&n2);
 
       l0 = 256 + S3L_clamp(S3L_dotProductVec3(n0,toLight),-511,511) / 2;
       l1 = 256 + S3L_clamp(S3L_dotProductVec3(n1,toLight),-511,511) / 2;
@@ -282,8 +216,8 @@ void drawPixel(S3L_PixelInfo *p)
     {
       S3L_Unit uv[2];
 
-      uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],p->barycentric);
-      uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],p->barycentric);
+      uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
+      uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
       sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
 
@@ -381,9 +315,7 @@ void drawPixel(S3L_PixelInfo *p)
 void draw()
 {
   S3L_newFrame();
-
   clearScreen();
-
   S3L_drawScene(scene);
 }
 

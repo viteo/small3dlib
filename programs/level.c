@@ -61,7 +61,7 @@ S3L_Index *uvIndices = 0;
 
 uint32_t previousTriangle = 1000;
 
-S3L_Unit uv0[2], uv1[2], uv2[2];
+S3L_Vec4 uv0, uv1, uv2;
 
 void sampleTxture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
 {
@@ -113,26 +113,26 @@ void drawPixel(S3L_PixelInfo *p)
 
     index = i0 * 2;
 
-    uv0[0] = uvs[index];
-    uv0[1] = uvs[index + 1];
+    uv0.x = uvs[index];
+    uv0.y = uvs[index + 1];
 
     index = i1 * 2;
 
-    uv1[0] = uvs[index];
-    uv1[1] = uvs[index + 1];
+    uv1.x = uvs[index];
+    uv1.y = uvs[index + 1];
 
     index = i2 * 2;
 
-    uv2[0] = uvs[index];
-    uv2[1] = uvs[index + 1];
+    uv2.x = uvs[index];
+    uv2.y = uvs[index + 1];
 
     previousTriangle = p->triangleID;
   }
 
   S3L_Unit uv[2];
 
-  uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],p->barycentric);
-  uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],p->barycentric);
+  uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
+  uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
   uint8_t r, g, b;
 

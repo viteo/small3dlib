@@ -516,6 +516,22 @@ S3L_Unit S3L_sqrt(S3L_Unit value);
 void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
   S3L_Vec4 *n);
 
+/** Helper function for retrieving per-vertex indexed values from an array,
+  e.g. texturing (UV) coordinates. The 'indices' array contains three indices
+  for each triangle, each index pointing into 'values' array, which contains
+  the values, each one consisting of 'numComponents' components (e.g. 2 for
+  UV coordinates). The three values are retrieved into 'v0', 'v1' and 'v2'
+  vectors (into x, y, z and w, depending on 'numComponents'). */
+
+void S3L_getIndexedTriangleValues(
+  S3L_Index triangleIndex,
+  const S3L_Index *indices,
+  const S3L_Unit *values,
+  uint8_t numComponents,
+  S3L_Vec4 *v0,
+  S3L_Vec4 *v1,
+  S3L_Vec4 *v2);
+
 /** Computes a normalized normal for every vertex of given model (this is
   relatively slow and SHOUDN'T be done each frame). The dst array must have a
   sufficient size preallocated! The size is: number of model vertices * 3 *
@@ -887,6 +903,55 @@ void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
 
   S3L_crossProduct(t1,t2,n);
   S3L_normalizeVec3(n);
+}
+
+void S3L_getIndexedTriangleValues(
+  S3L_Index triangleIndex,
+  const S3L_Index *indices,
+  const S3L_Unit *values,
+  uint8_t numComponents,
+  S3L_Vec4 *v0,
+  S3L_Vec4 *v1,
+  S3L_Vec4 *v2)
+{
+  S3L_Index i0, i1;
+  S3L_Unit *value;
+
+  i0 = triangleIndex * 3;
+  i1 = indices[i0] * numComponents;
+  value = (S3L_Unit *) v0;
+
+  if (numComponents > 4)
+    numComponents = 4;
+
+  for (uint8_t j = 0; j < numComponents; ++j)
+  {
+    *value = values[i1];
+    i1++;
+    value++;
+  }
+
+  i0++;
+  i1 = indices[i0] * numComponents;
+  value = (S3L_Unit *) v1;
+
+  for (uint8_t j = 0; j < numComponents; ++j)
+  {
+    *value = values[i1];
+    i1++;
+    value++;
+  }
+
+  i0++;
+  i1 = indices[i0] * numComponents;
+  value = (S3L_Unit *) v2;
+
+  for (uint8_t j = 0; j < numComponents; ++j)
+  {
+    *value = values[i1];
+    i1++;
+    value++;
+  }
 }
 
 void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
