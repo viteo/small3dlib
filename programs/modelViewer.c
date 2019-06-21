@@ -41,6 +41,13 @@
 #define TEXTURE_W 128
 #define TEXTURE_H 128
 
+#define MODE_TEXTUERED 0
+#define MODE_SINGLE_COLOR 1
+#define MODE_NORMAL_SMOOTH 2
+#define MODE_NORMAL_SHARP 3
+#define MODE_BARYCENTRIC 4
+#define MODE_TRIANGLE_INDEX 5
+
 void printHelp()
 {
   printf("Modelviewer: example program for small3dlib.\n\n");
@@ -162,7 +169,7 @@ void drawPixel(S3L_PixelInfo *p)
   {
     int16_t index;
 
-    if (mode == 0)
+    if (mode == MODE_TEXTUERED)
     {
       index = p->triangleIndex * 3;
 
@@ -185,7 +192,7 @@ void drawPixel(S3L_PixelInfo *p)
       uv2[0] = uvs[index];
       uv2[1] = uvs[index + 1];
     }
-    else if (mode == 3)
+    else if (mode == MODE_NORMAL_SHARP)
     {
       index = p->triangleIndex * 3;
 
@@ -222,7 +229,7 @@ void drawPixel(S3L_PixelInfo *p)
       nt.z = S3L_clamp(128 + nt.z / 4,0,255);
     }
 
-    if (light || mode == 2)
+    if (light || mode == MODE_NORMAL_SMOOTH)
     {
       index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
@@ -262,13 +269,16 @@ void drawPixel(S3L_PixelInfo *p)
         p->barycentric[2] != 0)
       return;
 
-  uint8_t r,g,b;
+  uint8_t
+    r = 0,
+    g = 0,
+    b = 0;
 
   int8_t transparent = 0;
 
   switch (mode)
   {
-    case 0: // textured mode
+    case MODE_TEXTUERED:
     {
       S3L_Unit uv[2];
 
@@ -283,7 +293,7 @@ void drawPixel(S3L_PixelInfo *p)
       break;
     }
 
-    case 1: // single color mode
+    case MODE_SINGLE_COLOR:
     {
       r = 128;
       g = 128;
@@ -292,7 +302,7 @@ void drawPixel(S3L_PixelInfo *p)
       break;
     }
 
-    case 2: // smooth normal mode
+    case MODE_NORMAL_SMOOTH:
     {
       S3L_Vec4 n;
 
@@ -309,7 +319,7 @@ void drawPixel(S3L_PixelInfo *p)
       break;
     }
 
-    case 3: // non-smooth normal mode
+    case MODE_NORMAL_SHARP:
     {
       r = nt.x;
       g = nt.y;
@@ -317,7 +327,7 @@ void drawPixel(S3L_PixelInfo *p)
       break;
     }
 
-    case 4: // barycentric mode
+    case MODE_BARYCENTRIC:
     {
       r = p->barycentric[0] >> 1;
       g = p->barycentric[1] >> 1;
@@ -325,7 +335,7 @@ void drawPixel(S3L_PixelInfo *p)
       break;
     }
 
-    case 5: // triangle index mode
+    case MODE_TRIANGLE_INDEX:
     {
       r = S3L_min(p->triangleIndex,255);
       g = r;
@@ -548,17 +558,17 @@ int main()
     }
     
     if (state[SDL_SCANCODE_KP_0])
-      mode = 0;
+      mode = MODE_TEXTUERED;
     else if (state[SDL_SCANCODE_KP_1])
-      mode = 1;
+      mode = MODE_SINGLE_COLOR;
     else if (state[SDL_SCANCODE_KP_2])
-      mode = 2;
+      mode = MODE_NORMAL_SMOOTH;
     else if (state[SDL_SCANCODE_KP_3])
-      mode = 3;
+      mode = MODE_NORMAL_SHARP;
     else if (state[SDL_SCANCODE_KP_4])
-      mode = 4;
+      mode = MODE_BARYCENTRIC;
     else if (state[SDL_SCANCODE_KP_5])
-      mode = 5;
+      mode = MODE_TRIANGLE_INDEX;
 
     if (modelIndex == 2)
       animate(((double) clock()) / CLOCKS_PER_SEC); 
