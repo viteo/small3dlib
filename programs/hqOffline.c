@@ -90,7 +90,7 @@ S3L_Vec4 toLightDirection;
 
 S3L_Vec4 n0, n1, n2, v0, v1, v2;
 
-S3L_Unit uv0[2], uv1[2], uv2[2];
+S3L_Vec4 uv0, uv1, uv2;
 
 void sampleTexture(uint8_t *texture, int w, int h, float x, float y, uint8_t color[3])
 {
@@ -170,59 +170,25 @@ void drawPixel(S3L_PixelInfo *p)
 
   if (p->triangleID != previousTriangle)
   {
-    int index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3] * 3;
 
-    n0.x = normals[index];
-    v0.x = scene.models[p->modelIndex].vertices[index];
-    index++;
-    n0.y = normals[index];
-    v0.y = scene.models[p->modelIndex].vertices[index];
-    index++;
-    n0.z = normals[index];
-    v0.z = scene.models[p->modelIndex].vertices[index];
+    S3L_getIndexedTriangleValues(
+      p->triangleIndex,
+      scene.models[p->modelIndex].triangles,
+      normals,3,&n0,&n1,&n2);
 
-    index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 1] * 3;
-
-    n1.x = normals[index];
-    v1.x = scene.models[p->modelIndex].vertices[index];
-    index++;
-    n1.y = normals[index];
-    v1.y = scene.models[p->modelIndex].vertices[index];
-    index++;
-    n1.z = normals[index];
-    v1.z = scene.models[p->modelIndex].vertices[index];
- 
-    index = scene.models[p->modelIndex].triangles[p->triangleIndex * 3 + 2] * 3;
-
-    n2.x = normals[index];
-    v2.x = scene.models[p->modelIndex].vertices[index];
-    index++;
-    n2.y = normals[index];
-    v2.y = scene.models[p->modelIndex].vertices[index];
-    index++;
-    n2.z = normals[index];
-    v2.z = scene.models[p->modelIndex].vertices[index];
+    S3L_getIndexedTriangleValues(
+      p->triangleIndex,
+      scene.models[p->modelIndex].triangles,
+      scene.models[p->modelIndex].vertices,3,&v0,&v1,&v2);
 
     if (p->modelIndex != WATER_MODEL_INDEX &&
         p->modelIndex != ISLAND_MODEL_INDEX)
     {
-      index = treeUVIndices[p->triangleIndex * 3] * 2;
 
-      uv0[0] = treeUVs[index];
-      index++;
-      uv0[1] = treeUVs[index];
-
-      index = treeUVIndices[p->triangleIndex * 3 + 1] * 2;
-
-      uv1[0] = treeUVs[index];
-      index++;
-      uv1[1] = treeUVs[index];
-
-      index = treeUVIndices[p->triangleIndex * 3 + 2] * 2;
-
-      uv2[0] = treeUVs[index];
-      index++;
-      uv2[1] = treeUVs[index];
+    S3L_getIndexedTriangleValues(
+      p->triangleIndex,
+      scene.models[p->modelIndex].triangles,
+      treeUVs,2,&uv0,&uv1,&uv2);
     }
 
     previousTriangle = p->triangleID;
@@ -297,8 +263,8 @@ void drawPixel(S3L_PixelInfo *p)
     specularIntensity = 0.2;
     specularPower = 20.0;
 
-    u = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
-    v = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
+    u = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
+    v = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
   }
 
   S3L_normalizeVec3(&normal);

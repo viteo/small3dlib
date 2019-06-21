@@ -103,29 +103,7 @@ void drawPixel(S3L_PixelInfo *p)
       texture = level3Texture;
     }
 
-    int16_t index;
-
-    index = p->triangleIndex * 3;
-
-    int16_t i0 = uvIndices[index];
-    int16_t i1 = uvIndices[index + 1];
-    int16_t i2 = uvIndices[index + 2];
-
-    index = i0 * 2;
-
-    uv0.x = uvs[index];
-    uv0.y = uvs[index + 1];
-
-    index = i1 * 2;
-
-    uv1.x = uvs[index];
-    uv1.y = uvs[index + 1];
-
-    index = i2 * 2;
-
-    uv2.x = uvs[index];
-    uv2.y = uvs[index + 1];
-
+    S3L_getIndexedTriangleValues(p->triangleIndex,uvIndices,uvs,2,&uv0,&uv1,&uv2);
     previousTriangle = p->triangleID;
   }
 

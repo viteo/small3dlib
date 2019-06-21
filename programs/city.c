@@ -111,7 +111,7 @@ void sampleTexture(uint8_t *texture, int32_t u, int32_t v, uint8_t *r, uint8_t *
 }
 
 uint32_t previousTriangle = -1;
-S3L_Unit uv0[2], uv1[2], uv2[2];
+S3L_Vec4 uv0, uv1, uv2;
 
 void drawPixel(S3L_PixelInfo *p)
 {
@@ -131,28 +131,7 @@ void drawPixel(S3L_PixelInfo *p)
       uvs = carUVs;
     }
 
-    int16_t index;
-
-    index = p->triangleIndex * 3;
-
-    int16_t i0 = uvIndices[index];
-    int16_t i1 = uvIndices[index + 1];
-    int16_t i2 = uvIndices[index + 2];
-
-    index = i0 * 2;
-
-    uv0[0] = uvs[index];
-    uv0[1] = uvs[index + 1];
-
-    index = i1 * 2;
-
-    uv1[0] = uvs[index];
-    uv1[1] = uvs[index + 1];
-
-    index = i2 * 2;
-
-    uv2[0] = uvs[index];
-    uv2[1] = uvs[index + 1];
+    S3L_getIndexedTriangleValues(p->triangleIndex,uvIndices,uvs,2,&uv0,&uv1,&uv2);
 
     previousTriangle = p->triangleID;
   }
@@ -161,8 +140,8 @@ void drawPixel(S3L_PixelInfo *p)
 
   S3L_Unit uv[2];
 
-  uv[0] = S3L_interpolateBarycentric(uv0[0],uv1[0],uv2[0],p->barycentric);
-  uv[1] = S3L_interpolateBarycentric(uv0[1],uv1[1],uv2[1],p->barycentric);
+  uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
+  uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
   sampleTexture(cityTexture,uv[0] / 2,uv[1] / 2,&r,&g,&b);
   

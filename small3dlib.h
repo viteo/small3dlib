@@ -521,7 +521,9 @@ void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
   for each triangle, each index pointing into 'values' array, which contains
   the values, each one consisting of 'numComponents' components (e.g. 2 for
   UV coordinates). The three values are retrieved into 'v0', 'v1' and 'v2'
-  vectors (into x, y, z and w, depending on 'numComponents'). */
+  vectors (into x, y, z and w, depending on 'numComponents'). This function is
+  meant to be used per-triangle (typically from a cache), NOT per-pixel, as it
+  is not as fast as possible! */
 
 void S3L_getIndexedTriangleValues(
   S3L_Index triangleIndex,
