@@ -4,6 +4,9 @@ features:
   (e.g. a "low memory sort strategy" will turn z-buffer off and turn
   back-to-front sorting on).
 
+- Helper functions for e.g. retrieving and caching UV coords etc. Maybe these
+  should be in a separate file?
+
 - function for computing normals and lighting
 
 - triangle sorting:
