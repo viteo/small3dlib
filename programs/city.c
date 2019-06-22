@@ -228,7 +228,11 @@ int main()
   {
     clock_t frameStartT = clock();
 
+    models[1].transform.rotation.y += models[1].transform.rotation.z; // overturn the car for the rendering
+
     draw();
+
+    models[1].transform.rotation.y -= models[1].transform.rotation.z; // turn the car back for the physics
 
     fps++;
 
