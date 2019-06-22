@@ -29,6 +29,7 @@ TODO
 ## limitations
 
 - Some values, like screen resolution, are a compile-time option due to performance and simplicity, and can't change during runtime.
+- No scenegraph (object parenting), just a scene list. Parenting can still be achieved by using cutom transform matrices.
 - Though performance is high, due to multiplatformness it can't match platform-specific rasterizers written in assembly.
 - Proper near-plane culling (subdividing triangles) is missing. You can either cull whole triangles completely or "push" them by the near plane. These options are okay when drawing a models not very close to the camera, but e.g. 3D environments may suffer from artifacts.
 - Due to the limitations of 32bit integer arithmetics, some types of movement may be jerky.
@@ -42,3 +43,4 @@ TODO
 ## tips/troubleshooting
 
 - Seeing buggy triangles flashing in front of the camera? With the limited 32bit arithmetic far-away things may be overflowing. Try to scale down the scene. If you also don't mind it, set `S3L_STRICT_NEAR_CULLING` to `1` -- this should probably solve it.
+- Sorted mode sorts triangles before drawing, but sometimes you need to control the drawing order more precisely. This can be done by reordering the objects in the scene list or rendering the scene multiple times without clearing the screen.
