@@ -14,7 +14,7 @@
 #define S3L_STRICT_NEAR_CULLING 0
 #define S3L_PERSPECTIVE_CORRECTION 2
 #define S3L_SORT 0
-#define S3L_Z_BUFFER 1
+#define S3L_Z_BUFFER 2
 
 #define S3L_PIXEL_FUNCTION drawPixel
 

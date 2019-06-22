@@ -1085,8 +1085,6 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
   vBackup.z = v->z;  
   vBackup.w = v->w;  
 
-  // TODO: try alternative operation orders to optimize
-
   #define dotCol(col)\
     ((vBackup.x * (*m)[col][0]) +\
      (vBackup.y * (*m)[col][1]) +\
@@ -1571,8 +1569,8 @@ void S3L_rotationToDirections(
   }
 }
 
-void S3L_initPixelInfo(S3L_PixelInfo *p) // TODO: maybe non-pointer for p
-{                                        // could be faster?
+void S3L_initPixelInfo(S3L_PixelInfo *p)
+{
   p->x = 0;
   p->y = 0;
   p->barycentric[0] = S3L_FRACTIONS_PER_UNIT;
@@ -2017,9 +2015,7 @@ void S3L_drawTriangle(
 
     if (currentY >= 0) /* clipping of pixels whose y < 0 (can't be easily done
                           outside the loop) */
-    {                     /* TODO: ^ This is bad though, a single large
-                             triangle outside he top of the screen will trigger
-                             a long loop. Try to FIX THIS! */
+    {                     
       p.y = currentY;
 
       // draw the horizontal line
@@ -2079,11 +2075,9 @@ void S3L_drawTriangle(
 
 #if S3L_PERSPECTIVE_CORRECTION
       S3L_ScreenCoord i = lXClipped - lX;  /* helper var to save one
-                                                  substraction in the inner
-                                                  loop */
+                                              substraction in the inner
+                                              loop */
 #endif
-
-      // draw the row -- inner loop:
 
 #if S3L_PERSPECTIVE_CORRECTION == 2
       S3L_FastLerpState depthPC, b0PC, b1PC;
@@ -2107,6 +2101,8 @@ void S3L_drawTriangle(
 
       int8_t rowCount = S3L_PC_APPROX_LENGTH;
 #endif
+
+      // draw the row -- inner loop:
 
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
@@ -2234,7 +2230,7 @@ void S3L_drawTriangle(
             S3L_FRACTIONS_PER_UNIT - *barycentric0 - *barycentric1;
 #endif
           S3L_PIXEL_FUNCTION(&p);
-        }
+        } // tests passed
 
 #if !S3L_FLAT
   #if S3L_PERSPECTIVE_CORRECTION
