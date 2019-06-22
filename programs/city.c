@@ -272,12 +272,14 @@ int main()
     if (state[SDL_SCANCODE_LEFT])
     {
       models[1].transform.rotation.y += stepRotation;
-      models[1].transform.rotation.z = S3L_min(velocity / 64, models[1].transform.rotation.z + 1);
+      models[1].transform.rotation.z =
+        S3L_min(S3L_abs(velocity) / 64, models[1].transform.rotation.z + 1);
     }
     else if (state[SDL_SCANCODE_RIGHT])
     {
       models[1].transform.rotation.y -= stepRotation;
-      models[1].transform.rotation.z = S3L_max(-velocity / 64, models[1].transform.rotation.z - 1);
+      models[1].transform.rotation.z =
+        S3L_max(-S3L_abs(velocity) / 64, models[1].transform.rotation.z - 1);
     }
     else
       models[1].transform.rotation.z = (models[1].transform.rotation.z * 3) / 4;
