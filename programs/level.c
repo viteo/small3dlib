@@ -116,6 +116,12 @@ void drawPixel(S3L_PixelInfo *p)
 
   sampleTxture(uv[0],uv[1],&r,&g,&b);
 
+  S3L_Unit fog = (p->depth * 8) / S3L_FRACTIONS_PER_UNIT;
+
+  r = S3L_clamp(((S3L_Unit) r) - fog,0,255);
+  g = S3L_clamp(((S3L_Unit) g) - fog,0,255);
+  b = S3L_clamp(((S3L_Unit) b) - fog,0,255);
+
   setPixel(p->x,p->y,r,g,b); 
 }
 
