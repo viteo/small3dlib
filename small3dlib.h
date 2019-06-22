@@ -2080,7 +2080,14 @@ void S3L_drawTriangle(
 #endif
 
 #if S3L_PERSPECTIVE_CORRECTION == 2
-      S3L_FastLerpState depthPC, b0PC, b1PC;
+      S3L_FastLerpState
+        depthPC, // interpolates depth between row segments
+        b0PC,    // interpolates barycentric0 between row segments 
+        b1PC;    // interpolates barycentric1 between row segments
+
+      /* ^ These interpolate values between row segments (lines of pixels
+           of S3L_PC_APPROX_LENGTH length). After each row segment perspective
+           correction is recomputed. */
 
       depthPC.valueScaled = 
         (Z_RECIP_NUMERATOR / 
