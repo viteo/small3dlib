@@ -32,9 +32,7 @@ TODO
 - No scenegraph (object parenting), just a scene list. Parenting can still be achieved by using cutom transform matrices.
 - Though performance is high, due to multiplatformness it can't match platform-specific rasterizers written in assembly.
 - Proper near-plane culling (subdividing triangles) is missing. You can either cull whole triangles completely or "push" them by the near plane. These options are okay when drawing a models not very close to the camera, but e.g. 3D environments may suffer from artifacts.
-- Due to the limitations of 32bit integer arithmetics, some types of movement may be jerky.
-
-TODO
+- Due to the limitations of 32bit integer arithmetics, some types of movement (particularly camera) may look jerky, and artifact may appear in specific situations.
 
 ## how to use
 
