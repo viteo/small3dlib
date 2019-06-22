@@ -16,21 +16,21 @@ features:
 - function to set/clear stencil buffer -- can be useful
 
 - function to map one point in 3D space to screen, along with size (for mapping
-  billboards/sprites etc.)                                DONE
+  billboards/sprites etc.)                                 DONE
 
 - Optimize persp. correction!
 
 - Create and use the same function for determining CW/CCW AND left/right vertex
-  determination in triangle drawing.
+  determination in triangle drawing.                       DONE
 
 - Check (and possibly fix) if any barycentric coord ever exceeds the range
-  <0,255> due to rounding errors etc.
+  <0,255> due to rounding errors etc.                      DONE
 
 - dithered barycentric interpolation function that is faster than normal
   interpolation -- it will randomly picky one of three values, with greater
   probabilities at greater coords
 
-- option to disable baycentric coordinates computing    DONE
+- option to disable baycentric coordinates computing       DONE
 
 - Z-buffer:
   - full                                  DONE
