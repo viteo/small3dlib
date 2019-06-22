@@ -17,7 +17,9 @@ TODO
 - No dependencies (uses only stdint standard library), extremely portable.
 - Single header, KISS.
 - Pure C99, tested to run as C++ as well.
-- Still flexible -- pixels are left for you to draw in any way you want with a custom fragment-shader like function. 
+- Still flexible -- pixels are left for you to draw in any way you want with a custom fragment-shader like function.
+- Perspective correction, 3 modes: none (linear only), full (per-pixel), approximation (per-N-pixels). 
+- Different drawing strategies to choose from: none, z-buffer (none, full, reduced), triangle sorting (back-to-front, fron-to-back with stencil buffer).
 - Triangles provide barycentric coordinates, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, transparency, PBR, shadow mapping, ...).
 - Tested on multiple platforms (PC, Arduboy, Pokitto, Gamebuino META).
 - Many compile-time options to tune the performance vs quality.
@@ -36,6 +38,6 @@ TODO
 
 TODO
 
-## tips
+## tips/troubleshooting
 
 - Seeing buggy triangles flashing in front of the camera? With the limited 32bit arithmetic far-away things may be overflowing. Try to scale down the scene. If you also don't mind it, set `S3L_STRICT_NEAR_CULLING` to `1` -- this should probably solve it.
