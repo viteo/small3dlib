@@ -20,7 +20,7 @@ TODO
 - Still flexible -- pixels are left for you to draw in any way you want with a custom fragment-shader like function.
 - Perspective correction, 3 modes: none (linear only), full (per-pixel), approximation (per-N-pixels). 
 - Different drawing strategies to choose from: none, z-buffer (none, full, reduced), triangle sorting (back-to-front, fron-to-back with stencil buffer).
-- Triangles provide barycentric coordinates, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, transparency, PBR, shadow mapping, ...).
+- Triangles provide barycentric coordinates, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, texture fitering, transparency, PBR, shadow mapping, MIP mapping, ...).
 - Tested on multiple platforms (TODO).
 - Many compile-time options to tune the performance vs quality.
 - Well commented and formatted code.
