@@ -29,6 +29,8 @@
 S3L_Model3D models[3];
 S3L_Scene scene;
 
+S3L_Vec4 teleportPoint;
+
 uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
 
 uint32_t frame = 0;
@@ -78,6 +80,20 @@ void sampleTxture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
   *g = texture[index];
   index++;
   *b = texture[index];
+}
+
+void drawTeleport(int16_t x, int16_t y, S3L_ScreenCoord size)
+{
+  int16_t halfSize = size / 2;
+
+  S3L_ScreenCoord x0 = S3L_max(0,x - halfSize);
+  S3L_ScreenCoord x1 = S3L_min(S3L_RESOLUTION_X - 1,x + halfSize);
+  S3L_ScreenCoord y0 = S3L_max(0,y - halfSize);
+  S3L_ScreenCoord y1 = S3L_min(S3L_RESOLUTION_Y - 1,y + halfSize);
+
+  for (S3L_ScreenCoord j = y0; j < y1; ++j)
+    for (S3L_ScreenCoord i = x0; i < x1; ++i)
+      setPixel(i,j,255,0,0);
 }
 
 void drawPixel(S3L_PixelInfo *p)
@@ -142,6 +158,13 @@ void draw()
 
   S3L_drawScene(scene);
 
+  S3L_Vec4 screenPoint;
+
+  project3DPointToScreen(teleportPoint,scene.camera,&screenPoint);
+
+  if (screenPoint.z < S3L_zBufferRead(screenPoint.x,screenPoint.y)) 
+    drawTeleport(screenPoint.x,screenPoint.y,screenPoint.w);
+
   clock_t nowT = clock();
 
   double timeDiff = ((double) (nowT - nextT)) / CLOCKS_PER_SEC;
@@ -166,6 +189,11 @@ int main()
   SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
+
+  teleportPoint.x = 6 * S3L_FRACTIONS_PER_UNIT;
+  teleportPoint.y = -3 * S3L_FRACTIONS_PER_UNIT;
+  teleportPoint.z = 2 * S3L_FRACTIONS_PER_UNIT;
+  teleportPoint.w = S3L_FRACTIONS_PER_UNIT;
 
   nextT = clock();
 

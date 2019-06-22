@@ -512,6 +512,15 @@ static inline S3L_Unit S3L_cos(S3L_Unit x);
 S3L_Unit S3L_vec3Length(S3L_Vec4 v);
 S3L_Unit S3L_sqrt(S3L_Unit value);
 
+/** Projects a single point from 3D space to the screen space (pixels), which
+  can be useful e.g. for drawing sprites. The w component of input and result
+  holds the point size. If this size is 0 in the result, the sprite is outside
+  the view. */
+void project3DPointToScreen(
+  S3L_Vec4 point,
+  S3L_Camera camera,
+  S3L_Vec4 *result);
+
 /** Computes a normalized normal of given triangle. */
 void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
   S3L_Vec4 *n);
@@ -1419,6 +1428,50 @@ void S3L_initTransoform3D(S3L_Transform3D *t)
   t->scale.w = 0;
 }
 
+/**
+  Performs perspecive division (z-divide). Does NOT check for division by zero.
+*/
+static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
+  S3L_Unit focalLength)
+{
+  vector->x = (vector->x * focalLength) / vector->z;
+  vector->y = (vector->y * focalLength) / vector->z;
+}
+
+void project3DPointToScreen(
+  S3L_Vec4 point,
+  S3L_Camera camera,
+  S3L_Vec4 *result)
+{
+  S3L_Mat4 m;
+  S3L_makeCameraMatrix(camera.transform,&m);
+
+  S3L_Unit s = point.w;
+
+  point.w = S3L_FRACTIONS_PER_UNIT;
+
+  S3L_vec3Xmat4(&point,&m);
+
+  point.z = S3L_nonZero(point.z);
+
+  S3L_perspectiveDivide(&point,camera.focalLength);
+
+  S3L_ScreenCoord x, y;
+
+  S3L_mapProjectionPlaneToScreen(point,&x,&y);
+
+  result->x = x;
+  result->y = y;
+  result->z = point.z;
+
+  result->w =
+    (point.z < 0) ? 0 :
+    (
+      (s * camera.focalLength * S3L_RESOLUTION_X) /
+        (point.z * S3L_FRACTIONS_PER_UNIT)
+    );
+}
+
 void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t)
 {
   S3L_Vec4 v;
@@ -2294,16 +2347,6 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
   S3L_transposeMat4(&r); // transposing creates an inverse transform
 
   S3L_mat4Xmat4(m,&r);
-}
-
-/**
-  Performs perspecive division (z-divide). Does NOT check for division by zero.
-*/
-static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
-  S3L_Unit focalLength)
-{
-  vector->x = (vector->x * focalLength) / vector->z;
-  vector->y = (vector->y * focalLength) / vector->z;
 }
 
 int8_t S3L_triangleWinding(

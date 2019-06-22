@@ -16,7 +16,7 @@ features:
 - function to set/clear stencil buffer -- can be useful
 
 - function to map one point in 3D space to screen, along with size (for mapping
-  billboards/sprites etc.)
+  billboards/sprites etc.)                                DONE
 
 - Optimize persp. correction!
 
