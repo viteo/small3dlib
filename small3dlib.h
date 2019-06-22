@@ -2102,6 +2102,8 @@ void S3L_drawTriangle(
       int8_t rowCount = S3L_PC_APPROX_LENGTH;
 #endif
 
+      S3L_Index zBufferIndex = p.y * S3L_RESOLUTION_X + lXClipped;
+
       // draw the row -- inner loop:
 
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
@@ -2127,7 +2129,36 @@ void S3L_drawTriangle(
 
           S3L_Unit nextI = i + S3L_PC_APPROX_LENGTH;
 
-          if (nextI >= rowLength)
+          if (nextI < rowLength)
+          {
+            S3L_Unit nextDepthScaled =
+              (
+              Z_RECIP_NUMERATOR /
+              S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,nextI,rowLength))
+              ) << S3L_FAST_LERP_QUALITY;
+
+            depthPC.stepScaled =
+              (nextDepthScaled - depthPC.valueScaled) / S3L_PC_APPROX_LENGTH;
+
+            S3L_Unit nextValue = 
+             ( 
+               S3L_interpolateFrom0(rOverZ,nextI,rowLength)
+               * nextDepthScaled
+             ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
+
+            b0PC.stepScaled =
+              (nextValue - b0PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+
+            nextValue = 
+             ( 
+               (lOverZ - S3L_interpolateFrom0(lOverZ,nextI,rowLength))
+               * nextDepthScaled
+             ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
+
+            b1PC.stepScaled =
+              (nextValue - b1PC.valueScaled) / S3L_PC_APPROX_LENGTH;
+          }
+          else
           {
             /* A special case where we'd be interpolating outside the triangle.
                It seems like a valid approach at first, but it creates a bug
@@ -2158,35 +2189,6 @@ void S3L_drawTriangle(
             b1PC.stepScaled =
               -1 * b1PC.valueScaled / maxI;
           }
-          else
-          {
-            S3L_Unit nextDepthScaled =
-              (
-              Z_RECIP_NUMERATOR /
-              S3L_nonZero(S3L_interpolate(lRecipZ,rRecipZ,nextI,rowLength))
-              ) << S3L_FAST_LERP_QUALITY;
-
-            depthPC.stepScaled =
-              (nextDepthScaled - depthPC.valueScaled) / S3L_PC_APPROX_LENGTH;
-
-            S3L_Unit nextValue = 
-             ( 
-               S3L_interpolateFrom0(rOverZ,nextI,rowLength)
-               * nextDepthScaled
-             ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
-
-            b0PC.stepScaled =
-              (nextValue - b0PC.valueScaled) / S3L_PC_APPROX_LENGTH;
-
-            nextValue = 
-             ( 
-               (lOverZ - S3L_interpolateFrom0(lOverZ,nextI,rowLength))
-               * nextDepthScaled
-             ) / (Z_RECIP_NUMERATOR / S3L_FRACTIONS_PER_UNIT);
-
-            b1PC.stepScaled =
-              (nextValue - b1PC.valueScaled) / S3L_PC_APPROX_LENGTH;
-          }
         }
 
         p.depth = S3L_getFastLerpValue(depthPC);
@@ -2197,7 +2199,8 @@ void S3L_drawTriangle(
 #endif
 
 #if S3L_Z_BUFFER
-        p.previousZ = S3L_zBuffer[p.y * S3L_RESOLUTION_X + p.x];
+        p.previousZ = S3L_zBuffer[zBufferIndex];
+        zBufferIndex++;
 
         if (!S3L_zTest(p.x,p.y,p.depth))
           testsPassed = 0;        
