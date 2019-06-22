@@ -8,13 +8,11 @@
 #include <math.h>
 #include <time.h>
 
-//#define S3L_PRESET_HIGHEST_QUALITY
-
 #define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 0
 #define S3L_PERSPECTIVE_CORRECTION 2
 #define S3L_SORT 0
-#define S3L_Z_BUFFER 2
+#define S3L_Z_BUFFER 1
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
@@ -183,8 +181,8 @@ void draw()
   project3DPointToScreen(teleportPoint,scene.camera,&screenPoint);
 
   if (screenPoint.w > 0 && 
-      screenPoint.x >= 0 && screenPoint.x <= S3L_RESOLUTION_X &&
-      screenPoint.y >= 0 && screenPoint.y <= S3L_RESOLUTION_Y &&
+      screenPoint.x >= 0 && screenPoint.x < S3L_RESOLUTION_X &&
+      screenPoint.y >= 0 && screenPoint.y < S3L_RESOLUTION_Y &&
       screenPoint.z < S3L_zBufferRead(screenPoint.x,screenPoint.y)) 
     drawTeleport(screenPoint.x,screenPoint.y,screenPoint.w);
 
