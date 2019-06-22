@@ -21,10 +21,15 @@ TODO
 - Perspective correction, 3 modes: none (linear only), full (per-pixel), approximation (per-N-pixels). 
 - Different drawing strategies to choose from: none, z-buffer (none, full, reduced), triangle sorting (back-to-front, fron-to-back with stencil buffer).
 - Triangles provide barycentric coordinates, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, transparency, PBR, shadow mapping, ...).
-- Tested on multiple platforms (PC, Arduboy, Pokitto, Gamebuino META).
+- Tested on multiple platforms (TODO).
 - Many compile-time options to tune the performance vs quality.
 - Well commented and formatted code.
-- Completely free of legal restrictions, do literally everything you want.
+- Completely free of legal restrictions, do literally anything you want.
+
+**NOTE**: Backwards compatibility isn't a goal of this libraray. It is meant to
+be an as-is set of tools that the users is welcome to adjust for their
+specific project. So new features will be preferred to keeping the same
+interface.
 
 ## limitations
 
