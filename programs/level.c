@@ -87,9 +87,9 @@ void drawTeleport(int16_t x, int16_t y, S3L_ScreenCoord size)
   int16_t halfSize = size / 2;
 
   S3L_ScreenCoord x0 = S3L_max(0,x - halfSize);
-  S3L_ScreenCoord x1 = S3L_min(S3L_RESOLUTION_X - 1,x + halfSize);
+  S3L_ScreenCoord x1 = S3L_min(S3L_RESOLUTION_X,x + halfSize);
   S3L_ScreenCoord y0 = S3L_max(0,y - halfSize);
-  S3L_ScreenCoord y1 = S3L_min(S3L_RESOLUTION_Y - 1,y + halfSize);
+  S3L_ScreenCoord y1 = S3L_min(S3L_RESOLUTION_Y,y + halfSize);
 
   for (S3L_ScreenCoord j = y0; j < y1; ++j)
     for (S3L_ScreenCoord i = x0; i < x1; ++i)
@@ -162,7 +162,10 @@ void draw()
 
   project3DPointToScreen(teleportPoint,scene.camera,&screenPoint);
 
-  if (screenPoint.z < S3L_zBufferRead(screenPoint.x,screenPoint.y)) 
+  if (screenPoint.w > 0 && 
+      screenPoint.x >= 0 && screenPoint.x <= S3L_RESOLUTION_X &&
+      screenPoint.y >= 0 && screenPoint.y <= S3L_RESOLUTION_Y &&
+      screenPoint.z < S3L_zBufferRead(screenPoint.x,screenPoint.y)) 
     drawTeleport(screenPoint.x,screenPoint.y,screenPoint.w);
 
   clock_t nowT = clock();

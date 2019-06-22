@@ -612,7 +612,12 @@ void S3L_newFrame();
 void S3L_zBufferClear();
 void S3L_stencilBufferClear();
 
+/** Writes a value (not necessarily depth! depends on the format of z-buffer)
+  to z-buffer (if enabled). Does NOT check boundaries! */
 void S3L_zBufferWrite(S3L_ScreenCoord x, S3L_ScreenCoord y, S3L_Unit value);
+
+/** Reads a value (not necessarily depth! depends on the format of z-buffer)
+  from z-buffer (if enabled). Does NOT check boundaries! */
 S3L_Unit S3L_zBufferRead(S3L_ScreenCoord x, S3L_ScreenCoord y);
 
 static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
@@ -1465,7 +1470,7 @@ void project3DPointToScreen(
   result->z = point.z;
 
   result->w =
-    (point.z < 0) ? 0 :
+    (point.z <= 0) ? 0 :
     (
       (s * camera.focalLength * S3L_RESOLUTION_X) /
         (point.z * S3L_FRACTIONS_PER_UNIT)
