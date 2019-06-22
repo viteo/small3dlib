@@ -91,9 +91,29 @@ void drawTeleport(int16_t x, int16_t y, S3L_ScreenCoord size)
   S3L_ScreenCoord y0 = S3L_max(0,y - halfSize);
   S3L_ScreenCoord y1 = S3L_min(S3L_RESOLUTION_Y,y + halfSize);
 
+  S3L_ScreenCoord row = y0 - (y - halfSize);
+
   for (S3L_ScreenCoord j = y0; j < y1; ++j)
-    for (S3L_ScreenCoord i = x0; i < x1; ++i)
-      setPixel(i,j,255,0,0);
+  {
+    S3L_ScreenCoord i0, i1;
+
+    if (row <= halfSize)
+    {
+      i0 = S3L_max(x0,x - row); 
+      i1 = S3L_min(x1,x + row); 
+    }
+    else
+    {
+      i0 = S3L_max(x0,x - size + row); 
+      i1 = S3L_min(x1,x + size - row); 
+    }
+
+    for (S3L_ScreenCoord i = i0; i < i1; ++i)
+      if (rand() % 8 == 0)
+        setPixel(i,j,255,0,0);
+
+    row++;
+  }
 }
 
 void drawPixel(S3L_PixelInfo *p)
@@ -195,7 +215,7 @@ int main()
 
   teleportPoint.x = 6 * S3L_FRACTIONS_PER_UNIT;
   teleportPoint.y = -3 * S3L_FRACTIONS_PER_UNIT;
-  teleportPoint.z = 2 * S3L_FRACTIONS_PER_UNIT;
+  teleportPoint.z = 3 * S3L_FRACTIONS_PER_UNIT / 2;
   teleportPoint.w = S3L_FRACTIONS_PER_UNIT;
 
   nextT = clock();
