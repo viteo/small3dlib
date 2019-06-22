@@ -28,6 +28,7 @@ TODO
 
 ## limitations
 
+- Some values, like screen resolution, are a compile-time option due to performance and simplicity, and can't change during runtime.
 - Though performance is high, due to multiplatformness it can't match platform-specific rasterizers written in assembly.
 - Proper near-plane culling (subdividing triangles) is missing. You can either cull whole triangles completely or "push" them by the near plane. These options are okay when drawing a models not very close to the camera, but e.g. 3D environments may suffer from artifacts.
 - Due to the limitations of 32bit integer arithmetics, some types of movement may be jerky.
