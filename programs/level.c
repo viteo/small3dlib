@@ -5,6 +5,8 @@
   license: CC0 1.0
 */
 
+#define TEXTURES 1 // whether to use textures for the level
+
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <math.h>
@@ -12,7 +14,13 @@
 
 #define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 0
-#define S3L_PERSPECTIVE_CORRECTION 2
+
+#if TEXTURES
+  #define S3L_PERSPECTIVE_CORRECTION 2
+#else
+  #define S3L_PERSPECTIVE_CORRECTION 0
+#endif
+
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
 
@@ -34,6 +42,12 @@ S3L_Vec4 teleportPoint;
 uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
 
 uint32_t frame = 0;
+uint8_t *texture = 0;
+S3L_Unit *uvs = 0;
+S3L_Index *uvIndices = 0;
+uint32_t previousTriangle = 1000;
+S3L_Vec4 uv0, uv1, uv2;
+uint8_t r, g, b;
 
 void clearScreen()
 {
@@ -56,14 +70,6 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
 
   pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
 }
-
-uint8_t *texture = 0;
-S3L_Unit *uvs = 0;
-S3L_Index *uvIndices = 0;
-
-uint32_t previousTriangle = 1000;
-
-S3L_Vec4 uv0, uv1, uv2;
 
 void sampleTxture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
 {
@@ -118,6 +124,7 @@ void drawTeleport(int16_t x, int16_t y, S3L_ScreenCoord size)
 
 void drawPixel(S3L_PixelInfo *p)
 {
+#if TEXTURES
   if (p->triangleID != previousTriangle)
   {
     switch (p->modelIndex)
@@ -151,11 +158,24 @@ void drawPixel(S3L_PixelInfo *p)
   uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
   uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
-  uint8_t r, g, b;
-
   sampleTxture(uv[0],uv[1],&r,&g,&b);
+#else
+  switch (p->modelIndex)
+  {
+    case 0: r = 255; g = 0; b = 0; break;
+    case 1: r = 0; g = 255; b = 0; break;
+    case 2:
+    default: r = 0; g = 0; b = 255; break;
+  }
+#endif
 
-  S3L_Unit fog = (p->depth * 8) / S3L_FRACTIONS_PER_UNIT;
+  S3L_Unit fog = (p->depth * 
+#if TEXTURES
+    8
+#else
+    16
+#endif
+  ) / S3L_FRACTIONS_PER_UNIT;
 
   r = S3L_clamp(((S3L_Unit) r) - fog,0,255);
   g = S3L_clamp(((S3L_Unit) g) - fog,0,255);
