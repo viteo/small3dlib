@@ -9,8 +9,9 @@ features:
 
 - PC == 2 (and possibly 1) could likely be accelerated by not using interpolate
   functions, but rather FastLerStates for the values recomputed after each
-  row segment.
-
+  row segment.                                             DONE (doesn't work
+                                                                 for PC == 2,
+                                                                 tried)
 - function for computing normals and lighting
 
 - triangle sorting:
