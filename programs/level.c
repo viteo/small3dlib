@@ -47,7 +47,6 @@ S3L_Unit *uvs = 0;
 S3L_Index *uvIndices = 0;
 uint32_t previousTriangle = 1000;
 S3L_Vec4 uv0, uv1, uv2;
-uint8_t r, g, b;
 
 void clearScreen()
 {
@@ -124,6 +123,8 @@ void drawTeleport(int16_t x, int16_t y, S3L_ScreenCoord size)
 
 void drawPixel(S3L_PixelInfo *p)
 {
+  uint8_t r, g, b;
+
 #if TEXTURES
   if (p->triangleID != previousTriangle)
   {
@@ -243,14 +244,11 @@ int main()
 
   nextT = clock();
 
-  S3L_initCamera(&scene.camera);
-
   levelWallsModelInit();
   levelFloorModelInit();
   levelCeilingModelInit();
 
-  scene.modelCount = 3;
-  scene.models = models;
+  S3L_initScene(models,3,&scene);
 
   scene.models[0] = levelWallsModel;
   scene.models[1] = levelFloorModel;
@@ -268,9 +266,6 @@ int main()
   scene.models[1].transform.scale = s;
   scene.models[2].transform.scale = s;
 
-  S3L_initTransoform3D(&modelTransform);
-  S3L_initDrawConfig(&conf);
-
   int running = 1;
 
   while (running) // main loop
@@ -278,21 +273,13 @@ int main()
     draw();
     SDL_UpdateTexture(texture,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
 
-    int code = 0;
-
     while (SDL_PollEvent(&event))
       if (event.type == SDL_QUIT)
         running = 0;
 
     S3L_Vec4 camF, camR;
-    int step = 50;
  
-    S3L_rotationToDirections(
-      scene.camera.transform.rotation,
-      step,
-      &camF,
-      &camR,
-      0);
+    S3L_rotationToDirections(scene.camera.transform.rotation,20,&camF,&camR,0);
 
     uint8_t *state = SDL_GetKeyboardState(NULL);
 
