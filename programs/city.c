@@ -83,9 +83,6 @@ void clearScreen()
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
 {
-  if (x < 0 || x >= S3L_RESOLUTION_X || y < 0 || y >= S3L_RESOLUTION_Y)
-    return;
-
   uint32_t r = red & 0x000000FF;
   r = r << 24;
 
