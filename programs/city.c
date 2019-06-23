@@ -1,6 +1,8 @@
 /*
+  Example program for small3dlib -- a GTA-like game demo.
+
   author: Miloslav Ciz
-  license: CC0
+  license: CC0 1.0
 */
 
 #include <SDL2/SDL.h>
@@ -96,18 +98,18 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
   pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
 }
 
-void sampleTexture(uint8_t *texture, int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
+void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
 {
-  u = S3L_clamp(u,0,TEXTURE_W - 1);
-  v = S3L_clamp(v,0,TEXTURE_H - 1);
+  u = S3L_clamp(u,0,CITY_TEXTURE_WIDTH - 1);
+  v = S3L_clamp(v,0,CITY_TEXTURE_HEIGHT - 1);
 
-  int32_t index = (v * TEXTURE_W + u) * 3;
+  int32_t index = (v * CITY_TEXTURE_WIDTH + u) * 3;
 
-  *r = texture[index];
+  *r = cityTexture[index];
   index++;
-  *g = texture[index];
+  *g = cityTexture[index];
   index++;
-  *b = texture[index];
+  *b = cityTexture[index];
 }
 
 uint32_t previousTriangle = -1;
@@ -136,14 +138,14 @@ void drawPixel(S3L_PixelInfo *p)
     previousTriangle = p->triangleID;
   }
 
-  uint8_t r,g,b;
+  uint8_t r, g, b;
 
   S3L_Unit uv[2];
 
   uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
   uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
-  sampleTexture(cityTexture,uv[0] / 2,uv[1] / 2,&r,&g,&b);
+  sampleTexture(uv[0] / 2,uv[1] / 2,&r,&g,&b);
   
   setPixel(p->x,p->y,r,g,b); 
 }
@@ -151,9 +153,7 @@ void drawPixel(S3L_PixelInfo *p)
 void draw()
 {
   S3L_newFrame();
-
   clearScreen();
-
   S3L_drawScene(scene);
 }
 
@@ -167,29 +167,28 @@ static inline uint32_t collision(S3L_Vec4 worldPosition)
   return collisionMap[index];
 }
 
-void handleCollision(S3L_Vec4 *pos, S3L_Vec4 previousPos)
+static inline void handleCollision(S3L_Vec4 *pos, S3L_Vec4 previousPos)
 {
-        S3L_Vec4 newPos = *pos;
-        newPos.x = previousPos.x;
-          
-        if (collision(newPos))
-        {
-          newPos = *pos;
-          newPos.z = previousPos.z;
+  S3L_Vec4 newPos = *pos;
+  newPos.x = previousPos.x;
+    
+  if (collision(newPos))
+  {
+    newPos = *pos;
+    newPos.z = previousPos.z;
 
-          if (collision(newPos))
-            newPos = previousPos;
-        }
+    if (collision(newPos))
+      newPos = previousPos;
+  }
 
-        *pos = newPos;
-
+  *pos = newPos;
 }
 
 int16_t fps = 0;
 
 int main()
 {
-  SDL_Window *window = SDL_CreateWindow("model viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
+  SDL_Window *window = SDL_CreateWindow("city demo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
   SDL_Texture *textureSDL = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
@@ -198,16 +197,12 @@ int main()
   cityModelInit();
   carModelInit();
 
-  carModel.transform.translation.x = 7 * (S3L_FRACTIONS_PER_UNIT / 2);
-  carModel.transform.translation.z = -7 * (S3L_FRACTIONS_PER_UNIT / 2);
-  carModel.transform.translation.y = (S3L_FRACTIONS_PER_UNIT / 32);
-
   models[0] = cityModel;
   models[1] = carModel;
 
   S3L_initScene(models,2,&scene);
 
-  scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
+  S3L_setTransform3D(1909,16,-3317,0,-510,0,512,512,512,&(models[1].transform));
 
   int running = 1;
 
@@ -224,7 +219,7 @@ int main()
 
   int16_t velocity = 0;
 
-  while (running)
+  while (running) // main loop
   {
     clock_t frameStartT = clock();
 

@@ -1,6 +1,8 @@
 /*
+  Example program for small3dlib, showing a Quake-like level.
+
   author: Miloslav Ciz
-  license: CC0
+  license: CC0 1.0
 */
 
 #include <SDL2/SDL.h>
@@ -118,23 +120,26 @@ void drawPixel(S3L_PixelInfo *p)
 {
   if (p->triangleID != previousTriangle)
   {
-    if (p->modelIndex == 0)
+    switch (p->modelIndex)
     {
-      uvs = levelWallsUVs;
-      uvIndices = levelWallsUVIndices;
-      texture = level1Texture;
-    }
-    else if (p->modelIndex == 1)
-    {
-      uvs = levelFloorUVs;
-      uvIndices = levelFloorUVIndices;
-      texture = level2Texture;
-    }
-    else
-    {
-      uvs = levelCeilingUVs;
-      uvIndices = levelCeilingUVIndices;
-      texture = level3Texture;
+      case 0:
+        uvs = levelWallsUVs;
+        uvIndices = levelWallsUVIndices;
+        texture = level1Texture;
+        break;
+
+      case 1:
+        uvs = levelFloorUVs;
+        uvIndices = levelFloorUVIndices;
+        texture = level2Texture;
+        break;
+
+      case 2:
+      default:
+        uvs = levelCeilingUVs;
+        uvIndices = levelCeilingUVIndices;
+        texture = level3Texture;
+        break;
     }
 
     S3L_getIndexedTriangleValues(p->triangleIndex,uvIndices,uvs,2,&uv0,&uv1,&uv2);
@@ -205,7 +210,7 @@ void draw()
 
 int main()
 {
-  SDL_Window *window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
+  SDL_Window *window = SDL_CreateWindow("level demo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
   SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
@@ -248,7 +253,7 @@ int main()
 
   int running = 1;
 
-  while (running)
+  while (running) // main loop
   {
     draw();
     SDL_UpdateTexture(texture,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
