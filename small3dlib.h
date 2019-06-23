@@ -215,6 +215,11 @@ typedef uint16_t S3L_Index;
   #define S3L_Z_BUFFER 0  
 #endif
 
+#ifndef S3L_REDUCED_Z_BUFFER_GRANULARITY
+  /** For S3L_Z_BUFFER == 2 this sets the reduced z-buffer granularity. */
+  #define S3L_REDUCED_Z_BUFFER_GRANULARITY 5
+#endif
+
 #ifndef S3L_STENCIL_BUFFER
   /** Whether to use stencil buffer for drawing -- with this a pixel that would
   be resterized over an already rasterized pixel will be discarded. This is
@@ -698,7 +703,8 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
   #define S3L_COMPUTE_DEPTH 1
   #define S3L_MAX_DEPTH 255
   uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
-  #define S3L_zBufferFormat(depth) (((depth) >> 5) & 0x000000FF)
+  #define S3L_zBufferFormat(depth)\
+    S3L_min(255,(depth) >> S3L_REDUCED_Z_BUFFER_GRANULARITY)
 #endif
 
 #if S3L_Z_BUFFER
@@ -711,11 +717,23 @@ static inline int8_t S3L_zTest(
 
   depth = S3L_zBufferFormat(depth);
 
-  if (depth < S3L_zBuffer[index])
+#if S3L_Z_BUFFER == 2
+  #define cmp <= /* For reduced z-buffer we need equality test, because
+                    otherwise pixels at the maximum depth (255) would never be
+                    drawn over the background (which also has the depth of
+                    255). */
+#else
+  #define cmp <  /* For normal z-buffer we leave out equality test to not waste
+                    time by drawing over already drawn pixls. */
+#endif
+
+  if (depth cmp S3L_zBuffer[index])
   {
     S3L_zBuffer[index] = depth;
     return 1;
   }
+
+#undef cmp
 
   return 0;
 }
