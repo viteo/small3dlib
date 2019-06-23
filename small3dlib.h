@@ -1633,6 +1633,18 @@ typedef struct
   int16_t minorDiff; 
 } S3L_BresenhamState; ///< State of drawing a line with Bresenham algorithm.
 
+/** Serves to accelerate linear interpolation for performance-critical
+  code. Functions such as S3L_interpolate require division to compute each
+  interpolated value, while S3L_FastLerpState only requires a division for
+  the initiation and a shift for retrieving each interpolated value.
+
+  S3L_FastLerpState stores a value and a step, both scaled (shifted by
+  S3L_FAST_LERP_QUALITY) to increase precision. The step is being added to the
+  value, which achieves the interpolation. This will only be useful for
+  interpolations in which we need to get the interpolated value in every step.
+
+  BEWARE! Shifting a negative value is undefined, so handling shifting of
+  negative values has to be done cleverly. */
 typedef struct
 {
   S3L_Unit valueScaled;
@@ -1911,7 +1923,8 @@ void S3L_drawTriangle(
     s##SideFLS.valueScaled = 0;\
     if (!down)\
     {\
-      s##SideFLS.valueScaled = S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY;\
+      s##SideFLS.valueScaled =\
+        S3L_FRACTIONS_PER_UNIT << S3L_FAST_LERP_QUALITY;\
       s##SideFLS.stepScaled *= -1;\
     }\
     s##Inc = s##Dx >= 0 ? 1 : -1;\
