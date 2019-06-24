@@ -23,6 +23,7 @@ TODO
 - Triangles provide barycentric coordinates, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, texture fitering, transparency, PBR, shadow mapping, MIP mapping, ...).
 - Tested on multiple platforms (TODO).
 - Many compile-time options to tune the performance vs quality.
+- Similar to OpenGL in principle, but simpler, easier to use, with higher-level features.
 - Well commented and formatted code.
 - Completely free of legal restrictions, do literally anything you want.
 
