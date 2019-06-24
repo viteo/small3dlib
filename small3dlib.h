@@ -1646,21 +1646,6 @@ void S3L_initDrawConfig(S3L_DrawConfig *config)
 
 static inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
 
-typedef struct
-{
-  int16_t steps;
-  int16_t err;
-  S3L_ScreenCoord x;
-  S3L_ScreenCoord y;
-
-  int16_t *majorCoord;
-  int16_t *minorCoord;
-  int16_t majorIncrement;
-  int16_t minorIncrement;
-  int16_t majorDiff;
-  int16_t minorDiff; 
-} S3L_BresenhamState; ///< State of drawing a line with Bresenham algorithm.
-
 /** Serves to accelerate linear interpolation for performance-critical
   code. Functions such as S3L_interpolate require division to compute each
   interpolated value, while S3L_FastLerpState only requires a division for
@@ -1697,65 +1682,6 @@ static inline S3L_Unit S3L_interpolateBarycentric(
       (value1 * barycentric[1]) +
       (value2 * barycentric[2])
     ) / S3L_FRACTIONS_PER_UNIT;
-}
-
-void S3L_bresenhamInit(S3L_BresenhamState *state, int16_t x0, int16_t y0,
-  int16_t x1, int16_t y1)
-{
-  int16_t dx = x1 - x0;
-  int16_t dy = y1 - y0;
-
-  int16_t absDx = S3L_abs(dx);
-  int16_t absDy = S3L_abs(dy);
-
-  if (absDx >= absDy)
-  {
-    state->majorCoord = &(state->x);
-    state->minorCoord = &(state->y);
-
-    state->minorDiff = 2 * absDy;
-    state->majorDiff = 2 * absDx;
-    state->err = 2 * dy - dx;
-  
-    state->majorIncrement = dx >= 0 ? 1 : -1;
-    state->minorIncrement = dy >= 0 ? 1 : -1;
-
-    state->steps = absDx;
-  }
-  else
-  {
-    state->majorCoord = &(state->y);
-    state->minorCoord = &(state->x);
-
-    state->minorDiff = 2 * absDx;
-    state->majorDiff = 2 * absDy;
-    state->err = 2 * dx - dy;
-
-    state->majorIncrement = dy >= 0 ? 1 : -1;
-    state->minorIncrement = dx >= 0 ? 1 : -1;
-
-    state->steps = absDy;
-  }
-
-  state->x = x0;
-  state->y = y0;
-}
-
-int S3L_bresenhamStep(S3L_BresenhamState *state)
-{
-  state->steps--;
-
-  (*state->majorCoord) += state->majorIncrement;
-
-  if (state->err > 0)
-  {
-    (*state->minorCoord) += state->minorIncrement;
-    state->err -= state->majorDiff;
-  }
-
-  state->err += state->minorDiff;
-
-  return state->steps >= 0;
 }
 
 void S3L_mapProjectionPlaneToScreen(
@@ -2465,9 +2391,9 @@ typedef struct
   uint8_t modelIndex;
   S3L_Index triangleIndex;
   uint16_t sortValue;
-} S3L_TriangleToSort;
+} _S3L_TriangleToSort;
 
-S3L_TriangleToSort S3L_sortArray[S3L_MAX_TRIANGES_DRAWN];
+_S3L_TriangleToSort S3L_sortArray[S3L_MAX_TRIANGES_DRAWN];
 uint16_t S3L_sortArrayLength;
 #endif
 

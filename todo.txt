@@ -5,7 +5,7 @@ features:
   back-to-front sorting on).
 
 - Helper functions for e.g. retrieving and caching UV coords etc. Maybe these
-  should be in a separate file?
+  should be in a separate file?                            DONE
 
 - objtool: An option to parse material groups and generate an array of 
   per-triangle material indices.                           DONE
@@ -70,9 +70,9 @@ features:
 
 - create demos:
   - model viewer                                   DONE 
-  - game-like demo (GTA-style, Quake style etc.)
+  - game-like demo (GTA-style, Quake style etc.)   DONE
   - offline HQ (lerp texuring, normal mapping, reflections, ...) rendering
-    to PPM image file
+    to PPM image file                              DONE
 
 - drawModel: create an option that would use a cache to not transform the same
   point twice
