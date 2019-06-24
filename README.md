@@ -23,6 +23,7 @@ TODO
 - Triangles provide barycentric coordinates, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, texture fitering, transparency, PBR, shadow mapping, MIP mapping, ...).
 - Tested on multiple platforms (TODO).
 - Many compile-time options to tune the performance vs quality.
+- Similar to OpenGL in principle, but simpler, easier to use, with higher-level features.
 - Well commented and formatted code.
 - Completely free of legal restrictions, do literally anything you want.
 
@@ -48,3 +49,7 @@ TODO
 - Seeing buggy triangles flashing in front of the camera? With the limited 32bit arithmetic far-away things may be overflowing. Try to scale down the scene. If you also don't mind it, set `S3L_STRICT_NEAR_CULLING` to `1` -- this should probably solve it.
 - Seeing triangles disappear randomly in sorted modes? This is because the size of the memory for triangle sorting is limited by default -- increase `S3L_MAX_TRIANGLES_DRAWN`.
 - Sorted mode sorts triangles before drawing, but sometimes you need to control the drawing order more precisely. This can be done by reordering the objects in the scene list or rendering the scene multiple times without clearing the screen.
+
+## license
+
+Everything is CC0 1.0 + a waiver of all other IP rights (including patents). Please share your own software as free and open-source.
