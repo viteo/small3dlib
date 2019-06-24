@@ -24,6 +24,7 @@ TODO
 - Tested on multiple platforms (TODO).
 - Many compile-time options to tune the performance vs quality.
 - Similar to OpenGL in principle, but simpler, easier to use, with higher-level features.
+- Tools (Python scripts) for converting 3D models and textures to C array format used by the library.
 - Well commented and formatted code.
 - Completely free of legal restrictions, do literally anything you want.
 
