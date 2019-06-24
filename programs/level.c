@@ -34,7 +34,6 @@
 #include "levelModel.h"
 #include "levelTextures.h"
 
-S3L_Model3D models[3];
 S3L_Scene scene;
 
 S3L_Vec4 teleportPoint;
@@ -43,8 +42,6 @@ uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
 
 uint32_t frame = 0;
 uint8_t *texture = 0;
-S3L_Unit *uvs = 0;
-S3L_Index *uvIndices = 0;
 uint32_t previousTriangle = 1000;
 S3L_Vec4 uv0, uv1, uv2;
 
@@ -125,29 +122,25 @@ void drawPixel(S3L_PixelInfo *p)
 #if TEXTURES
   if (p->triangleID != previousTriangle)
   {
-    switch (p->modelIndex)
+    uint8_t material = levelMaterials[p->triangleIndex];
+
+    switch (material)
     {
       case 0:
-        uvs = levelWallsUVs;
-        uvIndices = levelWallsUVIndices;
         texture = level1Texture;
         break;
 
       case 1:
-        uvs = levelFloorUVs;
-        uvIndices = levelFloorUVIndices;
         texture = level2Texture;
         break;
 
       case 2:
       default:
-        uvs = levelCeilingUVs;
-        uvIndices = levelCeilingUVIndices;
         texture = level3Texture;
         break;
     }
 
-    S3L_getIndexedTriangleValues(p->triangleIndex,uvIndices,uvs,2,&uv0,&uv1,&uv2);
+    S3L_getIndexedTriangleValues(p->triangleIndex,levelUVIndices,levelUVs,2,&uv0,&uv1,&uv2);
     previousTriangle = p->triangleID;
   }
 
@@ -241,27 +234,17 @@ int main()
 
   nextT = clock();
 
-  levelWallsModelInit();
-  levelFloorModelInit();
-  levelCeilingModelInit();
+  levelModelInit();
 
-  S3L_initScene(models,3,&scene);
+  S3L_initScene(&levelModel,1,&scene);
 
-  scene.models[0] = levelWallsModel;
-  scene.models[1] = levelFloorModel;
-  scene.models[2] = levelCeilingModel;
+  S3L_Unit s = S3L_FRACTIONS_PER_UNIT / 3;
 
-  S3L_Unit scale = S3L_FRACTIONS_PER_UNIT / 3;
+  S3L_Vec4 scale;
 
-  S3L_Vec4 s;
+  S3L_setVec4(&scale,s,s,s,S3L_FRACTIONS_PER_UNIT);
 
-  s.x = scale;
-  s.y = scale;
-  s.z = scale;
-
-  scene.models[0].transform.scale = s;
-  scene.models[1].transform.scale = s;
-  scene.models[2].transform.scale = s;
+  scene.models[0].transform.scale = scale;
 
   int running = 1;
 

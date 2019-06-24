@@ -13,6 +13,7 @@ def printHelp():
   print("  -c     compact format (off by default)")
   print("  -t     use direct instead of indexed UV coords (off by default)")
   print("  -h     include header guards (for model per file)")
+  print("  -m     include a material array (per-triangle)")
   print("  -nS    use the name S for the model (defaut: \"model\")")
   print("  -sX    scale the model by X (default: 512)")
   print("  -uY    scale the U texture coord by Y (default: 512)")
@@ -33,6 +34,7 @@ NAME = "model"
 GUARDS = False
 COMPACT = False
 INDEXED_UVS = True
+MATERIALS = False
 
 for s in sys.argv:
   if s == "-c":
@@ -41,6 +43,8 @@ for s in sys.argv:
     INDEXED_UVS = False
   elif s == "-h":
     GUARDS = True
+  elif s == "-m":
+    MATERIALS = True
   elif s[:2] == "-s":
     VERTEX_SCALE = int(s[2:])
   elif s[:2] == "-u":
@@ -58,6 +62,17 @@ vertices = []
 uvs = []
 triangles = []
 triangleUVs = []
+materials = []
+materialNames = []
+
+currentMatrial = 0
+
+def getMaterialIndex(materialName):
+  try:
+    return materialNames.index(materialName)
+  except Exception:
+    materialNames.append(materialName)
+    return len(materialNames) - 1
 
 # parse the file:
 
@@ -88,6 +103,9 @@ for line in objFile:
 
     triangles.append(t)
     triangleUVs.append(u)
+    materials.append([currentMatrial])
+  elif line[:7] == "usemtl ":
+    currentMatrial = getMaterialIndex(line[7:])
 
 # print the result:
 
@@ -159,6 +177,9 @@ print(arrayString(NAME + "Vertices",vertices,3,[VERTEX_SCALE],5,False,"S3L_Unit"
 
 print("#define " + NAME.upper() + "_TRIANGLE_COUNT " + str(len(triangles)))
 print(arrayString(NAME + "TriangleIndices",triangles,3,[1],5,True,"S3L_Index",NAME.upper() + "_TRIANGLE_COUNT * 3"))
+
+if MATERIALS:
+  print(arrayString(NAME + "Materials",materials,1,[1],5,True,"uint8_t",NAME.upper() + "_TRIANGLE_COUNT"))
 
 if INDEXED_UVS:
   print("#define " + NAME.upper() + "_UV_COUNT " + str(len(uvs)))

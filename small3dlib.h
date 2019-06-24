@@ -287,6 +287,8 @@ typedef struct
 } S3L_Vec4;
 
 static inline void S3L_initVec4(S3L_Vec4 *v);
+static inline void S3L_setVec4(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y,
+  S3L_Unit z, S3L_Unit w);
 static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
 static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
 S3L_Unit S3L_vec3Length(S3L_Vec4 v);
@@ -869,6 +871,14 @@ static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 void S3L_initVec4(S3L_Vec4 *v)
 {
   v->x = 0; v->y = 0; v->z = 0; v->w = S3L_FRACTIONS_PER_UNIT;
+}
+
+void S3L_setVec4(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y, S3L_Unit z, S3L_Unit w)
+{
+  v->x = x;
+  v->y = y;
+  v->z = z;
+  v->w = w;
 }
 
 void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added)
