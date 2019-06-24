@@ -75,7 +75,7 @@ features:
     to PPM image file                              DONE
 
 - drawModel: create an option that would use a cache to not transform the same
-  point twice
+  point twice                                      DONE (doesn't work, tried)
 
 - Optional rendering stats (FPS, rendered triangles, ...).
 
