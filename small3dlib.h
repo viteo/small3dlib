@@ -4,10 +4,16 @@
 /*
   Simple realtime 3D software rasterization renderer. It is fast, focused on
   resource-limited computers, located in a single C header file, with no
-  dependencies, using only integer arithmetics.
+  dependencies, using only 32bit integer arithmetics.
 
   author: Miloslav Ciz
   license: CC0 1.0 + additional waiver of all IP
+  version: TODO
+
+  Before including the library, define S3L_PIXEL_FUNCTION to the name of the
+  function you'll be using to draw single pixels (this function will be called
+  by the library to render the frames). Also define S3L_RESOLUTION_X and
+  S3L_RESOLUTION_Y.
 
   --------------------
 
@@ -33,12 +39,13 @@
   CONVENTIONS:
 
   This library should never draw pixels outside the specified screen
-  boundaries, so you don't have to check this!
+  boundaries, so you don't have to check this (that would cost CPU time)!
 
   You can safely assume that triangles are rasterized one by one and from top
   down, left to right (so you can utilize e.g. various caches), and if sorting
   is disabled the order of rasterization will be that specified in the scene
-  structure (of course, some triangles and models may be skipped).
+  structure and model arrays (of course, some triangles and models may be
+  skipped due to culling etc.).
 
   Angles are in S3L_Units, a full angle (2 pi) is S3L_FRACTIONS_PER_UNITs.
 
@@ -57,8 +64,8 @@
   Untransformed camera is placed at [0,0,0], looking forward along +z axis. The
   projection plane is centered at [0,0,0], stretrinch from
   -S3L_FRACTIONS_PER_UNIT to S3L_FRACTIONS_PER_UNIT horizontally (x),
-  vertical size (y) depends on the camera aspect ratio. Camera FOV is defined
-  by focal length.
+  vertical size (y) depends on the aspect ratio (S3L_RESOLUTION_X and
+  S3L_RESOLUTION_Y). Camera FOV is defined by focal length in S3L_Units.
 
            y ^
              |  _
@@ -74,7 +81,7 @@
   ZXY order (by Z, then by X, then by Y). Positive rotation about an axis
   rotates CW (clock-wise) when looking in the direction of the axis.
 
-  Coordinates of pixels on screen start typically at the top left, from [0,0].
+  Coordinates of pixels on the screen start at the top left, from [0,0].
 
   There is NO subpixel accuracy (screen coordinates are only integer).
 
@@ -101,12 +108,12 @@
 
   - Adjacent triangles don't have any overlapping pixels, nor gaps between.
   - Triangles of points that lie on a single line are NOT rasterized.
-  - A single "long" triangle CAN be rasterized as non-continuous.
+  - A single "long" triangle CAN be rasterized as isolated islands of pixels.
   - Transforming (e.g. mirroring, rotating by 90 degrees etc.) a result of
     rasterizing triangle A is NOT generally equal to applying the same
     transformation to triangle A first and then rasterizing it. Even the number
     of rasterized pixels is usually different.
-  - If specifying a triangle with integer coordinates, then:
+  - If specifying a triangle with integer coordinates (which we are), then:
     - The bottom-most corner (or side) of a triangle is never rasterized
       (because it is connected to a right side).
     - The top-most corner can only be rasterized on completely horizontal side
@@ -175,14 +182,20 @@ typedef uint16_t S3L_Index;
   /** Specifies what type of perspective correction (PC) to use. Remember this
   is an expensive operation! Possible values:
  
-  - 0: No perspective correction. Fastest, ugly.
-  - 1: Per-pixel perspective correction, nice but very expensive.
-  - 2: Approximation (computing only at every S3L_PC_APPROX_LENGTHth pixel). */
+  - 0: No perspective correction. Fastest, inaccurate from most angles.
+  - 1: Per-pixel perspective correction, accurate but very expensive.
+  - 2: Approximation (computing only at every S3L_PC_APPROX_LENGTHth pixel). 
+       Quake-style approximation is used, which only computes the PC after
+       S3L_PC_APPROX_LENGTH pixels. This is reasonably accurate and fast. */
 
   #define S3L_PERSPECTIVE_CORRECTION 0 
 #endif
 
 #ifndef S3L_PC_APPROX_LENGTH
+  /** For S3L_PERSPECTIVE_CORRECTION == 2, this specifies after how many pixels
+  PC is recomputed. Should be a power of two to keep up the performance.
+  Smaller is nicer but slower. */
+
   #define S3L_PC_APPROX_LENGTH 32
 #endif
 
@@ -192,7 +205,8 @@ typedef uint16_t S3L_Index;
 
 #ifndef S3L_COMPUTE_DEPTH
   /** Whether to compute depth for each pixel (fragment). Some other options
-  may turn this on automatically. */
+  may turn this on automatically. If you don't need depth information, turning
+  this off can save performance. */
   #define S3L_COMPUTE_DEPTH 1
 #endif
 
@@ -204,37 +218,41 @@ typedef uint16_t S3L_Index;
        won't be pixel-accurate and has to mostly be done by other means
        (typically sorting).
   - 1: Use full z-buffer (of S3L_Units) for visibiltiy determination. This is
-       the most accurate option (and also a fast one), but  requires a big
+       the most accurate option (and also a fast one), but requires a big
        amount of memory.
   - 2: Use reduced-size z-buffer (of bytes). This is fast and somewhat
        accurate, but inaccuracies can occur and a considerable amount of memory
        is needed. */
 
-  #define S3L_Z_BUFFER 0  
+  #define S3L_Z_BUFFER 0 
 #endif
 
 #ifndef S3L_REDUCED_Z_BUFFER_GRANULARITY
   /** For S3L_Z_BUFFER == 2 this sets the reduced z-buffer granularity. */
+
   #define S3L_REDUCED_Z_BUFFER_GRANULARITY 5
 #endif
 
 #ifndef S3L_STENCIL_BUFFER
   /** Whether to use stencil buffer for drawing -- with this a pixel that would
-  be resterized over an already rasterized pixel will be discarded. This is
-  mostly for front-to-back sorted drawing. */
+  be resterized over an already rasterized pixel (within a frame) will be
+  discarded. This is mostly for front-to-back sorted drawing. */
 
   #define S3L_STENCIL_BUFFER 0 
 #endif
 
 #ifndef S3L_SORT
   /** Defines how to sort triangles before drawing a frame. This can be used to
-  solve visibility in case z-buffer is not used, to prevent overwrting already
+  solve visibility in case z-buffer is not used, to prevent overwriting already
   rasterized pixels, implement transparency etc. Note that for simplicity and
   performance a relatively simple sorting is used which doesn't work completely
   correctly, so mistakes can occur (even the best sorting wouldn't be able to
-  solve e.g. intersecting triangles). Possible values:
+  solve e.g. intersecting triangles). Note that sorting requires a bit of extra
+  memory -- an array of the triangles to sort -- the size of this array limits
+  the maximum number of triangles that can be drawn in a single frame
+  (S3L_MAX_TRIANGES_DRAWN). Possible values:
 
-  - 0: Don't sort triangles. This is fastest.
+  - 0: Don't sort triangles. This is fastest and doesn't use extra memory.
   - 1: Sort triangles from back to front. This can in most cases solve 
        visibility without requiring almost any extra memory compared to 
        z-buffer.
@@ -275,7 +293,8 @@ typedef uint16_t S3L_Index;
 #endif
 
 /** Vector that consists of four scalars and can represent homogenous
-  coordinates, but is generally also used as Vec3 and Vec2. */
+  coordinates, but is generally also used as Vec3 and Vec2 for various
+  purposes. */
 typedef struct
 {
   S3L_Unit x;
@@ -283,6 +302,9 @@ typedef struct
   S3L_Unit z;
   S3L_Unit w;
 } S3L_Vec4;
+
+#define S3L_logVec4(v)\
+  printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
 
 static inline void S3L_initVec4(S3L_Vec4 *v);
 static inline void S3L_setVec4(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y,
@@ -301,7 +323,7 @@ static inline S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b);
   be normalized as well. */
 void S3L_reflect(S3L_Vec4 toLight, S3L_Vec4 normal, S3L_Vec4 *result);
 
-/** Determines the winding of triangle, returns 1 (CW, clockwise), -1 (CCW,
+/** Determines the winding of a triangle, returns 1 (CW, clockwise), -1 (CCW,
   counterclockwise) or 0 (points lie on a single line). */
 static inline int8_t S3L_triangleWinding(
   S3L_ScreenCoord x0,
@@ -310,9 +332,6 @@ static inline int8_t S3L_triangleWinding(
   S3L_ScreenCoord y1,
   S3L_ScreenCoord x2,
   S3L_ScreenCoord y2);
-
-#define S3L_logVec4(v)\
-  printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
 
 typedef struct
 {
@@ -355,7 +374,6 @@ void S3L_rotationToDirections(
   S3L_Vec4 *right,
   S3L_Vec4 *up);
 
-
 /** 4x4 matrix, used mostly for 3D transforms. The indexing is this:
     matrix[column][row]. */
 typedef S3L_Unit S3L_Mat4[4][4]; 
@@ -386,7 +404,7 @@ void S3L_makeScaleMatrix(
   S3L_Unit scaleZ,
   S3L_Mat4 *m);
 
-/** Makes a matrixfor rotation in the ZXY order. */
+/** Makes a matrix for rotation in the ZXY order. */
 void S3L_makeRotationMatrixZXY(
   S3L_Unit byX,
   S3L_Unit byY,
@@ -538,7 +556,6 @@ void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
   vectors (into x, y, z and w, depending on 'numComponents'). This function is
   meant to be used per-triangle (typically from a cache), NOT per-pixel, as it
   is not as fast as possible! */
-
 void S3L_getIndexedTriangleValues(
   S3L_Index triangleIndex,
   const S3L_Index *indices,
@@ -554,7 +571,6 @@ void S3L_getIndexedTriangleValues(
   sizeof(S3L_Unit). Note that for advanced allowing sharp edges it is not
   sufficient to have per-vertex normals, but must be per-triangle. This
   function doesn't support this. */
-
 void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
   int8_t transformNormals);
 

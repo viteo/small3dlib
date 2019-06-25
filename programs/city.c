@@ -243,10 +243,8 @@ int main()
     }
 
     while (SDL_PollEvent(&event))
-    {
       if (event.type == SDL_QUIT)
         running = 0;
-    }
 
     uint8_t *state = SDL_GetKeyboardState(NULL);
 

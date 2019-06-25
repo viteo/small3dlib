@@ -21,6 +21,8 @@
   #define S3L_PERSPECTIVE_CORRECTION 0
 #endif
 
+#define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 5)
+
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
 
