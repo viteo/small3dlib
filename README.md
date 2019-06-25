@@ -54,4 +54,8 @@ TODO
 
 ## license
 
-Everything is CC0 1.0 + a waiver of all other IP rights (including patents). Please share your own software as free and open-source.
+Everything is CC0 1.0 + a waiver of all other IP rights (including patents). The art used in demos is either my own released nder CC0 or someone else's released under CC0.
+
+Please support free software and free culture by using free licenses and/or waivers.
+
+If you'd like to support me or just read something about me and my projects, visit my site: [www.tastyfish.cz](http://www.tastyfish.cz/).
