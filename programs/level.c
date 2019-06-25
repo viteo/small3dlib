@@ -64,7 +64,7 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
   pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
 }
 
-void sampleTxture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
+void sampleTexture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
 {
   u = (u * LEVEL_TEXTURE_WIDTH) / S3L_FRACTIONS_PER_UNIT;
   v = (v * LEVEL_TEXTURE_HEIGHT) / S3L_FRACTIONS_PER_UNIT;
@@ -149,7 +149,7 @@ void drawPixel(S3L_PixelInfo *p)
   uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
   uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
-  sampleTxture(uv[0],uv[1],&r,&g,&b);
+  sampleTexture(uv[0],uv[1],&r,&g,&b);
 #else
   switch (p->modelIndex)
   {
