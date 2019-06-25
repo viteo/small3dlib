@@ -2,8 +2,6 @@
 #define SMALL3DLIB_H
 
 /*
-  WIP
-
   Simple realtime 3D software rasterization renderer. It is fast, focused on
   resource-limited computers, located in a single C header file, with no
   dependencies, using only integer arithmetics.
@@ -1731,7 +1729,7 @@ void S3L_drawTriangle(
   S3L_initPixelInfo(&p);
   p.modelIndex = modelIndex;
   p.triangleIndex = triangleIndex;
-  p.triangleID = modelIndex << 16 | triangleIndex;
+  p.triangleID = (modelIndex << 16) | triangleIndex;
 
 #if !S3L_STRICT_NEAR_CULLING
   point0.z = point0.z >= S3L_NEAR ? point0.z : S3L_NEAR;
@@ -1747,7 +1745,7 @@ void S3L_drawTriangle(
   S3L_Unit *barycentric1; // bar. coord that gets higher from R to L
   S3L_Unit *barycentric2; // bar. coord that gets higher from bottom up
 
-  // sort the points:
+  // sort the vertices:
 
   #define assignPoints(t,a,b)\
     {\
@@ -1793,8 +1791,8 @@ void S3L_drawTriangle(
 #endif
 
   p.triangleSize[0] = rPointSS->x - lPointSS->x;
-  p.triangleSize[1] = (rPointSS->y > lPointSS->y ? rPointSS->y : lPointSS->y)
-                        - tPointSS->y;
+  p.triangleSize[1] =
+    (rPointSS->y > lPointSS->y ? rPointSS->y : lPointSS->y) - tPointSS->y;
 
   // now draw the triangle line by line:
 
@@ -1821,7 +1819,7 @@ void S3L_drawTriangle(
   /* We'll be using an algorithm similar to Bresenham line algorithm. The
      specifics of this algorithm are among others:
 
-     - drawing possibly a NON-CONTINUOUS line
+     - drawing possibly NON-CONTINUOUS line
      - NOT tracing the line exactly, but rather rasterizing one the right
        side of it, according to the pixel CENTERS, INCLUDING the pixel
        centers
@@ -1951,8 +1949,8 @@ void S3L_drawTriangle(
 
   while (currentY < endY)   /* draw the triangle from top to bottom -- the
                                bottom-most row is left out because, following
-                               from the rasterization rules (see top of the
-                               source), it is to never be rasterized. */
+                               from the rasterization rules (see start of the
+                               file), it is to never be rasterized. */
   {
     if (currentY == splitY) // reached a vertical split of the triangle?
     {
@@ -1981,8 +1979,9 @@ void S3L_drawTriangle(
     stepSide(l)
 
     if (currentY >= 0) /* clipping of pixels whose y < 0 (can't be easily done
-                          outside the loop) */
-    {                     
+                          outside the loop because of the Bresenham-like
+                          algorithm steps) */
+    { 
       p.y = currentY;
 
       // draw the horizontal line
@@ -2582,4 +2581,4 @@ void S3L_drawScene(S3L_Scene scene)
 #endif
 }
 
-#endif
+#endif // guard
