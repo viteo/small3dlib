@@ -115,8 +115,8 @@ for y in range(OUT_HEIGHT):
 
 #-----------------------
 
-def printArray(array, name, sizeString):
-  print("uint8_t " + name + "[" + sizeString + "] = {")
+def printArray(array, name, sizeString, dataType="uint8_t"):
+  print(dataType + " " + name + "[" + sizeString + "] = {")
   arrayString = ""
 
   lineLen = 0
@@ -140,7 +140,7 @@ if GUARDS:
   print("#define " + NAME.upper() + "_TEXTURE_H\n")
 
 if USE_PALETTE:
-  printArray(paletteArray,NAME + "Palette",str(len(paletteArray)))
+  printArray(paletteArray,NAME + "Palette",str(len(paletteArray)),"uint16_t" if USE_565 else "uint8_t")
   print("")
 
 print("#define " + NAME.upper() + "_TEXTURE_WIDTH " + str(OUT_WIDTH))

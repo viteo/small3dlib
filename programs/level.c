@@ -237,7 +237,7 @@ int main()
   levelModelInit();
 
   S3L_initScene(&levelModel,1,&scene);
-
+/*
   S3L_Unit s = S3L_FRACTIONS_PER_UNIT / 3;
 
   S3L_Vec4 scale;
@@ -245,7 +245,7 @@ int main()
   S3L_setVec4(&scale,s,s,s,S3L_FRACTIONS_PER_UNIT);
 
   scene.models[0].transform.scale = scale;
-
+*/
   int running = 1;
 
   while (running) // main loop
