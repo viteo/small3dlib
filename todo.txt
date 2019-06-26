@@ -4,6 +4,8 @@ features:
   (e.g. a "low memory sort strategy" will turn z-buffer off and turn
   back-to-front sorting on).
 
+- Add and test a doxyfile.
+
 - Helper functions for e.g. retrieving and caching UV coords etc. Maybe these
   should be in a separate file?                            DONE
 
