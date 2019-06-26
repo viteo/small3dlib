@@ -25,6 +25,7 @@
 
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
+#define S3L_MAX_TRIANGES_DRAWN 512
 
 #define S3L_PIXEL_FUNCTION drawPixel
 

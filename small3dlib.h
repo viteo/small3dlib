@@ -2547,7 +2547,7 @@ void S3L_drawScene(S3L_Scene scene)
 
   for (int16_t i = 1; i < S3L_sortArrayLength; ++i)
   {
-    S3L_TriangleToSort tmp = S3L_sortArray[i];
+    _S3L_TriangleToSort tmp = S3L_sortArray[i];
  
     int16_t j = i - 1;
 
