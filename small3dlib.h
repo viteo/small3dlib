@@ -2428,7 +2428,10 @@ void _S3L_projectVertex(
   result->w = S3L_FRACTIONS_PER_UNIT; // for translation 
  
   S3L_vec3Xmat4(result,projectionMatrix);
- 
+
+  result->w = result->z;
+  /* We'll keep the non-clamped z in w for sorting. */ 
+
   result->z = result->z >= S3L_NEAR ? result->z : S3L_NEAR;
   /* ^ This firstly prevents zero division in the follwoing z-divide and
     secondly "pushes" vertices that are in front of near a little bit forward,
@@ -2519,8 +2522,11 @@ void S3L_drawScene(S3L_Scene scene)
         S3L_sortArray[S3L_sortArrayLength].modelIndex = modelIndex;
         S3L_sortArray[S3L_sortArrayLength].triangleIndex = triangleIndex;
         S3L_sortArray[S3L_sortArrayLength].sortValue = 
-          (transformed0.z + transformed1.z + transformed2.z) >> 2;
-        /* ^ As a simple approximation we sort by the triangle center point,
+          S3L_max(0,(transformed0.w + transformed1.w + transformed2.w)) >> 2;
+        /* ^ 
+           The w component here stores non-clamped z.
+ 
+           As a simple approximation we sort by the triangle center point,
            which is a mean coordinate -- we don't actually have to divide by 3
            (or anything), that is unnecessary for sorting! We shift by 2 just
            as a fast operation to prevent overflow of the sum ver uint_16t. */
