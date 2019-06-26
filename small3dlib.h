@@ -15,6 +15,11 @@
   by the library to render the frames). Also define S3L_RESOLUTION_X and
   S3L_RESOLUTION_Y.
 
+  You'll also need to decide what rendering strategy and other settings you
+  want to use, depending on your specific usecase. You may want to use a
+  z-buffer (full or reduced, S3L_Z_BUFFER), sorted-drawing (S3L_SORT), or even
+  none of these. See the description of the options in this file.
+
   --------------------
 
   This work's goal is to never be encumbered by any exclusive intellectual
@@ -123,13 +128,6 @@
 */
 
 #include <stdint.h>
-
-/* === PRESETS ===
-   These can be used to quickly set a predefined library behavior. */
-
-// TODO
-
-// ---------------
 
 #ifndef S3L_RESOLUTION_X
 #define S3L_RESOLUTION_X 640 ///< Redefine to screen x resolution.
