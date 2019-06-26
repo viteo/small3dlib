@@ -12,7 +12,6 @@
 #include <math.h>
 #include <time.h>
 
-#define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 0
 
 #if TEXTURES
@@ -23,6 +22,7 @@
 
 #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 5)
 
+#define S3L_FLAT 0
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
 #define S3L_MAX_TRIANGES_DRAWN 512

@@ -175,7 +175,7 @@ typedef uint16_t S3L_Index;
 #if S3L_FLAT
   #define S3L_COMPUTE_DEPTH 0
   #define S3L_PERSPECTIVE_CORRECTION 0
-  #define S3L_Z_BUFFER 0
+  // don't disable z-buffer, it makes sense to use it with no sorting
 #endif
 
 #ifndef S3L_PERSPECTIVE_CORRECTION
@@ -206,7 +206,9 @@ typedef uint16_t S3L_Index;
 #ifndef S3L_COMPUTE_DEPTH
   /** Whether to compute depth for each pixel (fragment). Some other options
   may turn this on automatically. If you don't need depth information, turning
-  this off can save performance. */
+  this off can save performance. Depth will still be accessible in
+  S3L_PixelInfo, but will be constant -- equal to center point depth -- over
+  the whole triangle. */
   #define S3L_COMPUTE_DEPTH 1
 #endif
 
@@ -711,12 +713,10 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
   ((S3L_RESOLUTION_Y * S3L_FRACTIONS_PER_UNIT * 2) / S3L_RESOLUTION_X)
 
 #if S3L_Z_BUFFER == 1
-  #define S3L_COMPUTE_DEPTH 1
   #define S3L_MAX_DEPTH 2147483647
   S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
   #define S3L_zBufferFormat(depth) (depth)
 #elif S3L_Z_BUFFER == 2
-  #define S3L_COMPUTE_DEPTH 1
   #define S3L_MAX_DEPTH 255
   uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
   #define S3L_zBufferFormat(depth)\
@@ -1800,7 +1800,6 @@ void S3L_drawTriangle(
   #undef assignPoints
 
 #if S3L_FLAT
-  p.depth = (tPointSS->z + lPointSS->z + rPointSS->z) / 3;
   *barycentric0 = S3L_FRACTIONS_PER_UNIT / 3;
   *barycentric1 = S3L_FRACTIONS_PER_UNIT / 3;
   *barycentric2 = S3L_FRACTIONS_PER_UNIT - 2 * (S3L_FRACTIONS_PER_UNIT / 3);
@@ -2185,6 +2184,8 @@ void S3L_drawTriangle(
         p.depth = S3L_getFastLerpValue(depthFLS);
         S3L_stepFastLerp(depthFLS);
   #endif
+#else   // !S3L_COMPUTE_DEPTH
+  p.depth = (tPointSS->z + lPointSS->z + rPointSS->z) / 3;
 #endif
 
 #if S3L_Z_BUFFER
