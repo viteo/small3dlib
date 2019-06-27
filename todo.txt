@@ -75,6 +75,8 @@ features:
   - game-like demo (GTA-style, Quake style etc.)   DONE
   - offline HQ (lerp texuring, normal mapping, reflections, ...) rendering
     to PPM image file                              DONE
+  - test offline rendering of a high-poly model (see how very small tris
+    are rendered)
 
 - drawModel: create an option that would use a cache to not transform the same
   point twice                                      DONE (doesn't work, tried)
