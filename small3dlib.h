@@ -982,7 +982,7 @@ void S3L_getIndexedTriangleValues(
   S3L_Vec4 *v1,
   S3L_Vec4 *v2)
 {
-  S3L_Index i0, i1;
+  uint32_t i0, i1;
   S3L_Unit *value;
 
   i0 = triangleIndex * 3;
@@ -1046,7 +1046,7 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
         (model.triangles[j + 2] == i))
       {    
         S3L_Vec4 t0, t1, t2;
-        S3L_Index vIndex;
+        uint32_t vIndex;
 
         #define getVertex(n)\
           vIndex = model.triangles[j + n] * 3;\
@@ -2437,7 +2437,7 @@ void _S3L_projectVertex(
   S3L_Vec4 *result,
   S3L_Unit focalLength)
 {
-  S3L_Index vertexIndex = model->triangles[triangleIndex * 3 + vertex] * 3;
+  uint32_t vertexIndex = model->triangles[triangleIndex * 3 + vertex] * 3;
 
   result->x = model->vertices[vertexIndex];
   result->y = model->vertices[vertexIndex + 1];

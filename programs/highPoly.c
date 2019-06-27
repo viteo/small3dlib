@@ -82,19 +82,21 @@ void drawPixel(S3L_PixelInfo *p)
 
   S3L_normalizeVec3(&normal);
 
-  uint8_t shading = 
-    S3L_clamp((S3L_dotProductVec3(normal,toLight) + S3L_FRACTIONS_PER_UNIT) / 4,0,255);
+  S3L_Unit shading = 
+    (S3L_dotProductVec3(normal,toLight) + S3L_FRACTIONS_PER_UNIT) / 2;
+
+  shading = S3L_interpolate(shading,0,p->depth,32 * S3L_FRACTIONS_PER_UNIT);
 
   int index = (p->y * S3L_RESOLUTION_X + p->x) * 3;
 
-  frameBuffer[index] = shading;
-  frameBuffer[index + 1] = shading; 
-  frameBuffer[index + 2] = shading; 
+  frameBuffer[index] = S3L_clamp(S3L_interpolateByUnitFrom0(200,shading),0,255);
+  frameBuffer[index + 1] = S3L_clamp(S3L_interpolateByUnitFrom0(255,shading),0,255);
+  frameBuffer[index + 2] = S3L_clamp(S3L_interpolateByUnitFrom0(150,shading),0,255); 
 }
 
 int main()
 {
-  S3L_setVec4(&toLight,10,10,10,0);
+  S3L_setVec4(&toLight,10,-10,-10,0);
 
   S3L_normalizeVec3(&toLight);
 
