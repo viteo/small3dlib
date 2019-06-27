@@ -87,6 +87,8 @@ features:
 
 bugs:
 
+- obj tools still crosses the 80 column alignment limit (alligator model)
+
 repeated:
 
 - valgrind (and similar) checks

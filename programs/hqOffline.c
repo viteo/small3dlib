@@ -140,7 +140,6 @@ void sampleTexture(uint8_t *texture, int w, int h, float x, float y, uint8_t col
   color[0] = interpolate(interpolate(c0[0],c1[0],xFract),interpolate(c2[0],c3[0],xFract),yFract);
   color[1] = interpolate(interpolate(c0[1],c1[1],xFract),interpolate(c2[1],c3[1],xFract),yFract);
   color[2] = interpolate(interpolate(c0[2],c1[2],xFract),interpolate(c2[2],c3[2],xFract),yFract);
-
 }
 
 void drawPixel(S3L_PixelInfo *p)

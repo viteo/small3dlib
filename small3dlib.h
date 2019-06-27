@@ -282,6 +282,13 @@ typedef uint16_t S3L_Index;
 #define S3L_NEAR 1 // Can't be <= 0.
 #endif
 
+#ifndef S3L_NORMAL_COMPUTE_MAXIMUM_AVERAGE
+  /** Affects the S3L_computeModelNormals function. See its description for
+  details. */
+
+  #define S3L_NORMAL_COMPUTE_MAXIMUM_AVERAGE 6
+#endif
+
 #ifndef S3L_FAST_LERP_QUALITY
   /** Quality (scaling) of SOME (stepped) linear interpolations. 0 will most
   likely be a tiny bit faster, but artifacts can occur for bigger tris, while
@@ -570,7 +577,12 @@ void S3L_getIndexedTriangleValues(
   sufficient size preallocated! The size is: number of model vertices * 3 *
   sizeof(S3L_Unit). Note that for advanced allowing sharp edges it is not
   sufficient to have per-vertex normals, but must be per-triangle. This
-  function doesn't support this. */
+  function doesn't support this. 
+
+  The function computes a normal for each vertex by averaging normals of
+  the triangles containing the vertex. The maximum number of these triangle
+  normals that will be averaged is set with
+  S3L_NORMAL_COMPUTE_MAXIMUM_AVERAGE. */
 void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
   int8_t transformNormals);
 
@@ -1019,16 +1031,14 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
 
   n.w = 0;
 
-  #define MAX_NORMALS 6
-
-  S3L_Vec4 ns[MAX_NORMALS];
+  S3L_Vec4 ns[S3L_NORMAL_COMPUTE_MAXIMUM_AVERAGE];
   S3L_Index normalCount;
 
-  for (S3L_Index i = 0; i < model.vertexCount; ++i)
+  for (uint32_t i = 0; i < model.vertexCount; ++i)
   {
     normalCount = 0;
 
-    for (S3L_Index j = 0; j < model.triangleCount * 3; j += 3)
+    for (uint32_t j = 0; j < model.triangleCount * 3; j += 3)
     {
       if (
         (model.triangles[j] == i) ||
@@ -1056,7 +1066,7 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
 
         normalCount++;
 
-        if (normalCount >= MAX_NORMALS)
+        if (normalCount >= S3L_NORMAL_COMPUTE_MAXIMUM_AVERAGE)
           break;
       }
     }
@@ -1094,8 +1104,6 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
     dst[vPos] = n.z;
     vPos++;
   }
-
-  #undef MAX_NORMALS
     
   S3L_Mat4 m;
 
@@ -1440,6 +1448,16 @@ S3L_Unit S3L_vec2Length(S3L_Vec4 v)
 
 void S3L_normalizeVec3(S3L_Vec4 *v)
 {
+  #define SCALE 16
+
+  v->x *= SCALE;
+  v->y *= SCALE;
+  v->z *= SCALE;
+  
+  // ^ This pre-scale prevents inaccuracy with very small vectors ([1,1,1]).
+
+  #undef SCALE
+
   S3L_Unit l = S3L_vec3Length(*v);
 
   if (l == 0)
