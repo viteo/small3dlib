@@ -497,7 +497,7 @@ typedef struct
                               vertices. These serve to locate the pixel on a
                               triangle and interpolate values between it's
                               three points. Each one goes from 0 to
-                              S3L_FRACTIONS_PER_UNIT (inclidung), but due to
+                              S3L_FRACTIONS_PER_UNIT (including), but due to
                               rounding error may fall outside this range (you
                               can use S3L_correctBarycentricCoords to fix this
                               for the price of some performance). The sum of
@@ -2452,7 +2452,7 @@ void _S3L_projectVertex(
   result->z = result->z >= S3L_NEAR ? result->z : S3L_NEAR;
   /* ^ This firstly prevents zero division in the follwoing z-divide and
     secondly "pushes" vertices that are in front of near a little bit forward,
-    which makes the behave a bit better. If all three vertices end up exactly
+    which makes them behave a bit better. If all three vertices end up exactly
     on NEAR, the triangle will be culled. */ 
 
   S3L_perspectiveDivide(result,focalLength);
@@ -2512,8 +2512,9 @@ void S3L_drawScene(S3L_Scene scene)
     {
       model = &(scene.models[modelIndex]);
 
-      /* TODO: maybe create an option that would use a cache here to not
-               transform the same point twice? */
+      /* Some kind of cache could be used in theory to not project perviously
+         already projected vertices, but after some testing this was abandoned,
+         no gain was seen. */
 
       _S3L_projectVertex(model,triangleIndex,0,&matFinal,
         &transformed0,scene.camera.focalLength);
@@ -2546,7 +2547,7 @@ void S3L_drawScene(S3L_Scene scene)
            As a simple approximation we sort by the triangle center point,
            which is a mean coordinate -- we don't actually have to divide by 3
            (or anything), that is unnecessary for sorting! We shift by 2 just
-           as a fast operation to prevent overflow of the sum ver uint_16t. */
+           as a fast operation to prevent overflow of the sum over uint_16t. */
 
         S3L_sortArrayLength++;
 #endif
