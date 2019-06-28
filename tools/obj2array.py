@@ -138,7 +138,7 @@ def arrayString(name, array, components, scales, align, short, dataType, sizeStr
         else:
           item += ("" if num >= 0 else "-") + "0x%x" % abs(num)
 
-        if lineLen + len(item) > 80:
+        if lineLen + len(item) >= 80:
           result += "\n"
           lineLen = 0
        
