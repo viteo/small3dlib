@@ -1489,9 +1489,8 @@ void S3L_initTransoform3D(S3L_Transform3D *t)
   t->scale.w = 0;
 }
 
-/**
-  Performs perspecive division (z-divide). Does NOT check for division by zero.
-*/
+/** Performs perspecive division (z-divide). Does NOT check for division by
+  zero. */
 static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   S3L_Unit focalLength)
 {
@@ -2047,7 +2046,6 @@ void S3L_drawTriangle(
 
       b0FLS.stepScaled = rSideFLS.valueScaled / rowLength;
       b1FLS.stepScaled = -1 * lSideFLS.valueScaled / rowLength;
-
   #endif
 #endif
 
@@ -2201,7 +2199,7 @@ void S3L_drawTriangle(
         S3L_stepFastLerp(depthFLS);
   #endif
 #else   // !S3L_COMPUTE_DEPTH
-  p.depth = (tPointSS->z + lPointSS->z + rPointSS->z) / 3;
+        p.depth = (tPointSS->z + lPointSS->z + rPointSS->z) / 3;
 #endif
 
 #if S3L_Z_BUFFER
@@ -2256,9 +2254,8 @@ void S3L_drawTriangle(
           S3L_stepFastLerp(b1FLS);
   #endif
 #endif
-
-      }  // inner loop
-    }  // y clipping
+      } // inner loop
+    } // y clipping
 
     S3L_stepFastLerp(lSideFLS);
     S3L_stepFastLerp(rSideFLS);

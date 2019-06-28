@@ -7,9 +7,7 @@
 
 #include <SDL2/SDL.h>
 #include <stdio.h>
-#include <math.h>
 #include <time.h>
-#include <stdlib.h>
 
 #define S3L_FLAT 0
 #define S3L_STRICT_NEAR_CULLING 0

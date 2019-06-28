@@ -6,8 +6,6 @@
 */
 
 #include <stdio.h>
-#include <math.h>
-#include <time.h>
 
 #define S3L_STRICT_NEAR_CULLING 0
 
