@@ -1928,13 +1928,13 @@ void S3L_drawTriangle(
      velues can be computed. See
      http://www.lysator.liu.se/~mikaelk/doc/perspectivetexture/ */
 
-#if S3L_PERSPECTIVE_CORRECTION == 1
-  #define Z_RECIP_NUMERATOR\
-  (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-#elif S3L_PERSPECTIVE_CORRECTION == 2
-  #define Z_RECIP_NUMERATOR\
-  (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
-#endif
+  #if S3L_PERSPECTIVE_CORRECTION == 1
+    #define Z_RECIP_NUMERATOR\
+      (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
+  #elif S3L_PERSPECTIVE_CORRECTION == 2
+    #define Z_RECIP_NUMERATOR\
+      (S3L_FRACTIONS_PER_UNIT * S3L_FRACTIONS_PER_UNIT)
+  #endif
   /* ^ This numerator is a number by which we divide values for the
      reciprocals. For PC == 2 it has to be lower because linear interpolation
      scaling would make it overflow -- this results in lower depth precision
@@ -2251,16 +2251,18 @@ void S3L_drawTriangle(
       } // inner loop
     } // y clipping
 
+#if !S3L_FLAT
     S3L_stepFastLerp(lSideFLS);
     S3L_stepFastLerp(rSideFLS);
 
-#if S3L_COMPUTE_LERP_DEPTH
+  #if S3L_COMPUTE_LERP_DEPTH
     S3L_stepFastLerp(lDepthFLS);
     S3L_stepFastLerp(rDepthFLS);
+  #endif
 #endif
 
     ++currentY;
-  }
+  } // row drawing
 
   #undef manageSplit
   #undef initPC
