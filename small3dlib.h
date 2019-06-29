@@ -319,7 +319,12 @@ static inline void S3L_setVec4(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y,
 static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
 static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
 S3L_Unit S3L_vec3Length(S3L_Vec4 v);
+
+/** Normalizes Vec3. Note that this function tries to normalize correctly rather
+  than quickly! If you need to normalize quickly, do it yourself in a way that
+  best fits your case. */
 void S3L_normalizeVec3(S3L_Vec4 *v);
+
 S3L_Unit S3L_vec2Length(S3L_Vec4 v);
 void S3L_normalizeVec2(S3L_Vec4 *v);
 void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result);
@@ -954,8 +959,7 @@ void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result)
   result->z = a.x * b.y - a.y * b.x;
 }
 
-void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
-  S3L_Vec4 *n)
+void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2, S3L_Vec4 *n)
 {
   #define antiOverflow 32
 
@@ -970,6 +974,7 @@ void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2,
   #undef antiOverflow
 
   S3L_crossProduct(t1,t2,n);
+
   S3L_normalizeVec3(n);
 }
 
@@ -1449,14 +1454,22 @@ S3L_Unit S3L_vec2Length(S3L_Vec4 v)
 void S3L_normalizeVec3(S3L_Vec4 *v)
 {
   #define SCALE 16
+  #define LIMIT 16
 
-  v->x *= SCALE;
-  v->y *= SCALE;
-  v->z *= SCALE;
-  
-  // ^ This pre-scale prevents inaccuracy with very small vectors ([1,1,1]).
+  /* Here we try to decide if the vector is too small and would cause
+     inaccurate result due to very its inaccurate length. If so, we scale
+     it up. We can't scale up everything as big vectors overflow in length
+     calculations. */
+
+  if (S3L_abs(v->x + v->y + v->z) < LIMIT)
+  {
+    v->x *= SCALE;
+    v->y *= SCALE;
+    v->z *= SCALE;
+  }  
 
   #undef SCALE
+  #undef LIMIT
 
   S3L_Unit l = S3L_vec3Length(*v);
 
