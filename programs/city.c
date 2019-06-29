@@ -18,8 +18,8 @@
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
-#define S3L_RESOLUTION_X 800
-#define S3L_RESOLUTION_Y 600
+#define S3L_RESOLUTION_X 640
+#define S3L_RESOLUTION_Y 480
 
 #include "../small3dlib.h"
 
@@ -140,7 +140,7 @@ void drawPixel(S3L_PixelInfo *p)
   uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
   uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
-  sampleTexture(uv[0] / 2,uv[1] / 2,&r,&g,&b);
+  sampleTexture(uv[0] >> 1,uv[1] >> 1,&r,&g,&b);
   
   setPixel(p->x,p->y,r,g,b); 
 }
@@ -152,7 +152,7 @@ void draw()
   S3L_drawScene(scene);
 }
 
-static inline uint32_t collision(S3L_Vec4 worldPosition)
+static inline uint8_t collision(S3L_Vec4 worldPosition)
 {
   worldPosition.x /= S3L_FRACTIONS_PER_UNIT;
   worldPosition.z /= -S3L_FRACTIONS_PER_UNIT;    
@@ -232,6 +232,7 @@ int main()
 
     double timeDiff = ((double) (nowT - nextPrintT)) / CLOCKS_PER_SEC;
     double frameDiff = ((double) (nowT - frameStartT)) / CLOCKS_PER_SEC;
+    int16_t frameDiffMs = frameDiff * 1000;
 
     if (timeDiff >= 1.0)
     {
@@ -246,10 +247,11 @@ int main()
 
     uint8_t *state = SDL_GetKeyboardState(NULL);
 
-    int16_t step = velocity * frameDiff;
-    int16_t stepFriction = FRICTION * frameDiff;
-    int16_t stepRotation = TURN_SPEED * frameDiff * S3L_max(0,velocity - 200) / ((float) MAX_VELOCITY);
-    int16_t stepVelocity = S3L_nonZero(ACCELERATION * frameDiff);
+    int16_t step = (velocity * frameDiffMs) / 1000;
+    int16_t stepFriction = (FRICTION * frameDiffMs) / 1000;
+    int16_t stepRotation = TURN_SPEED * frameDiffMs * S3L_max(0,velocity - 200) / (MAX_VELOCITY * 1000);
+
+    int16_t stepVelocity = S3L_nonZero((ACCELERATION * frameDiffMs) / 1000);
 
     if (stepRotation == 0 && S3L_abs(velocity) >= 200)
       stepRotation = 1;
