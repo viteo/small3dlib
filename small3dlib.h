@@ -1762,12 +1762,6 @@ void S3L_drawTriangle(
   p.triangleIndex = triangleIndex;
   p.triangleID = (modelIndex << 16) | triangleIndex;
 
-#if !S3L_STRICT_NEAR_CULLING
-  point0.z = point0.z >= S3L_NEAR ? point0.z : S3L_NEAR;
-  point1.z = point1.z >= S3L_NEAR ? point1.z : S3L_NEAR;
-  point2.z = point2.z >= S3L_NEAR ? point2.z : S3L_NEAR;
-#endif
-
   S3L_Vec4 *tPointSS, *lPointSS, *rPointSS; /* points in Screen Space (in
                                                S3L_Units, normalized by
                                                S3L_FRACTIONS_PER_UNIT) */
