@@ -320,13 +320,17 @@ static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
 static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
 S3L_Unit S3L_vec3Length(S3L_Vec4 v);
 
-/** Normalizes Vec3. Note that this function tries to normalize correctly rather
-  than quickly! If you need to normalize quickly, do it yourself in a way that
-  best fits your case. */
+/** Normalizes Vec3. Note that this function tries to normalize correctly
+  rather than quickly! If you need to normalize quickly, do it yourself in a
+  way that best fits your case. */
 void S3L_normalizeVec3(S3L_Vec4 *v);
 
+/** Like S3L_normalizeVec3, but doesn't perform any checks on the input vector,
+  which is faster, but can be very innacurate or overflowing. You are supposed
+  to provide a "nice" vector (not too big or small). */
+static inline void S3L_normalizeVec3Fast(S3L_Vec4 *v);
+
 S3L_Unit S3L_vec2Length(S3L_Vec4 v);
-void S3L_normalizeVec2(S3L_Vec4 *v);
 void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result);
 static inline S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b);
 
@@ -961,17 +965,17 @@ void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result)
 
 void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2, S3L_Vec4 *n)
 {
-  #define antiOverflow 32
+  #define ANTI_OVERFLOW 32
 
-  t1.x = (t1.x - t0.x) / antiOverflow;
-  t1.y = (t1.y - t0.y) / antiOverflow;
-  t1.z = (t1.z - t0.z) / antiOverflow;
+  t1.x = (t1.x - t0.x) / ANTI_OVERFLOW;
+  t1.y = (t1.y - t0.y) / ANTI_OVERFLOW;
+  t1.z = (t1.z - t0.z) / ANTI_OVERFLOW;
 
-  t2.x = (t2.x - t0.x) / antiOverflow;
-  t2.y = (t2.y - t0.y) / antiOverflow;
-  t2.z = (t2.z - t0.z) / antiOverflow;
+  t2.x = (t2.x - t0.x) / ANTI_OVERFLOW;
+  t2.y = (t2.y - t0.y) / ANTI_OVERFLOW;
+  t2.z = (t2.z - t0.z) / ANTI_OVERFLOW;
 
-  #undef antiOverflow
+  #undef ANTI_OVERFLOW
 
   S3L_crossProduct(t1,t2,n);
 
@@ -1461,7 +1465,10 @@ void S3L_normalizeVec3(S3L_Vec4 *v)
      it up. We can't scale up everything as big vectors overflow in length
      calculations. */
 
-  if (S3L_abs(v->x + v->y + v->z) < LIMIT)
+  if (
+    S3L_abs(v->x) <= LIMIT &&
+    S3L_abs(v->y) <= LIMIT &&
+    S3L_abs(v->z) <= LIMIT)
   {
     v->x *= SCALE;
     v->y *= SCALE;
@@ -1481,15 +1488,16 @@ void S3L_normalizeVec3(S3L_Vec4 *v)
   v->z = (v->z * S3L_FRACTIONS_PER_UNIT) / l;
 }
 
-void S3L_normalizeVec2(S3L_Vec4 *v)
+void S3L_normalizeVec3Fast(S3L_Vec4 *v)
 {
-  S3L_Unit l = S3L_vec2Length(*v);
+  S3L_Unit l = S3L_vec3Length(*v);
 
   if (l == 0)
     return;
 
   v->x = (v->x * S3L_FRACTIONS_PER_UNIT) / l;
   v->y = (v->y * S3L_FRACTIONS_PER_UNIT) / l;
+  v->z = (v->z * S3L_FRACTIONS_PER_UNIT) / l;
 }
 
 void S3L_initTransoform3D(S3L_Transform3D *t)
