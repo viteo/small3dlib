@@ -19,7 +19,7 @@ void pixelFunc(S3L_PixelInfo *p)
   testRaster[p->y * TEST_BUFFER_W + p->x] += 1;
 }
 
-uint16_t testTriangleRasterization(
+int testTriangleRasterization(
   S3L_ScreenCoord x0,
   S3L_ScreenCoord y0,
   S3L_ScreenCoord x1,
@@ -30,10 +30,6 @@ uint16_t testTriangleRasterization(
   )
 {
   printf("  --- testing tringle rasterization [%d,%d] [%d,%d] [%d,%d] (|: expected, -: rasterized) ----\n",x0,y0,x1,y1,x2,y2);
-
-  S3L_DrawConfig conf;
-
-  conf.backfaceCulling = 0;
 
   memset(testRaster,0,TEST_BUFFER_W * TEST_BUFFER_H);
 
@@ -81,7 +77,7 @@ uint16_t testTriangleRasterization(
   return numErrors;
 }
 
-uint16_t testRasterization()
+int testRasterization()
 {
   printf("\n=== TESTING RASTERIZATION ===\n");
   
@@ -332,8 +328,69 @@ uint16_t testRasterization()
 
   numErrors += numErrors2;
 
-
   printf("total rasterization errors: %d\n",numErrors);
+
+  return numErrors;
+}
+
+static inline double abs(double a)
+{
+  return a >= 0.0 ? a : (-1 * a);
+}
+
+double vec3Len(S3L_Vec4 v)
+{
+  return sqrt(
+    ((double) v.x) * ((double) v.x) +
+    ((double) v.y) * ((double) v.y) +
+    ((double) v.z) * ((double) v.z));
+}
+
+int testGeneral()
+{
+  printf("\n=== TESTING GENERAL ===\n");
+
+  printf("testing vector normalization precision...\n");
+
+  S3L_Unit m = 100 * S3L_FRACTIONS_PER_UNIT;
+  S3L_Unit tolerance = 0.1 * S3L_FRACTIONS_PER_UNIT;
+
+  uint32_t errors0 = 0;
+  uint32_t errors1 = 0;
+
+  for (S3L_Unit x = -1 * m; x < m; x += 3 * (abs(x) / 64 + 1))
+    for (S3L_Unit y = -1 * m; y < m; y += 3 * (abs(y) / 32 + 1))
+      for (S3L_Unit z = -1 * m; z < m; z += 5 * (abs(z) / 64 + 1))
+      {
+        S3L_Vec4 v;
+
+        S3L_setVec4(&v,x,y,z,0);
+        S3L_normalizeVec3Fast(&v);
+
+        double l0 = vec3Len(v);
+        double e0 = abs(l0 - S3L_FRACTIONS_PER_UNIT);
+
+        S3L_setVec4(&v,x,y,z,0);
+        S3L_normalizeVec3(&v);
+
+        double l1 = vec3Len(v);
+        double e1 = abs(l1 - S3L_FRACTIONS_PER_UNIT);
+
+        if (e0 > tolerance)
+          errors0++;
+
+        if (e1 > tolerance)
+        {
+          errors1++;
+
+          printf("%f\n",l1);
+          S3L_logVec4(v);
+        }
+      }
+
+  printf("wrong normalization with unsafe function: %d\nwrong normalizations with safe function: %d\n",errors0,errors1);
+
+  return errors1;
 }
 
 int main()
@@ -357,7 +414,12 @@ int main()
   S3L_mat4Xmat4(&m,&m2);
   S3L_logMat4(m);
 
-  testRasterization();
+  uint32_t totalErrors = 0;
+
+  totalErrors += testRasterization();
+  totalErrors += testGeneral();
+
+  printf("\n===== DONE =====\ntotal errors: %d\n",totalErrors);
 
   return 0;
 }

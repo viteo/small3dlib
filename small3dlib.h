@@ -1458,7 +1458,8 @@ S3L_Unit S3L_vec2Length(S3L_Vec4 v)
 void S3L_normalizeVec3(S3L_Vec4 *v)
 {
   #define SCALE 16
-  #define LIMIT 16
+  #define BOTTOM_LIMIT 16
+  #define UPPER_LIMIT 900
 
   /* Here we try to decide if the vector is too small and would cause
      inaccurate result due to very its inaccurate length. If so, we scale
@@ -1466,17 +1467,27 @@ void S3L_normalizeVec3(S3L_Vec4 *v)
      calculations. */
 
   if (
-    S3L_abs(v->x) <= LIMIT &&
-    S3L_abs(v->y) <= LIMIT &&
-    S3L_abs(v->z) <= LIMIT)
+    S3L_abs(v->x) <= BOTTOM_LIMIT &&
+    S3L_abs(v->y) <= BOTTOM_LIMIT &&
+    S3L_abs(v->z) <= BOTTOM_LIMIT)
   {
     v->x *= SCALE;
     v->y *= SCALE;
     v->z *= SCALE;
-  }  
-
+  }
+  else if (
+    S3L_abs(v->x) > UPPER_LIMIT ||
+    S3L_abs(v->y) > UPPER_LIMIT ||
+    S3L_abs(v->z) > UPPER_LIMIT)
+  {
+    v->x /= SCALE;
+    v->y /= SCALE;
+    v->z /= SCALE;
+  }
+ 
   #undef SCALE
-  #undef LIMIT
+  #undef BOTTOM_LIMIT
+  #undef UPPER_LIMIT
 
   S3L_Unit l = S3L_vec3Length(*v);
 
