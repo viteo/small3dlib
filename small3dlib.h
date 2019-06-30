@@ -2130,7 +2130,9 @@ void S3L_drawTriangle(
       int8_t rowCount = S3L_PC_APPROX_LENGTH;
 #endif
 
+#if S3L_Z_BUFFER
       S3L_Index zBufferIndex = p.y * S3L_RESOLUTION_X + lXClipped;
+#endif
 
       // draw the row -- inner loop:
 
@@ -2230,6 +2232,7 @@ void S3L_drawTriangle(
 
 #if S3L_Z_BUFFER
         p.previousZ = S3L_zBuffer[zBufferIndex];
+
         zBufferIndex++;
 
         if (!S3L_zTest(p.x,p.y,p.depth))

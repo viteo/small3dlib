@@ -21,6 +21,7 @@
 
 #include "../small3dlib.h"
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 #include "grassTexture.h"
@@ -84,7 +85,7 @@ S3L_Unit treeNormals[TREE_VERTEX_COUNT * 3];
 S3L_Model3D models[MODELS_TOTAL];
 S3L_Scene scene;
 
-int previousTriangle = -1;
+uint32_t previousTriangle = 1000;
 
 S3L_Vec4 toLightDirection;
 
@@ -92,7 +93,7 @@ S3L_Vec4 n0, n1, n2, v0, v1, v2;
 
 S3L_Vec4 uv0, uv1, uv2;
 
-void sampleTexture(uint8_t *texture, int w, int h, float x, float y, uint8_t color[3])
+void sampleTexture(const uint8_t *texture, int w, int h, float x, float y, uint8_t color[3])
 {
   // we do linear interpolation of the samples
 
@@ -220,7 +221,7 @@ void drawPixel(S3L_PixelInfo *p)
     specularIntensity = 0.8;
     specularPower = 40.0;
 
-    float dist, dx, dy;
+    float dist;
 
     // create wavy normal map for water
 
@@ -453,13 +454,9 @@ int main()
   char fileName[] = "test00.ppm";
 
   S3L_Transform3D transform0, transform1;
-  S3L_Vec4 target0, target1;
 
   S3L_initTransoform3D(&transform0);
   S3L_initTransoform3D(&transform1);
-
-  target0 = scene.models[0].transform.translation;
-  target1 = scene.models[2].transform.translation;
 
   transform0.translation.x = -2 * S3L_FRACTIONS_PER_UNIT;
   transform0.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;

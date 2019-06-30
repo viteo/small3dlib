@@ -114,8 +114,8 @@ void drawPixel(S3L_PixelInfo *p)
 {
   if (p->triangleID != previousTriangle)
   {
-    S3L_Index *uvIndices;
-    S3L_Unit *uvs;
+    const S3L_Index *uvIndices;
+    const S3L_Unit *uvs;
 
     if (p->modelIndex == 0)
     {
@@ -245,7 +245,7 @@ int main()
       if (event.type == SDL_QUIT)
         running = 0;
 
-    uint8_t *state = SDL_GetKeyboardState(NULL);
+    const uint8_t *state = SDL_GetKeyboardState(NULL);
 
     int16_t step = (velocity * frameDiffMs) / 1000;
     int16_t stepFriction = (FRICTION * frameDiffMs) / 1000;
@@ -277,7 +277,6 @@ int main()
     S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
 
     S3L_Vec4 previousCarPos = models[1].transform.translation;
-    S3L_Vec4 previousCamPos = scene.camera.transform.translation;
 
     int16_t friction = 0;
 

@@ -190,8 +190,6 @@ void draw()
 
   clearScreen();
 
-  uint32_t f = frame;
-
   S3L_drawScene(scene);
 
   S3L_Vec4 screenPoint;
@@ -255,7 +253,7 @@ int main()
  
     S3L_rotationToDirections(scene.camera.transform.rotation,20,&camF,&camR,0);
 
-    uint8_t *state = SDL_GetKeyboardState(NULL);
+    const uint8_t *state = SDL_GetKeyboardState(NULL);
 
     if (state[SDL_SCANCODE_A])
       scene.camera.transform.rotation.y += 1;
