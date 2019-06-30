@@ -2131,7 +2131,7 @@ void S3L_drawTriangle(
 #endif
 
 #if S3L_Z_BUFFER
-      S3L_Index zBufferIndex = p.y * S3L_RESOLUTION_X + lXClipped;
+      uint32_t zBufferIndex = p.y * S3L_RESOLUTION_X + lXClipped;
 #endif
 
       // draw the row -- inner loop:
