@@ -6,6 +6,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 
 #define S3L_STRICT_NEAR_CULLING 0
 
