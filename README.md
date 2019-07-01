@@ -8,6 +8,12 @@ If you like this, you may also like my similar project: [raycastlib](https://git
 
 ## eye-candy previews
 
+Pokitto (32bit embedded console, 48 MHz, 36 kB RAM):
+
+![](media/pokitto_modelviewer.gif)
+![](media/pokitto_level.gif)
+![](media/pokitto_city.gif)
+
 PC (SDL, offline rendering, terminal):
 
 ![](media/pc_modelviewer.gif)
