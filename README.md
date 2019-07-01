@@ -8,7 +8,14 @@ If you like this, you may also like my similar project: [raycastlib](https://git
 
 ## eye-candy previews
 
-TODO
+PC (SDL, offline rendering, terminal):
+
+![](media/pc_modelviewer.gif)
+![](media/pc_level.gif)
+![](media/pc_city.gif)
+![](media/pc_term.gif)
+![](media/pc_island.png)
+![](media/pc_alligator.png)
 
 ## features
 
