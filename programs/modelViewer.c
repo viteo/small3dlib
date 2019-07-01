@@ -74,13 +74,13 @@ S3L_Unit plantNormals[PLANT_VERTEX_COUNT * 3];
 
 S3L_Unit catVertices[CAT1_VERTEX_COUNT * 3];
 const S3L_Index *catTriangleIndices = cat1TriangleIndices;
-const S3L_Index *catUVs = cat1UVs;
+const S3L_Unit *catUVs = cat1UVs;
 const S3L_Index *catUVIndices = cat1UVIndices;
 
 S3L_Model3D catModel; 
 
 S3L_Model3D model;
-uint8_t *texture;
+const uint8_t *texture;
 const S3L_Unit *uvs;
 const S3L_Unit *normals;
 const S3L_Index *uvIndices;
@@ -167,8 +167,6 @@ void drawPixel(S3L_PixelInfo *p)
 {
   if (p->triangleID != previousTriangle)
   {
-    int16_t index;
-
     if (mode == MODE_TEXTUERED)
     {
       S3L_getIndexedTriangleValues(p->triangleIndex,uvIndices,uvs,2,&uv0,&uv1,&uv2);
@@ -426,7 +424,7 @@ int main()
     if (timeDiff >= 1.0)
     {
       nextPrintT = nowT;
-      printf("\nFPS: %d\n",fps);
+      printf("FPS: %d\n",fps);
       fps = 0;
     }
 
@@ -454,7 +452,7 @@ int main()
       }
     }
 
-    uint8_t *state = SDL_GetKeyboardState(NULL);
+    const uint8_t *state = SDL_GetKeyboardState(NULL);
 
     int16_t rotationStep = S3L_max(1,300 * frameDiff);
     int16_t moveStep = S3L_max(1,3000 * frameDiff);
