@@ -66,7 +66,7 @@ For more see the other examples and **the library code itself**, it is meant to 
 
 The basic philosophy is:
 
-- The library implements only a rendering back-end, it doesn't perform any drawing to the actual screen,
+- The library implements only a rendering "middle-end", it doesn't perform any drawing to the actual screen,
   hence there is no dependency on any library such as OpenGL or SDL. It just calls your front-end function
   and tells you which pixels you should write. How you do it is up to you.
 - Before including the header, define `S3L_PIXEL_FUNCTION` to the name of a function you will use to
