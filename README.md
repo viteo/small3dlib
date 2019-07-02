@@ -1,5 +1,3 @@
-# WIP, NOT WORKABLE YET!
-
 # small3dlib
 
 Public domain 3D software rasterizer for (not only) resource-limited computers.

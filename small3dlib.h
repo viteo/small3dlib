@@ -8,7 +8,7 @@
 
   author: Miloslav Ciz
   license: CC0 1.0 + additional waiver of all IP
-  version: TODO
+  version: 0.85
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
