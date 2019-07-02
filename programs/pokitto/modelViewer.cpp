@@ -7,7 +7,7 @@
 
 #include "Pokitto.h"
 
-/* Before including small3dli, we need to define some values for it, such as
+/* Before including small3dlib, we need to define some values for it, such as
   the resolution, the name of the pixel drawing function etc.: */
 
 #define S3L_PIXEL_FUNCTION pixelFunc
