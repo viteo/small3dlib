@@ -14,6 +14,10 @@ Pokitto (32bit embedded console, 48 MHz, 36 kB RAM):
 ![](media/pokitto_level.gif)
 ![](media/pokitto_city.gif)
 
+Gamebuino META (Arduino 32bit console, 48 MHz, 32 kB RAM):
+
+![](media/gb_modelviewer.gif)
+
 PC (SDL, offline rendering, terminal):
 
 ![](media/pc_modelviewer.gif)
