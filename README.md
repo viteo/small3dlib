@@ -36,7 +36,7 @@ PC (SDL, offline rendering, terminal):
 - **Perspective correction**, 3 modes: none (linear only), full (per-pixel), approximation (per-N-pixels). 
 - **Different drawing strategies** to choose from: none, z-buffer (none, full, reduced), triangle sorting (back-to-front, fron-to-back with stencil buffer).
 - Triangles provide **barycentric coordinates**, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, texture fitering, transparency, PBR, shadow mapping, MIP mapping, ...).
-- **Tested on multiple platforms** (TODO).
+- **Tested on multiple platforms** (PC, Pokitto, Gamebuino META).
 - **Many compile-time options** to tune the performance vs quality.
 - **Similar to OpenGL** in principle, but simpler, easier to use, with higher-level features.
 - **Tools** (Python scripts) for converting 3D models and textures to C array format used by the library.
