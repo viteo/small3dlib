@@ -7,7 +7,9 @@
   dependencies, using only 32bit integer arithmetics.
 
   author: Miloslav Ciz
-  license: CC0 1.0 + additional waiver of all IP
+  license: CC0 1.0 (public domain)
+           found at https://creativecommons.org/publicdomain/zero/1.0/
+           + additional waiver of all IP
   version: 0.85
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
