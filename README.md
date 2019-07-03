@@ -66,7 +66,7 @@ For more see the other examples and **the library code itself**, it is meant to 
 
 The basic philosophy is:
 
-- The library implements only a rendering "middle-end", it doesn't perform any drawing to the actual screen,
+- The library implements only a rendering back-end, it doesn't perform any drawing to the actual screen,
   hence there is no dependency on any library such as OpenGL or SDL. It just calls your front-end function
   and tells you which pixels you should write. How you do it is up to you.
 - Before including the header, define `S3L_PIXEL_FUNCTION` to the name of a function you will use to
@@ -76,6 +76,7 @@ The basic philosophy is:
 - Also define `S3L_RESOLUTION_X` and `S3L_RESOLUTION_Y` to the resolution of your rendering screen.
 - Use the provided Python tools to convert your model and textures to C arrays, include them in your
   program and set up the scene struct.
+- Init the 3D models and the scene with provided init functions (`S3L_init*`), set the position of the camera.
 - Call `S3L_drawScene` on the scene to perform the frame rendering. This will cause the
   library to start calling the `S3L_PIXEL_FUNCTION` in order to draw the frame. You can of course
   modify the function or write a similar one of your own using the more low-level functions which are
