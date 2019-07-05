@@ -504,7 +504,7 @@ typedef struct
   S3L_ScreenCoord x;          ///< Screen X coordinate.
   S3L_ScreenCoord y;          ///< Screen Y coordinate.
 
-  S3L_Unit barycentric[3]; /**< Barycentric coords corresponds to the three
+  S3L_Unit barycentric[3]; /**< Barycentric coords correspond to the three
                               vertices. These serve to locate the pixel on a
                               triangle and interpolate values between it's
                               three points. Each one goes from 0 to
