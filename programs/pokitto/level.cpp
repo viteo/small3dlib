@@ -66,6 +66,7 @@ uint32_t previousTriangle = 100;
 static inline uint8_t addIntensity(uint8_t color, int16_t intensity)
 {
   int16_t newValue = (color & 0b00001111) + intensity; // value as in HSV
+  // TODO: ^ this could be uint8? Would be faster! Also in the below function.
 
   if (newValue >= 16)
     newValue = 15;
