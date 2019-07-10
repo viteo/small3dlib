@@ -63,25 +63,24 @@ S3L_ScreenCoord subsampleMap[BASE_W + SUBSAMPLE];
 
 uint32_t previousTriangle = 100;
 
-static inline uint8_t addIntensity(uint8_t color, int16_t intensity)
+static inline uint8_t addIntensity(uint8_t color, uint8_t intensity)
 {
-  int16_t newValue = (color & 0b00001111) + intensity; // value as in HSV
-  // TODO: ^ this could be uint8? Would be faster! Also in the below function.
+  uint8_t newValue = color + intensity; // value as in HSV
 
-  if (newValue >= 16)
-    newValue = 15;
+  if (color >> 4 == newValue >> 4)
+    return newValue;
 
-  return (color & 0b11110000) | newValue;
+  return color | 0x0F;
 }
 
-static inline uint8_t substractIntensity(uint8_t color, int16_t intensity)
+static inline uint8_t substractIntensity(uint8_t color, uint8_t intensity)
 {
-  int16_t newValue = (color & 0b00001111) - intensity; // value as in HSV
+  uint8_t newValue = color - intensity; // value as in HSV
 
-  if (newValue <= 0)
-    return 0;
+  if (color >> 4 == newValue >> 4)
+    return newValue;
 
-  return (color & 0b11110000) | newValue;
+  return 0;
 }
 
 uint8_t c = 0;
@@ -190,6 +189,7 @@ int main()
 
   pokitto.begin();
 
+//  pokitto.display.persistence = 1;
   pokitto.setFrameRate(60);
 
   pokitto.display.load565Palette(level1Palette);

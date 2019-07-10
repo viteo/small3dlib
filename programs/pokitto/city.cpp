@@ -132,6 +132,7 @@ static inline void handleCollision(S3L_Vec4 *pos, S3L_Vec4 previousPos)
 int main()
 {  
   pokitto.begin();
+//  pokitto.display.persistence = 1;
   pokitto.setFrameRate(60);
   pokitto.display.load565Palette(cityPalette);
 

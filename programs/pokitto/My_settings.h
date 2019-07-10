@@ -1,3 +1,4 @@
+#define _OSCT 2 // overclock
 //#define PROJ_SHOW_FPS_COUNTER
 #define PROJ_SCREENMODE 13
 #define PROJ_MODE13 1
