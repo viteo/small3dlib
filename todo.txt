@@ -1,5 +1,8 @@
 features:
 
+- Add macros that would allow to make some compile-time options (e.g.
+  resolution) global variabes instead and allow them to change at runtime.
+
 - presets that can be optionally selected and  will configure other constants
   (e.g. a "low memory sort strategy" will turn z-buffer off and turn
   back-to-front sorting on).
