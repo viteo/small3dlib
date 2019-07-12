@@ -50,7 +50,6 @@ interface.
 
 ## limitations
 
-- Some values, like screen resolution, are a compile-time option due to performance and simplicity, and **can't change during runtime**.
 - **No scenegraph** (object parenting), just a scene list. Parenting can still be achieved by using cutom transform matrices.
 - Though performance is high, due to multiplatformness it **probably can't match platform-specific rasterizers written in assembly**.
 - There is **no far plane**.
@@ -73,7 +72,7 @@ The basic philosophy is:
   draw pixels. It is basically a fragment/pixel shader function that the library will call. You will
   be passed info about the pixel and can decide what to do with it, so you can process it, discard it,
   or simply write it to the screen.
-- Also define `S3L_RESOLUTION_X` and `S3L_RESOLUTION_Y` to the resolution of your rendering screen.
+- Also init screen resolution, either by defining `S3L_RESOLUTION_X` and `S3L_RESOLUTION_Y` (before including the library) or by setting `S3L_resolutionX` and `S3L_resolutionY` variables.
 - Use the provided Python tools to convert your model and textures to C arrays, include them in your
   program and set up the scene struct.
 - Init the 3D models and the scene with provided init functions (`S3L_init*`), set the position of the camera.
@@ -91,6 +90,7 @@ The basic philosophy is:
 - Don't forget to **compile with -O3!** This drastically improves performance.
 - Your pixel drawing function (`S3L_PIXEL_FUNC`) will mostly be the performance bottleneck, try to make it as fast as possible. The number of pixels is usually much higher than the number of triangles or vertices processed, so you should focus on pixels the most.
 - In your `S3L_PIXEL_FUNC` **use a per-triangle cache!** This saves a lot of CPU time. Basically make sure you don't compute per-triangle values per-pixel, but only once, with the first pixel of the triangle. You can do this by remembering the last `triangleID` and only recompute the value when the ID changes. See the examples for how this is done.
+- Some things, such as screen resolution, can be specified as static (compile time, can't change during run time) or dynamic. If you can, prefer setting them to static and a power of two (e.g. `#define S3L_RESOLUTION_X 512`) to increase performance!
 - Seeing buggy triangles flashing in front of the camera? With the limited 32bit arithmetic far-away things may be overflowing. Try to scale down the scene. If you also don't mind it, set `S3L_STRICT_NEAR_CULLING` to `1` -- this should probably solve it.
 - Seeing triangles weirdly deform in front of the camera? Due to the lack of proper near plane culling one of the options (`S3L_STRICT_NEAR_CULLING == 0`) deals with this by pushing the vertices in front of the near plane. To fix this either manually subdivide your model into more triangles or turn on `S3L_STRICT_NEAR_CULLING` (which will however make the close triangles disappear). 
 - Seeing triangles disappear randomly in sorted modes? This is because the size of the memory for triangle sorting is limited by default -- increase `S3L_MAX_TRIANGLES_DRAWN`.

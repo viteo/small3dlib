@@ -28,8 +28,7 @@
 
 #define S3L_PIXEL_FUNCTION drawPixel
 
-#define S3L_RESOLUTION_X 640
-#define S3L_RESOLUTION_Y 480
+#define S3L_MAX_PIXELS (1024 * 1024)
 
 #include "../small3dlib.h"
 
@@ -40,7 +39,7 @@ S3L_Scene scene;
 
 S3L_Vec4 teleportPoint;
 
-uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+uint32_t pixels[S3L_MAX_PIXELS];
 
 uint32_t frame = 0;
 uint8_t *texture = 0;
@@ -49,7 +48,7 @@ S3L_Vec4 uv0, uv1, uv2;
 
 void clearScreen()
 {
-  memset(pixels,255,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
+  memset(pixels,255,S3L_MAX_PIXELS * sizeof(uint32_t));
 }
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
@@ -63,7 +62,7 @@ static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t bl
   uint32_t b = blue & 0x000000FF;
   b = b << 8;
 
-  pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
+  pixels[y * S3L_resolutionX + x] = r | g | b;
 }
 
 void sampleTexture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
@@ -88,9 +87,9 @@ void drawTeleport(int16_t x, int16_t y, S3L_ScreenCoord size)
   int16_t halfSize = size / 2;
 
   S3L_ScreenCoord x0 = S3L_max(0,x - halfSize);
-  S3L_ScreenCoord x1 = S3L_min(S3L_RESOLUTION_X,x + halfSize);
+  S3L_ScreenCoord x1 = S3L_min(S3L_resolutionX,x + halfSize);
   S3L_ScreenCoord y0 = S3L_max(0,y - halfSize);
-  S3L_ScreenCoord y1 = S3L_min(S3L_RESOLUTION_Y,y + halfSize);
+  S3L_ScreenCoord y1 = S3L_min(S3L_resolutionY,y + halfSize);
 
   S3L_ScreenCoord row = y0 - (y - halfSize);
 
@@ -197,8 +196,8 @@ void draw()
   project3DPointToScreen(teleportPoint,scene.camera,&screenPoint);
 
   if (screenPoint.w > 0 && 
-      screenPoint.x >= 0 && screenPoint.x < S3L_RESOLUTION_X &&
-      screenPoint.y >= 0 && screenPoint.y < S3L_RESOLUTION_Y &&
+      screenPoint.x >= 0 && screenPoint.x < S3L_resolutionX &&
+      screenPoint.y >= 0 && screenPoint.y < S3L_resolutionY &&
       screenPoint.z < S3L_zBufferRead(screenPoint.x,screenPoint.y)) 
     drawTeleport(screenPoint.x,screenPoint.y,screenPoint.w);
 
@@ -221,9 +220,12 @@ void draw()
 
 int main()
 {
-  SDL_Window *window = SDL_CreateWindow("level demo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
+  S3L_resolutionX = 640;
+  S3L_resolutionY = 480;
+
+  SDL_Window *window = SDL_CreateWindow("level demo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_resolutionX, S3L_resolutionY, SDL_WINDOW_SHOWN); 
   SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
-  SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
+  SDL_Texture *texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_resolutionX, S3L_resolutionY);
   SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
   SDL_Event event;
 
@@ -242,8 +244,10 @@ int main()
 
   while (running) // main loop
   {
+    int newWidth = -1, newHeight = -1;
+
     draw();
-    SDL_UpdateTexture(texture,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
+    SDL_UpdateTexture(texture,NULL,pixels,S3L_resolutionX * sizeof(uint32_t));
 
     while (SDL_PollEvent(&event))
       if (event.type == SDL_QUIT)
@@ -272,6 +276,34 @@ int main()
       S3L_vec3Sub(&scene.camera.transform.translation,camR);
     else if (state[SDL_SCANCODE_RIGHT])
       S3L_vec3Add(&scene.camera.transform.translation,camR);
+
+    if (state[SDL_SCANCODE_K])
+      newHeight = S3L_resolutionY + 4;
+    else if (state[SDL_SCANCODE_I])
+      newHeight = S3L_resolutionY - 4;
+    else if (state[SDL_SCANCODE_J])
+      newWidth = S3L_resolutionX - 4;
+    else if (state[SDL_SCANCODE_L])
+      newWidth = S3L_resolutionX + 4;
+
+    if (
+         (
+           (newWidth != -1 && newWidth > 0) ||
+           (newHeight != -1 && newHeight > 0)
+         ) &&
+        (newWidth * S3L_resolutionY <= S3L_MAX_PIXELS) &&
+        (newHeight * S3L_resolutionX <= S3L_MAX_PIXELS))
+    {
+      if (newWidth != -1)
+        S3L_resolutionX = newWidth;
+
+      if (newHeight != -1)
+        S3L_resolutionY = newHeight;
+
+      SDL_DestroyTexture(texture);
+      texture = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_resolutionX, S3L_resolutionY);
+      SDL_SetWindowSize(window,S3L_resolutionX,S3L_resolutionY);
+    }
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer,texture,NULL,NULL);

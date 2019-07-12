@@ -10,12 +10,12 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.85
+  version: 0.851
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
-  by the library to render the frames). Also define S3L_RESOLUTION_X and
-  S3L_RESOLUTION_Y.
+  by the library to render the frames). Also either init S3L_resolutionX and
+  S3L_resolutionY or define S3L_RESOLUTION_X and S3L_RESOLUTION_Y.
 
   You'll also need to decide what rendering strategy and other settings you
   want to use, depending on your specific usecase. You may want to use a
@@ -131,12 +131,35 @@
 
 #include <stdint.h>
 
+#ifdef S3L_RESOLUTION_X
+  #ifdef S3L_RESOLUTION_Y
+    #define S3L_MAX_PIXELS (S3L_RESOLUTION_X * S3L_RESOLUTION_Y)
+  #endif
+#endif
+
 #ifndef S3L_RESOLUTION_X
-#define S3L_RESOLUTION_X 640 ///< Redefine to screen x resolution.
+  #ifndef S3L_MAX_PIXELS
+    #error Dynamic resolution set (S3L_RESOLUTION_X not defined), but\
+           S3L_MAX_PIXELS not defined!
+  #endif
+
+  uint16_t S3L_resolutionX = 512; /**< If a static resolution is not set with
+                                       S3L_RESOLUTION_X, this variable can be
+                                       used to change X resolution at runtime,
+                                       in which case S3L_MAX_PIXELS has to be
+                                       defined (to allocate zBuffer etc.)! */
+  #define S3L_RESOLUTION_X S3L_resolutionX
 #endif
 
 #ifndef S3L_RESOLUTION_Y
-#define S3L_RESOLUTION_Y 480 ///< Redefine to screen y resolution.
+  #ifndef S3L_MAX_PIXELS
+    #error Dynamic resolution set (S3L_RESOLUTION_Y not defined), but\
+           S3L_MAX_PIXELS not defined!
+  #endif
+
+  uint16_t S3L_resolutionY = 512; /**< Same as S3L_resolutionX, but for Y
+                                       resolution. */
+  #define S3L_RESOLUTION_Y S3L_resolutionY
 #endif
 
 /** Units of measurement in 3D space. There is S3L_FRACTIONS_PER_UNIT in one
@@ -735,11 +758,11 @@ static inline void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle);
 
 #if S3L_Z_BUFFER == 1
   #define S3L_MAX_DEPTH 2147483647
-  S3L_Unit S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+  S3L_Unit S3L_zBuffer[S3L_MAX_PIXELS];
   #define S3L_zBufferFormat(depth) (depth)
 #elif S3L_Z_BUFFER == 2
   #define S3L_MAX_DEPTH 255
-  uint8_t S3L_zBuffer[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+  uint8_t S3L_zBuffer[S3L_MAX_PIXELS];
   #define S3L_zBufferFormat(depth)\
     S3L_min(255,(depth) >> S3L_REDUCED_Z_BUFFER_GRANULARITY)
 #endif
@@ -1706,6 +1729,10 @@ void S3L_initDrawConfig(S3L_DrawConfig *config)
   config->backfaceCulling = 2;
   config->visible = 1;
 }
+
+#ifndef S3L_PIXEL_FUNCTION
+  #error Pixel rendering function (S3L_PIXEL_FUNCTION) not specified!
+#endif
 
 static inline void S3L_PIXEL_FUNCTION(S3L_PixelInfo *pixel); // forward decl
 
