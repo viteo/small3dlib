@@ -4,6 +4,7 @@
   license: CC0 1.0
 */
 
+#include <stdio.h>
 #include <unistd.h>  // for usleep
 
 // we need to define screen resolution before including the library:
@@ -101,6 +102,8 @@ int main()
   for (int i = 0; i < 200; ++i)   // render 200 frames
   {
     clearScreen();
+
+    S3L_newFrame();        // has to be called before each frame
 
     S3L_drawScene(scene);  /* This starts the scene rendering. The drawPixel
                               function will be called to draw it. */
