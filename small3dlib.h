@@ -1286,9 +1286,12 @@ S3L_Unit S3L_sin(S3L_Unit x)
   int8_t positive = 1;
 
   if (x < S3L_SIN_TABLE_LENGTH)
-    x = x;
+  {
+  }
   else if (x < S3L_SIN_TABLE_LENGTH * 2)
+  {
     x = S3L_SIN_TABLE_LENGTH * 2 - x - 1;
+  }
   else if (x < S3L_SIN_TABLE_LENGTH * 3)
   {
     x = x - S3L_SIN_TABLE_LENGTH * 2;
