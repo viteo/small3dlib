@@ -390,7 +390,7 @@ typedef struct
     (t).rotation.x,(t).rotation.y,(t).rotation.z,\
     (t).scale.x,(t).scale.y,(t).scale.z)
 
-static inline void S3L_initTransoform3D(S3L_Transform3D *t);
+static inline void S3L_initTransform3D(S3L_Transform3D *t);
 
 void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t);
 
@@ -1539,7 +1539,7 @@ void S3L_normalizeVec3Fast(S3L_Vec4 *v)
   v->z = (v->z * S3L_FRACTIONS_PER_UNIT) / l;
 }
 
-void S3L_initTransoform3D(S3L_Transform3D *t)
+void S3L_initTransform3D(S3L_Transform3D *t)
 {
   S3L_initVec4(&(t->translation));
   S3L_initVec4(&(t->rotation));
@@ -1647,7 +1647,7 @@ void S3L_setTransform3D(
 void S3L_initCamera(S3L_Camera *camera)
 {
   camera->focalLength = S3L_FRACTIONS_PER_UNIT;
-  S3L_initTransoform3D(&(camera->transform));
+  S3L_initTransform3D(&(camera->transform));
 }
 
 void S3L_rotationToDirections(
@@ -1713,7 +1713,7 @@ void S3L_initModel3D(
   model->triangleCount = triangleCount;
   model->customTransformMatrix = 0;  
 
-  S3L_initTransoform3D(&(model->transform));
+  S3L_initTransform3D(&(model->transform));
   S3L_initDrawConfig(&(model->config));
 }
 
