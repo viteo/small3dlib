@@ -1,5 +1,8 @@
 features:
 
+- Optional OpenGL acceleration, perhaps a separate header file with the same
+  API.
+
 - Helper functions for e.g. retrieving and caching UV coords etc. Maybe these
   should be in a separate file?                            DONE
 
