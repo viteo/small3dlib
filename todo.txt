@@ -1,7 +1,13 @@
 features:
 
 - Optional OpenGL acceleration, perhaps a separate header file with the same
-  API.
+  API. How this can work:
+
+  Have a new accelerated render scene function that in the first pass uses OGL
+  to render info about pixels (barycentric, depth, ...) to a 2D "screen" array
+  (g buffer), then in the second pass loop over these pixels and on each
+  rendered pixel call the user pixel funct. Basically deferred rendering in
+  which the first pass is done with OGL.
 
 - Helper functions for e.g. retrieving and caching UV coords etc. Maybe these
   should be in a separate file?                            DONE
