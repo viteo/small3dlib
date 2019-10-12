@@ -346,7 +346,7 @@ void setModel(uint8_t index)
 
   #undef modelCase
 
-  S3L_initTransoform3D(&(scene.models[0].transform));
+  S3L_initTransform3D(&(scene.models[0].transform));
   S3L_initDrawConfig(&(scene.models[0].config));
 
   if (index == 3)

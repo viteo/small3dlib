@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.851
+  version: 0.852
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -568,6 +568,7 @@ static inline S3L_Unit S3L_max(S3L_Unit v1, S3L_Unit v2);
 static inline S3L_Unit S3L_clamp(S3L_Unit v, S3L_Unit v1, S3L_Unit v2);
 static inline S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod);
 static inline S3L_Unit S3L_nonZero(S3L_Unit value);
+static inline S3L_Unit S3L_zeroClamp(S3L_Unit value);
 
 S3L_Unit S3L_sin(S3L_Unit x);
 S3L_Unit S3L_asin(S3L_Unit x);
@@ -1205,7 +1206,7 @@ void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
 
 S3L_Unit S3L_abs(S3L_Unit value)
 {
-  return value >= 0 ? value : -1 * value;
+  return value * (((value >= 0) << 1) - 1);
 }
 
 S3L_Unit S3L_min(S3L_Unit v1, S3L_Unit v2)
@@ -1223,6 +1224,11 @@ S3L_Unit S3L_clamp(S3L_Unit v, S3L_Unit v1, S3L_Unit v2)
   return v >= v1 ? (v <= v2 ? v : v2) : v1;
 }
 
+S3L_Unit S3L_zeroClamp(S3L_Unit value)
+{
+  return (value * (value >= 0));
+}
+
 S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
 {
   return value >= 0 ? (value % mod) : (mod + (value % mod) - 1);
@@ -1230,7 +1236,7 @@ S3L_Unit S3L_wrap(S3L_Unit value, S3L_Unit mod)
 
 S3L_Unit S3L_nonZero(S3L_Unit value)
 {
-  return value != 0 ? value : 1;
+  return (value + (value == 0));
 }
 
 S3L_Unit S3L_interpolate(S3L_Unit v1, S3L_Unit v2, S3L_Unit t, S3L_Unit tMax)
@@ -2600,7 +2606,7 @@ void S3L_drawScene(S3L_Scene scene)
         S3L_sortArray[S3L_sortArrayLength].modelIndex = modelIndex;
         S3L_sortArray[S3L_sortArrayLength].triangleIndex = triangleIndex;
         S3L_sortArray[S3L_sortArrayLength].sortValue = 
-          S3L_max(0,(transformed0.w + transformed1.w + transformed2.w)) >> 2;
+          S3L_zeroClamp(transformed0.w + transformed1.w + transformed2.w) >> 2;
         /* ^ 
            The w component here stores non-clamped z.
  

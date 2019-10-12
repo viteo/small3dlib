@@ -6,7 +6,11 @@
 */
 
 #include <stdio.h>
+
 #define S3L_PIXEL_FUNCTION pixelFunc
+#define S3L_RESOLUTION_X 100
+#define S3L_RESOLUTION_Y 100
+
 #include "../small3dlib.h"
 
 #define TEST_BUFFER_W 16
