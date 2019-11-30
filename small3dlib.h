@@ -22,6 +22,12 @@
   z-buffer (full or reduced, S3L_Z_BUFFER), sorted-drawing (S3L_SORT), or even
   none of these. See the description of the options in this file.
 
+  The library is meant to be used in not so huge programs that use single
+  translation unit and so includes both declarations and implementation at once.
+  If you for some reason use multiple translation units (which include the
+  library), you'll have to handle this yourself (e.g. create a wrapper, manually
+  split the library into .c and .h etc.).
+
   --------------------
 
   This work's goal is to never be encumbered by any exclusive intellectual
@@ -84,7 +90,7 @@
              |    
              |
 
-  Rotations use Euler angles and are generally in the extinsic Euler angles in
+  Rotations use Euler angles and are generally in the extrinsic Euler angles in
   ZXY order (by Z, then by X, then by Y). Positive rotation about an axis
   rotates CW (clock-wise) when looking in the direction of the axis.
 
