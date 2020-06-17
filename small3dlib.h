@@ -22,6 +22,9 @@
   z-buffer (full or reduced, S3L_Z_BUFFER), sorted-drawing (S3L_SORT), or even
   none of these. See the description of the options in this file.
 
+  The rendering itself is done with S3L_drawScene, usually preceded by
+  S3L_newFrame (for clearing zBuffer etc.).
+
   The library is meant to be used in not so huge programs that use single
   translation unit and so includes both declarations and implementation at once.
   If you for some reason use multiple translation units (which include the
@@ -681,10 +684,10 @@ void S3L_drawTriangle(
 
 /** This should be called before rendering each frame. The function clears
   buffers and does potentially other things needed for the frame. */
-void S3L_newFrame();
+void S3L_newFrame(void);
 
-void S3L_zBufferClear();
-void S3L_stencilBufferClear();
+void S3L_zBufferClear(void);
+void S3L_stencilBufferClear(void);
 
 /** Writes a value (not necessarily depth! depends on the format of z-buffer)
   to z-buffer (if enabled). Does NOT check boundaries! */
@@ -1803,7 +1806,7 @@ void S3L_mapProjectionPlaneToScreen(
     (point.y * S3L_HALF_RESOLUTION_X) / S3L_FRACTIONS_PER_UNIT;
 }
 
-void S3L_zBufferClear()
+void S3L_zBufferClear(void)
 {
 #if S3L_Z_BUFFER
   for (uint32_t i = 0; i < S3L_RESOLUTION_X * S3L_RESOLUTION_Y; ++i)
@@ -1811,7 +1814,7 @@ void S3L_zBufferClear()
 #endif
 }
 
-void S3L_stencilBufferClear()
+void S3L_stencilBufferClear(void)
 {
 #if S3L_STENCIL_BUFFER
   for (uint32_t i = 0; i < S3L_STENCIL_BUFFER_SIZE; ++i)
@@ -1819,7 +1822,7 @@ void S3L_stencilBufferClear()
 #endif
 }
 
-void S3L_newFrame()
+void S3L_newFrame(void)
 {
   S3L_zBufferClear();
   S3L_stencilBufferClear();

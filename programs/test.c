@@ -1,4 +1,4 @@
-/*
+/**
   Some basic tests for small3dlib.
 
   author: Miloslav Ciz
@@ -6,6 +6,8 @@
 */
 
 #include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 #define S3L_PIXEL_FUNCTION pixelFunc
 #define S3L_RESOLUTION_X 100
@@ -81,7 +83,7 @@ int testTriangleRasterization(
   return numErrors;
 }
 
-int testRasterization()
+int testRasterization(void)
 {
   printf("\n=== TESTING RASTERIZATION ===\n");
   
@@ -337,7 +339,7 @@ int testRasterization()
   return numErrors;
 }
 
-static inline double abs(double a)
+static inline double absVal(double a)
 {
   return a >= 0.0 ? a : (-1 * a);
 }
@@ -350,7 +352,7 @@ double vec3Len(S3L_Vec4 v)
     ((double) v.z) * ((double) v.z));
 }
 
-int testGeneral()
+int testGeneral(void)
 {
   printf("\n=== TESTING GENERAL ===\n");
 
@@ -362,9 +364,9 @@ int testGeneral()
   uint32_t errors0 = 0;
   uint32_t errors1 = 0;
 
-  for (S3L_Unit x = -1 * m; x < m; x += 3 * (abs(x) / 64 + 1))
-    for (S3L_Unit y = -1 * m; y < m; y += 3 * (abs(y) / 32 + 1))
-      for (S3L_Unit z = -1 * m; z < m; z += 5 * (abs(z) / 64 + 1))
+  for (S3L_Unit x = -1 * m; x < m; x += 3 * (absVal(x) / 64 + 1))
+    for (S3L_Unit y = -1 * m; y < m; y += 3 * (absVal(y) / 32 + 1))
+      for (S3L_Unit z = -1 * m; z < m; z += 5 * (absVal(z) / 64 + 1))
       {
         S3L_Vec4 v;
 
@@ -372,13 +374,13 @@ int testGeneral()
         S3L_normalizeVec3Fast(&v);
 
         double l0 = vec3Len(v);
-        double e0 = abs(l0 - S3L_FRACTIONS_PER_UNIT);
+        double e0 = absVal(l0 - S3L_FRACTIONS_PER_UNIT);
 
         S3L_setVec4(&v,x,y,z,0);
         S3L_normalizeVec3(&v);
 
         double l1 = vec3Len(v);
-        double e1 = abs(l1 - S3L_FRACTIONS_PER_UNIT);
+        double e1 = absVal(l1 - S3L_FRACTIONS_PER_UNIT);
 
         if (e0 > tolerance)
           errors0++;
@@ -397,8 +399,19 @@ int testGeneral()
   return errors1;
 }
 
-int main()
+int testRender(void) 
 {
+  printf("\n=== TESTING RENDER ===\n");
+
+  // TODO
+
+  return 0;
+}
+
+int main(void)
+{
+  printf("testing small3dlib\n\n");
+
   S3L_Mat4 m, m2;
   S3L_Vec4 v;
 
@@ -420,8 +433,9 @@ int main()
 
   uint32_t totalErrors = 0;
 
-  totalErrors += testRasterization();
   totalErrors += testGeneral();
+  totalErrors += testRasterization();
+  totalErrors += testRender();
 
   printf("\n===== DONE =====\ntotal errors: %d\n",totalErrors);
 
