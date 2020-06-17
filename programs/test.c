@@ -10,19 +10,82 @@
 #include <math.h>
 
 #define S3L_PIXEL_FUNCTION pixelFunc
-#define S3L_RESOLUTION_X 100
-#define S3L_RESOLUTION_Y 100
+#define S3L_RESOLUTION_X 64
+#define S3L_RESOLUTION_Y 40
+
+#define S3L_SORT 1
 
 #include "../small3dlib.h"
 
 #define TEST_BUFFER_W 16
 #define TEST_BUFFER_H 16
 
+const char expectedRender[S3L_RESOLUTION_X * S3L_RESOLUTION_Y + 1] =
+  "...................54433221100.................................."
+  "...................55443221100.................................."
+  "...................6554432211..................................."
+  "...................65544332....................................."
+  "...................665544......................................."
+  "..........AAA......7655........................................."
+  "..........BAAACE...76..........................................."
+  "..........CABAABDEG..........................................ddd"
+  ".........DBABAAABCDFGH...............................eeeeeeeeddd"
+  ".........DBABBAAABCDEGH.....................fffffffeeeeeeeeeeddd"
+  ".........EDBACBAAABCDEFG............gggggffffffffffeeeeeeeeeeddd"
+  "........FECBACCBBAAABDEG....hhhggggggggggffffffffffeeeeeeeeeeddd"
+  "........GFDCBADCBBAihhhhhhhhhhggggggggggffffffffffeeeeeeeeeeeddd"
+  "........HFECBADCCBBahhhhhhhhhhggggggggggffffffffffeeeeeeeeeeeddd"
+  ".......IGFECBADDCCBaahhhhhhhhhggggggggggffffffffffeeeeeeeeeeeddd"
+  "........HGEDCBAEDCCaaahhhhhhhhggggggggggfffffffffffeeeeeeeeeeddd"
+  "........AGFDCBAEDDCaaaahhhhhhhgggggggggggffffffffffeeeeeeeeeeddd"
+  "........BAFECBAEEDDaaaaahhhhhhhggggggggggffffffffffeeeeeeeeeeddd"
+  "........BAAFDCBAFEEaaaaaahhhhhhggggggggggffffffffffeeeeeeeeeeddd"
+  ".........BAAECBAFFEbaaaaahhhhhggggggggggffffffffffeeeeeeeeeeeddd"
+  ".........CBAADCBAGFbbaaaaahhhhggggggggggffffffffffeeeeeeeeeeeddd"
+  ".........CCBAACBAGFbbbaaaaahhhggggggggggfffffffffffeeeeeeeeeeddd"
+  ".........DCBBAACAGGbbbbaaaaahhgggggggggggffffffffffeeeeeeeeeeddd"
+  "..........DCCBAABAHbbbbbaaaaahhggggggggggffffffffffeeeeeeeeeeddd"
+  "..........DDCBBAAAHbbbbbaaaaaahggggggggggffffffffffeeeeeeeeeeddd"
+  "..........EDDCBBAAIcbbbbbaaaaaaggggggggggffffffffffeeeeeeeeeeddd"
+  "..........EEDDCCBAHccbbbbbaaaaagggggggggffffffffffeeeeeeeeeeeddd"
+  "...........FEDDCBGFcccbbbbbaaaaaggggggggfffffffffffeeeeeeeeeeddd"
+  "...........FEEDCFEDccccbbbbbaaaaaggggggggffffffffffeeeeeeeeeeddd"
+  "...........GFEEDEDCcccccbbbbbaaaaagggggggffffffffffeeeeeeeeeeddd"
+  "...........GFFEDCBAcccccbbbbbaaaaaaggggggffffffffffeeeeeeeeeeddd"
+  "............GFCBAACdcccccbbbbbaaaaaagggggffffffffffeeeeeeeeeeddd"
+  "............HGBABAAddcccccbbbbbaaaaaggggffffffffffeeeeeeeeeeeddd"
+  "............HAAA...dddcccccbbbbbaaaaagggfffffffffffeeeeeeeeeeddd"
+  "...................ddddcccccbbbbbaaaaagggffffffffffeeeeeeeeeeddd"
+  "...................dddddcccccbbbbbaaaaaggffffffffffeeeeeeeeeeddd"
+  "...................dddddcccccbbbbbaaaaaagffffffffffeeeeeeeeeeddd"
+  "...................edddddcccccbbbbbaaaaaaffffffffffeeeeeeeeeeddd"
+  "...................eedddddcccccbbbbbaaaaaafffffffffeeeeeeeeeeddd"
+  "...................eeedddddcccccbbbbbaaaaafffffffffeeeeeeeeeeddd";
+
 uint8_t testRaster[TEST_BUFFER_W * TEST_BUFFER_H];
+uint8_t testScreen[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
+uint8_t renderingMode = 0;
 
 void pixelFunc(S3L_PixelInfo *p)
 {
-  testRaster[p->y * TEST_BUFFER_W + p->x] += 1;
+  if (renderingMode == 0)
+    testRaster[p->y * TEST_BUFFER_W + p->x] += 1;
+    else
+  {
+    char c = 'x';
+ 
+    switch (p->modelIndex)
+    {
+      case 0: c = 'a'; break;
+      case 1: c = 'A'; break;
+      case 2: c = '0'; break;
+      default: break;
+    }
+
+    c += ((p->barycentric[0] * 8) / S3L_FRACTIONS_PER_UNIT);
+
+    testScreen[p->y * S3L_RESOLUTION_X + p->x] = c;
+  }
 }
 
 int testTriangleRasterization(
@@ -399,13 +462,69 @@ int testGeneral(void)
   return errors1;
 }
 
+S3L_Unit cubeVertices[] = { S3L_CUBE_VERTICES(S3L_FRACTIONS_PER_UNIT) };
+S3L_Index cubeTriangles[] = { S3L_CUBE_TRIANGLES };
+S3L_Unit triangleVertices[] = { -512, 0, 512, 402, 0, 200, 0, 600, 0 };
+S3L_Index triangleTriangles[] = { 0, 1, 2 };
+
+S3L_Model3D cubeModel;
+S3L_Model3D triangleModel;
+S3L_Model3D models[4];
+S3L_Scene scene;
+
 int testRender(void) 
 {
   printf("\n=== TESTING RENDER ===\n");
 
-  // TODO
+  memset(testScreen,'.',S3L_RESOLUTION_X * S3L_RESOLUTION_Y);
 
-  return 0;
+  S3L_initModel3D(cubeVertices,S3L_CUBE_VERTEX_COUNT,cubeTriangles,S3L_CUBE_TRIANGLE_COUNT,&cubeModel); 
+  S3L_initModel3D(triangleVertices,3,triangleTriangles,1,&triangleModel); 
+
+  models[0] = cubeModel;
+  models[0].transform.translation.z -= S3L_FRACTIONS_PER_UNIT;
+
+  models[1] = cubeModel;
+  models[1].transform.translation.x -= S3L_FRACTIONS_PER_UNIT * 2;
+  models[1].transform.translation.y = S3L_FRACTIONS_PER_UNIT / 2;
+  models[1].transform.scale.y = S3L_FRACTIONS_PER_UNIT * 2;
+  models[1].transform.rotation.x = 200;
+  models[1].transform.rotation.y = 100;
+
+  models[2] = triangleModel;
+  models[2].transform.translation.x = -1000;
+  models[2].transform.translation.y = 1000;
+
+  models[3] = triangleModel;
+  models[3].transform.translation.x = -1500;
+  models[3].transform.translation.y = 1200;
+  models[3].transform.rotation.x = S3L_FRACTIONS_PER_UNIT / 2; // turn away, test BF culling
+
+  S3L_initScene(models,4,&scene);
+
+  scene.camera.transform.translation.z = -2 * S3L_FRACTIONS_PER_UNIT;
+  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 3;
+  scene.camera.transform.rotation.y = 30;
+
+  renderingMode = 1;
+
+  S3L_newFrame(); 
+  S3L_drawScene(scene);
+
+  int errors = 0;
+
+  for (uint32_t i = 0; i < (S3L_RESOLUTION_X * S3L_RESOLUTION_Y); ++i)
+  {
+    if ((i % S3L_RESOLUTION_X) == 0)
+      printf("  \n");
+
+    printf("%c",testScreen[i]);
+
+    if (testScreen[i] != expectedRender[i])
+      errors += 1;
+  } 
+
+  return errors;
 }
 
 int main(void)
@@ -437,7 +556,7 @@ int main(void)
   totalErrors += testRasterization();
   totalErrors += testRender();
 
-  printf("\n===== DONE =====\ntotal errors: %d\n",totalErrors);
+  printf("\n\n===== DONE =====\ntotal errors: %d\n",totalErrors);
 
   return 0;
 }
