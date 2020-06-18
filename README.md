@@ -81,14 +81,15 @@ The basic philosophy is:
 - Use the provided Python tools to convert your model and textures to C arrays, include them in your
   program and set up the scene struct.
 - Init the 3D models and the scene with provided init functions (`S3L_init*`), set the position of the camera.
-- Call `S3L_drawScene` on the scene to perform the frame rendering. This will cause the
-  library to start calling the `S3L_PIXEL_FUNCTION` in order to draw the frame. You can of course
+- Call `S3L_newFrame` to prepare for rendering, then call `S3L_drawScene` on the scene to perform the frame rendering.
+  This will cause the library to start rendering and calling the `S3L_PIXEL_FUNCTION` in order to draw the frame. You can of course
   modify the function or write a similar one of your own using the more low-level functions which are
   also provided.
 - Fixed point arithmetics is used as a principle, but there is no abstraction above it, everything is simply
   an integer (`S3L_Unit` type). The space is considered to be a dense grid, and what would normally be
   a 1.0 float value is an int value equal to `S3L_FRACTIONS_PER_UNIT` units. Numbers are normalized by this
-  constant, so e.g. the sin function returns a value from `-S3L_FRACTIONS_PER_UNIT` to `S3L_FRACTIONS_PER_UNIT`.
+  constant, so e.g. the sin function returns a value from `-S3L_FRACTIONS_PER_UNIT` to `S3L_FRACTIONS_PER_UNIT`. You have to
+  pass numbers of this format to the library functions, but of course you may chooe to use floats in other places of your program.
 
 ## tips/troubleshooting
 
