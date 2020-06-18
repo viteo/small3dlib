@@ -39,12 +39,13 @@ PC (SDL, offline rendering, terminal):
 - **Different drawing strategies** to choose from: none, z-buffer (none, full, reduced), triangle sorting (back-to-front, fron-to-back with stencil buffer).
 - Triangles provide **barycentric coordinates**, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, texture fitering, transparency, PBR, shadow mapping, MIP mapping, ...).
 - **Top-left rasterization rule**, pixels of adjacent triangles don't overlap or have holes (just like in OpenGL).
-- **Tested on multiple platforms** (PC, Pokitto, Gamebuino META).
+- **Tested on multiple platforms** (little endian PC, Pokitto and Gamebuino META embedded consoles, big endian PowerPC emulator).
+- **Extremely portable** due to no dependencies, no float, no build systems, low HW requirements, endian independence etc.
 - **Many compile-time options** to tune the performance vs quality.
 - **Similar to OpenGL** in principle, but simpler, easier to use, with higher-level features.
 - **Tools** (Python scripts) for converting 3D models and textures to C array format used by the library.
 - **Well commented** and formatted code. Automatic documentation (comments + provided Doxyfile).
-- Completely **free of legal restrictions**, do literally anything you want.
+- Completely **free of legal restrictions**, public domain, do literally anything you want.
 
 **NOTE**: Backwards compatibility isn't a goal of this libraray. It is meant to
 be an as-is set of tools that the users is welcome to adjust for their
