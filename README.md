@@ -104,10 +104,12 @@ The basic philosophy is:
 
 ## license
 
-Everything is CC0 1.0 (public domain, https://creativecommons.org/publicdomain/zero/1.0/) + a waiver of all other IP rights (including patents). 
+Everything in this repository is CC0 1.0 (public domain, https://creativecommons.org/publicdomain/zero/1.0/) + a waiver of all other IP rights (including patents and trademarks). 
 
 The art used in demos is either my own released under CC0 or someone else's released under CC0.
 
-Please support free software and free culture by using free licenses and/or waivers.
+This project is made out of love and to be truly helpful to everyone, not for any self interest. I want it to forever stay completely in the public domain, not owned by anyone.
+
+This is not mandatory but please consider supporting free software and free culture by using free licenses and/or waivers.
 
 If you'd like to support me or just read something about me and my projects, visit my site: [www.tastyfish.cz](http://www.tastyfish.cz/).
