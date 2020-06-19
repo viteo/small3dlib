@@ -1,5 +1,7 @@
 features:
 
+- Replace assets with completely original ones, rerender images/animations.
+
 - Add optional functions (macro defs.) that get called during various rendering
   steps, to e.g. be able to analyze and visualize rendering step by step.
   
