@@ -65,9 +65,9 @@ interface.
 
 You just need to make a small mini 3D game, quick 3D animation or visualization and don't want to go through the horror of learning and setting
 up OpenGL, installing drivers and libraries? Don't want to be tied to HW, 3rd party API or libraries and their dependencies? Don't want to install
-gigabytes of heavy super ultra graphics engines just for playing around with a few low poly models? You want to create extremely portable 3D
+gigabytes of heavy super ultra graphics engines just to play around with a few low poly models? You want to create extremely portable 3D
 graphics that will run on small and obscure platforms that don't have OpenGL, good specs or even standard C library? Want to just render something
-offline simply and not caring about highest rendering speed? You want to toy around with modifying something in the rendering pipeline that you
+offline simply without caring about highest rendering speed? You want to toy around with modifying something in the rendering pipeline that you
 can't easily do or debug in OpenGL (such as the rasterization algorithm)? Want to hack around in the demo scene? Want to create something public
 domain and need a public domain renderer? Or just don't want to be bothered by conditions such as proper attribution or copyleft?
 
@@ -129,7 +129,7 @@ The basic philosophy is:
 
 Everything in this repository is CC0 1.0 (public domain, https://creativecommons.org/publicdomain/zero/1.0/) + a waiver of all other IP rights (including patents and trademarks). 
 
-The art used in demos is either my own released under CC0 or someone else's released under CC0.
+I've written the code completely myself, from scratch. The art used in demos is either my own released under CC0 or someone else's released under CC0.
 
 This project is made out of love and to be truly helpful to everyone, not for any self interest. I want it to forever stay completely in the public domain, not owned by anyone.
 
