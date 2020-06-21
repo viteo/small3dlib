@@ -49,11 +49,12 @@ PC (SDL, offline rendering, terminal):
     - Android
     - Windows
     - emscripten (web browser, JavaScript transpile)
+- **Extremely portable** due to no dependencies, no float, no build systems, low HW requirements, endian independence etc.
 - **Many compile-time options** to tune the performance vs quality.
 - **Similar to OpenGL** in principle, but simpler, easier to use, with higher-level features.
 - **Tools** (Python scripts) for converting 3D models and textures to C array format used by the library.
 - **Well commented** and formatted code. Automatic documentation (comments + provided Doxyfile).
-- Completely **free of legal restrictions**, do literally anything you want.
+- Completely **free of legal restrictions**, public domain, do literally anything you want.
 
 **NOTE**: Backwards compatibility isn't a goal of this libraray. It is meant to
 be an as-is set of tools that the users is welcome to adjust for their
@@ -79,8 +80,9 @@ And advantages at the same time :)
 - **No scenegraph** (object parenting), just a scene list. Parenting can still be achieved by using cutom transform matrices.
 - Though performance is high, due to multiplatformness it **probably can't match platform-specific rasterizers written in assembly**.
 - There is **no far plane**.
-- There is **no subpixel accuracy**.
-- There is a near plane, but a **proper culling by it (subdividing triangles) is missing**. You can either cull whole triangles completely or "push" them by the near plane. These options are okay when drawing a model not very close to the camera, but e.g. 3D environments may suffer from artifacts.
+- There is **no subpixel accuracy** (PS1 style graphics).
+- There is **no antialiasing**, but you can still achieve it by supersampling (render in higher resolution and downscale) or filters like FXAA.
+- There is a near plane but a **proper culling by it (subdividing triangles) is missing**. You can either cull whole triangles completely or "push" them by the near plane. These options are okay when drawing a model not very close to the camera, but e.g. 3D environments may suffer from artifacts.
 - Due to the limitations of 32bit integer arithmetics, some types of movement (particularly camera) **may look jerky, and artifact may appear** in specific situations.
 
 ## how to use
@@ -102,14 +104,15 @@ The basic philosophy is:
 - Use the provided Python tools to convert your model and textures to C arrays, include them in your
   program and set up the scene struct.
 - Init the 3D models and the scene with provided init functions (`S3L_init*`), set the position of the camera.
-- Call `S3L_drawScene` on the scene to perform the frame rendering. This will cause the
-  library to start calling the `S3L_PIXEL_FUNCTION` in order to draw the frame. You can of course
+- Call `S3L_newFrame` to prepare for rendering, then call `S3L_drawScene` on the scene to perform the frame rendering.
+  This will cause the library to start rendering and calling the `S3L_PIXEL_FUNCTION` in order to draw the frame. You can of course
   modify the function or write a similar one of your own using the more low-level functions which are
   also provided.
 - Fixed point arithmetics is used as a principle, but there is no abstraction above it, everything is simply
   an integer (`S3L_Unit` type). The space is considered to be a dense grid, and what would normally be
   a 1.0 float value is an int value equal to `S3L_FRACTIONS_PER_UNIT` units. Numbers are normalized by this
-  constant, so e.g. the sin function returns a value from `-S3L_FRACTIONS_PER_UNIT` to `S3L_FRACTIONS_PER_UNIT`.
+  constant, so e.g. the sin function returns a value from `-S3L_FRACTIONS_PER_UNIT` to `S3L_FRACTIONS_PER_UNIT`. You have to
+  pass numbers of this format to the library functions, but of course you may chooe to use floats in other places of your program.
 
 ## tips/troubleshooting
 
@@ -124,10 +127,12 @@ The basic philosophy is:
 
 ## license
 
-Everything is CC0 1.0 (public domain, https://creativecommons.org/publicdomain/zero/1.0/) + a waiver of all other IP rights (including patents). 
+Everything in this repository is CC0 1.0 (public domain, https://creativecommons.org/publicdomain/zero/1.0/) + a waiver of all other IP rights (including patents and trademarks). 
 
 The art used in demos is either my own released under CC0 or someone else's released under CC0.
 
-Please support free software and free culture by using free licenses and/or waivers.
+This project is made out of love and to be truly helpful to everyone, not for any self interest. I want it to forever stay completely in the public domain, not owned by anyone.
+
+This is not mandatory but please consider supporting free software and free culture by using free licenses and/or waivers.
 
 If you'd like to support me or just read something about me and my projects, visit my site: [www.tastyfish.cz](http://www.tastyfish.cz/).
