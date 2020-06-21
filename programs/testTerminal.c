@@ -1,26 +1,22 @@
-/*
+/**
   Simple example of small3dlib, rendering in terminal.
 
-  license: CC0 1.0
+  by drummyfish, released under CC0 1.0, public domain
 */
 
 #include <stdio.h>
-#include <unistd.h>  // for usleep
+#include <unistd.h> // for usleep
 
 // we need to define screen resolution before including the library:
-
 #define S3L_RESOLUTION_X 80
 #define S3L_RESOLUTION_Y 40
 
 // and a name of the function we'll be using to draw individual pixels:
-
 #define S3L_PIXEL_FUNCTION drawPixel
 
-// now include the library:
+#include "../small3dlib.h" // now include the library
 
-#include "../small3dlib.h"
-
-// we'll use a predefined geometry of a cube that's in the library:
+// we'll use a predefined geometry of a cube from the library:
 
 S3L_Unit cubeVertices[] = { S3L_CUBE_VERTICES(S3L_FRACTIONS_PER_UNIT) };
 S3L_Index cubeTriangles[] = { S3L_CUBE_TRIANGLES };
@@ -28,7 +24,10 @@ S3L_Index cubeTriangles[] = { S3L_CUBE_TRIANGLES };
 S3L_Model3D cubeModel; // 3D model, has a geometry, position, rotation etc.
 S3L_Scene scene;       // scene we'll be rendring (can have multiple models)
 
-uint8_t screen[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];    // our screen
+#define FRAME_OFFSET 20 // how many newlines will be printed before each frame
+#define SCREEN_SIZE (FRAME_OFFSET + (S3L_RESOLUTION_X + 1) * S3L_RESOLUTION_Y + 1)
+
+uint8_t screen[SCREEN_SIZE]; // ASCII screen
 
 /* This function will be called by the library to draw individual rasterized
  pixels to the screen. We should try to make this function as fast as possible
@@ -50,34 +49,8 @@ void drawPixel(S3L_PixelInfo *p)
   else
     c = '.';
 
-  screen[p->y * S3L_RESOLUTION_X + p->x] = c; // draw the pixel to the screen
-}
-
-void clearScreen()
-{
-  for (int j = 0; j < S3L_RESOLUTION_X * S3L_RESOLUTION_Y; ++j)
-    screen[j] = ' ';
-}
-
-// This function prints out the content of the screen to the terminal.
-
-void drawScreen()
-{
-  for (int i = 0; i < 20; ++i)
-    printf("\n");
-
-  int pos = 0;
-
-  for (int y = 0; y < S3L_RESOLUTION_Y; ++y)
-  {
-    for (int x = 0; x < S3L_RESOLUTION_X; ++x)
-    {
-      printf("%c",screen[pos]);
-      pos++;      
-    }
-
-    printf("\n");
-  }
+  // draw to ASCII screen
+  screen[FRAME_OFFSET + p->y * (S3L_RESOLUTION_X + 1) + p->x] = c;
 }
 
 int main()
@@ -89,9 +62,8 @@ int main()
     S3L_CUBE_TRIANGLE_COUNT,
     &cubeModel); 
 
-  S3L_initScene(  // Initialize the scene we'll be rendering.
-    &cubeModel,   /* We only have one model (the cube), this is like an array
-                     with only one model in it. */
+  S3L_initScene( // Initialize the scene we'll be rendering.
+    &cubeModel,  // This is like an array with only one model in it.
     1,
     &scene);
 
@@ -99,20 +71,25 @@ int main()
 
   scene.camera.transform.translation.z = -2 * S3L_FRACTIONS_PER_UNIT;
 
-  for (int i = 0; i < 200; ++i)   // render 200 frames
+  for (int i = 0; i < 200; ++i) // render 200 frames
   {
-    clearScreen();
+    // clear the screen
+    for (int j = 0; j < FRAME_OFFSET; ++j)
+      screen[j] = '\n';
+
+    for (int j = FRAME_OFFSET; j < SCREEN_SIZE; ++j)
+      screen[j] = ((j - FRAME_OFFSET + 1) % (S3L_RESOLUTION_X + 1) ? ' ' : '\n');
+
+    screen[SCREEN_SIZE - 1] = 0; // terminate the string
 
     S3L_newFrame();        // has to be called before each frame
-
     S3L_drawScene(scene);  /* This starts the scene rendering. The drawPixel
                               function will be called to draw it. */
-    drawScreen();
 
+    puts(screen);          // display the frame
     usleep(100000);        // wait a bit to let the user see the frame
 
     // now move and rotate the cube a little to see some movement:
-
     scene.models[0].transform.rotation.y += 10;
     scene.models[0].transform.rotation.x += 4;
     scene.models[0].transform.translation.x = S3L_sin(i * 4);

@@ -39,7 +39,16 @@ PC (SDL, offline rendering, terminal):
 - **Different drawing strategies** to choose from: none, z-buffer (none, full, reduced), triangle sorting (back-to-front, fron-to-back with stencil buffer).
 - Triangles provide **barycentric coordinates**, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, texture fitering, transparency, PBR, shadow mapping, MIP mapping, ...).
 - **Top-left rasterization rule**, pixels of adjacent triangles don't overlap or have holes (just like in OpenGL).
-- **Tested on multiple platforms** (PC, Pokitto, Gamebuino META).
+- **Tested on many platforms**:
+  - PC (little endian, 64bit GNU)
+  - PowerPC emulator (big endian)
+  - compilers: gcc, clang
+  - Arduboy (only experimental)
+  - Gamebuino META (32bit resource-limited embedded ARM)
+  - TODO:
+    - Android
+    - Windows
+    - emscripten (web browser, JavaScript transpile)
 - **Many compile-time options** to tune the performance vs quality.
 - **Similar to OpenGL** in principle, but simpler, easier to use, with higher-level features.
 - **Tools** (Python scripts) for converting 3D models and textures to C array format used by the library.
@@ -51,7 +60,21 @@ be an as-is set of tools that the users is welcome to adjust for their
 specific project. So new features will be preferred to keeping the same
 interface.
 
+## why?
+
+You just need to make a small mini 3D game, quick 3D animation or visualization and don't want to go through the horror of learning and setting
+up OpenGL, installing drivers and libraries? Don't want to be tied to HW, 3rd party API or libraries and their dependencies? Don't want to install
+gigabytes of heavy super ultra graphics engines just for playing around with a few low poly models? You want to create extremely portable 3D
+graphics that will run on small and obscure platforms that don't have OpenGL, good specs or even standard C library? Want to just render something
+offline simply and not caring about highest rendering speed? You want to toy around with modifying something in the rendering pipeline that you
+can't easily do or debug in OpenGL (such as the rasterization algorithm)? Want to hack around in the demo scene? Want to create something public
+domain and need a public domain renderer? Or just don't want to be bothered by conditions such as proper attribution or copyleft?
+
+This library may help you.
+
 ## limitations
+
+And advantages at the same time :)
 
 - **No scenegraph** (object parenting), just a scene list. Parenting can still be achieved by using cutom transform matrices.
 - Though performance is high, due to multiplatformness it **probably can't match platform-specific rasterizers written in assembly**.
