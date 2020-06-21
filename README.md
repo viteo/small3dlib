@@ -87,7 +87,7 @@ And advantages at the same time :)
 
 ## how to use
 
-For start take a look at the [helloTerminal.c](https://gitlab.com/drummyfish/small3dlib/blob/master/programs/helloTerminal.c) program. It is only a little bit more complex than a simple hello world.
+For start take a look at the [helloWorld.c](programs/helloWorld.c) program and other examples.
 
 For more see the other examples and **the library code itself**, it is meant to be self-documenting -- you'll find the description of a lot of things at the start of the file.
 
