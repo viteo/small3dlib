@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define S3L_STRICT_NEAR_CULLING 0
+#define S3L_NEAR_CROSS_STRATEGY 2
 
 #if TEXTURES
   #define S3L_PERSPECTIVE_CORRECTION 2

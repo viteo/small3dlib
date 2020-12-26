@@ -10,7 +10,7 @@
 #include <time.h>
 
 #define S3L_FLAT 0
-#define S3L_STRICT_NEAR_CULLING 0
+#define S3L_NEAR_CROSS_STRATEGY 1
 #define S3L_PERSPECTIVE_CORRECTION 2
 #define S3L_SORT 0
 #define S3L_STENCIL_BUFFER 0

@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.852
+  version: 0.852d
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -186,12 +186,30 @@ BE REDEFINED, so rather don't do it (otherwise things may overflow etc.). */
 typedef int16_t S3L_ScreenCoord;
 typedef uint16_t S3L_Index;
 
-#ifndef S3L_STRICT_NEAR_CULLING
-  /** If on, any triangle that only partially intersects the near plane will be
-  culled. This can prevent errorneous rendering and  artifacts, but also makes
-  triangles close to the camera disappear. */
+#ifndef S3L_NEAR_CROSS_STRATEGY
+  /** Specifies how the library will handle triangles that partially cross the
+  near plane. These are problematic and require special handling. Possible
+  values:
 
-  #define S3L_STRICT_NEAR_CULLING 1 
+    0: Strictly cull any triangle crossing the near plane. This will make such
+       triangles disappear. This is good for performance or models viewed only
+       from at least small distance.
+    1: Forcefully push the vertices crossing near plane in front of it. This is
+       a cheap technique that can be good enough for displaying simple
+       environments on slow devices, but texturing and geometric artifacts/warps
+       will appear.
+    2: Geometrically correct the triangles crossing the near plane. This may
+       result in some triangles being subdivided into two and is a little more
+       expensive, but the results will be geometrically correct, even though
+       barycentric correction is not performed so texturing artifacts will
+       appear. Can be ideal with S3L_FLAT.
+    3: NOT IMPLEMENTED YET
+       Perform both geometrical and barycentric correction of triangle crossing
+       the near plane. This is significantly more expensive but results in
+       correct rendering.
+  */
+
+  #define S3L_NEAR_CROSS_STRATEGY 0
 #endif
 
 #ifndef S3L_FLAT
@@ -2464,7 +2482,7 @@ static inline int8_t S3L_triangleIsVisible(
     (p0.c cmp (v) && p1.c cmp (v) && p2.c cmp (v))
 
   if ( // outside frustum?
-#if S3L_STRICT_NEAR_CULLING
+#if S3L_NEAR_CROSS_STRATEGY == 0
       p0.z <= S3L_NEAR || p1.z <= S3L_NEAR || p2.z <= S3L_NEAR ||
       // ^ partially in front of NEAR?
 #else
@@ -2509,41 +2527,135 @@ void _S3L_projectVertex(
   S3L_Index triangleIndex,
   uint8_t vertex,
   S3L_Mat4 *projectionMatrix, 
-  S3L_Vec4 *result,
-  S3L_Unit focalLength)
+  S3L_Vec4 *result)
 {
   uint32_t vertexIndex = model->triangles[triangleIndex * 3 + vertex] * 3;
 
   result->x = model->vertices[vertexIndex];
   result->y = model->vertices[vertexIndex + 1];
   result->z = model->vertices[vertexIndex + 2];
-  result->w = S3L_FRACTIONS_PER_UNIT; // for translation 
+  result->w = S3L_FRACTIONS_PER_UNIT; // needed for translation 
  
   S3L_vec3Xmat4(result,projectionMatrix);
 
   result->w = result->z;
   /* We'll keep the non-clamped z in w for sorting. */ 
+}
 
-  result->z = result->z >= S3L_NEAR ? result->z : S3L_NEAR;
+void _S3L_mapProjectedVertexToScreen(S3L_Vec4 *vertex, S3L_Unit focalLength)
+{
+  vertex->z = vertex->z >= S3L_NEAR ? vertex->z : S3L_NEAR;
   /* ^ This firstly prevents zero division in the follwoing z-divide and
     secondly "pushes" vertices that are in front of near a little bit forward,
     which makes them behave a bit better. If all three vertices end up exactly
     on NEAR, the triangle will be culled. */ 
 
-  S3L_perspectiveDivide(result,focalLength);
+  S3L_perspectiveDivide(vertex,focalLength);
       
   S3L_ScreenCoord sX, sY;
       
-  S3L_mapProjectionPlaneToScreen(*result,&sX,&sY);
+  S3L_mapProjectionPlaneToScreen(*vertex,&sX,&sY);
    
-  result->x = sX;
-  result->y = sY;
+  vertex->x = sX;
+  vertex->y = sY;
+}
+
+/**
+  Projects a triangle to the screen. If enabled, a triangle can be potentially
+  subdivided into two if it crosses the near plane, in which case two projected
+  triangles are returned (return value will be 1).
+*/
+uint8_t _S3L_projectTriangle(
+  const S3L_Model3D *model,
+  S3L_Index triangleIndex,
+  S3L_Mat4 *matrix,
+  uint32_t focalLength,
+  S3L_Vec4 transformed[6])
+{
+  _S3L_projectVertex(model,triangleIndex,0,matrix,&(transformed[0]));
+  _S3L_projectVertex(model,triangleIndex,1,matrix,&(transformed[1]));
+  _S3L_projectVertex(model,triangleIndex,2,matrix,&(transformed[2]));
+
+  uint8_t result = 0;
+
+#if S3L_NEAR_CROSS_STRATEGY == 2
+  uint8_t infront = 0;
+  uint8_t behind = 0;
+  uint8_t infrontI[3];
+  uint8_t behindI[3];
+
+  for (uint8_t i = 0; i < 3; ++i)
+    if (transformed[i].z < S3L_NEAR)
+    {
+      infrontI[infront] = i;
+      infront++;
+    }
+    else
+    {
+      behindI[behind] = i;
+      behind++;
+    }
+
+#define interpolateVertex \
+  S3L_Unit ratio =\
+    ((transformed[be].z - S3L_NEAR) * S3L_FRACTIONS_PER_UNIT) /\
+    (transformed[be].z - transformed[in].z);\
+  transformed[in].x = transformed[be].x - \
+    ((transformed[be].x - transformed[in].x) * ratio) /\
+      S3L_FRACTIONS_PER_UNIT;\
+  transformed[in].y = transformed[be].y -\
+    ((transformed[be].y - transformed[in].y) * ratio) /\
+      S3L_FRACTIONS_PER_UNIT;\
+  transformed[in].z = S3L_NEAR;
+  
+  if (infront == 2)
+  {
+    // shift the two vertices forward along the edge
+    for (uint8_t i = 0; i < 2; ++i)
+    {
+      uint8_t be = behindI[0], in = infrontI[i];
+    
+      interpolateVertex
+    }
+  }
+  else if (infront == 1)
+  {
+    // create another triangle and do the shifts
+    transformed[3] = transformed[behindI[1]];
+    transformed[4] = transformed[infrontI[0]];
+    transformed[5] = transformed[infrontI[0]];
+
+    for (uint8_t i = 0; i < 2; ++i)
+    {
+      uint8_t be = behindI[i], in = i + 4;
+
+      interpolateVertex
+    }
+
+    transformed[infrontI[0]] = transformed[4];
+
+    _S3L_mapProjectedVertexToScreen(&transformed[3],focalLength);
+    _S3L_mapProjectedVertexToScreen(&transformed[4],focalLength);
+    _S3L_mapProjectedVertexToScreen(&transformed[5],focalLength);
+
+    result = 1;
+  }
+
+#undef interpolateVertex
+#endif // S3L_NEAR_CROSS_STRATEGY == 2
+
+  _S3L_mapProjectedVertexToScreen(&transformed[0],focalLength);
+  _S3L_mapProjectedVertexToScreen(&transformed[1],focalLength);
+  _S3L_mapProjectedVertexToScreen(&transformed[2],focalLength);
+
+  return result;
 }
 
 void S3L_drawScene(S3L_Scene scene)
 {
   S3L_Mat4 matFinal, matCamera;
-  S3L_Vec4 transformed0, transformed1, transformed2;
+  S3L_Vec4 transformed[6]; // transformed triangle coords, for 2 triangles
+
   const S3L_Model3D *model;
   S3L_Index modelIndex, triangleIndex;
 
@@ -2591,31 +2703,31 @@ void S3L_drawScene(S3L_Scene scene)
          already projected vertices, but after some testing this was abandoned,
          no gain was seen. */
 
-      _S3L_projectVertex(model,triangleIndex,0,&matFinal,
-        &transformed0,scene.camera.focalLength);
+      uint8_t split = _S3L_projectTriangle(model,triangleIndex,&matFinal,
+        scene.camera.focalLength,transformed);
 
-      _S3L_projectVertex(model,triangleIndex,1,&matFinal,
-        &transformed1,scene.camera.focalLength);
-
-      _S3L_projectVertex(model,triangleIndex,2,&matFinal,
-        &transformed2,scene.camera.focalLength);
-
-      if (S3L_triangleIsVisible(transformed0,transformed1,transformed2,
+      if (S3L_triangleIsVisible(transformed[0],transformed[1],transformed[2],
          model->config.backfaceCulling))
       {
 #if S3L_SORT == 0
         // without sorting draw right away
-        S3L_drawTriangle(transformed0,transformed1,transformed2,modelIndex,
+        S3L_drawTriangle(transformed[0],transformed[1],transformed[2],modelIndex,
           triangleIndex);
+
+        if (split) // draw potential subtriangle
+          S3L_drawTriangle(transformed[3],transformed[4],transformed[5],
+          modelIndex, triangleIndex);
 #else
+        S3L_UNUSED(split);
+
         if (S3L_sortArrayLength >= S3L_MAX_TRIANGES_DRAWN)
           break;
 
         // with sorting add to a sort list
         S3L_sortArray[S3L_sortArrayLength].modelIndex = modelIndex;
         S3L_sortArray[S3L_sortArrayLength].triangleIndex = triangleIndex;
-        S3L_sortArray[S3L_sortArrayLength].sortValue = 
-          S3L_zeroClamp(transformed0.w + transformed1.w + transformed2.w) >> 2;
+        S3L_sortArray[S3L_sortArrayLength].sortValue = S3L_zeroClamp(
+          transformed[0].w + transformed[1].w + transformed[2].w) >> 2;
         /* ^ 
            The w component here stores non-clamped z.
  
@@ -2661,7 +2773,7 @@ void S3L_drawScene(S3L_Scene scene)
 
   #undef cmp
 
-  for (S3L_Index i = 0; i < S3L_sortArrayLength; ++i)
+  for (S3L_Index i = 0; i < S3L_sortArrayLength; ++i) // draw sorted triangles
   {
     modelIndex = S3L_sortArray[i].modelIndex;
     triangleIndex = S3L_sortArray[i].triangleIndex;
@@ -2680,18 +2792,16 @@ void S3L_drawScene(S3L_Scene scene)
        already been projected above, but saving the projected points would
        require a lot of memory, which for small resolutions could be even
        worse than z-bufer. So this seems to be the best way memory-wise. */
-    
-    _S3L_projectVertex(model,triangleIndex,0,&matFinal,
-      &transformed0,scene.camera.focalLength);
 
-    _S3L_projectVertex(model,triangleIndex,1,&matFinal,
-      &transformed1,scene.camera.focalLength);
+    uint8_t split = _S3L_projectTriangle(model,triangleIndex,&matFinal,
+      scene.camera.focalLength,transformed);
 
-    _S3L_projectVertex(model,triangleIndex,2,&matFinal,
-      &transformed2,scene.camera.focalLength);
-
-    S3L_drawTriangle(transformed0,transformed1,transformed2,modelIndex,
+    S3L_drawTriangle(transformed[0],transformed[1],transformed[2],modelIndex,
       triangleIndex);
+        
+    if (split)
+      S3L_drawTriangle(transformed[3],transformed[4],transformed[5],
+      modelIndex, triangleIndex);
   }
 #endif
 }
