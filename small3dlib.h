@@ -458,6 +458,8 @@ static inline void S3L_initMat4(S3L_Mat4 *m);
 
 void S3L_transposeMat4(S3L_Mat4 *m);
 
+// TODO: why pass pointer to matrix when matrix is an array? fix this?
+
 void S3L_makeTranslationMat(
   S3L_Unit offsetX,
   S3L_Unit offsetY,
