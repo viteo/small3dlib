@@ -2696,11 +2696,11 @@ void S3L_drawScene(S3L_Scene scene)
     S3L_Index triangleCount = scene.models[modelIndex].triangleCount;
 
     triangleIndex = 0;
+      
+    model = &(scene.models[modelIndex]);
     
     while (triangleIndex < triangleCount)
     {
-      model = &(scene.models[modelIndex]);
-
       /* Some kind of cache could be used in theory to not project perviously
          already projected vertices, but after some testing this was abandoned,
          no gain was seen. */
