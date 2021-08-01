@@ -99,7 +99,10 @@ for line in objFile:
     for i in indices:
       components = i.split("/")
       t.append(int(components[0]) - 1)
-      u.append(int(components[1]) - 1)
+      try:
+        u.append(int(components[1]) - 1)
+      except Exception as e:
+        u.append(int(components[2]) - 1)
 
     triangles.append(t)
     triangleUVs.append(u)
