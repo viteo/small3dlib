@@ -534,7 +534,7 @@ typedef struct
 
 void S3L_initModel3D(
   const S3L_Unit *vertices,
-  S3L_Unit vertexCount,
+  S3L_Index vertexCount,
   const S3L_Index *triangles,
   S3L_Index triangleCount,
   S3L_Model3D *model);
@@ -1737,7 +1737,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p)
 
 void S3L_initModel3D(
   const S3L_Unit *vertices,
-  S3L_Unit vertexCount,
+  S3L_Index vertexCount,
   const S3L_Index *triangles,
   S3L_Index triangleCount,
   S3L_Model3D *model)
