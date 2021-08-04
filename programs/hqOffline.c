@@ -455,8 +455,8 @@ int main()
 
   S3L_Transform3D transform0, transform1;
 
-  S3L_initTransoform3D(&transform0);
-  S3L_initTransoform3D(&transform1);
+  S3L_initTransform3D(&transform0);
+  S3L_initTransform3D(&transform1);
 
   transform0.translation.x = -2 * S3L_FRACTIONS_PER_UNIT;
   transform0.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;

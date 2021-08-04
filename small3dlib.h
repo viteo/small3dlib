@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.852d
+  version: 0.853d
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -206,8 +206,7 @@ typedef uint16_t S3L_Index;
     3: NOT IMPLEMENTED YET
        Perform both geometrical and barycentric correction of triangle crossing
        the near plane. This is significantly more expensive but results in
-       correct rendering.
-  */
+       correct rendering. */
 
   #define S3L_NEAR_CROSS_STRATEGY 0
 #endif
@@ -232,11 +231,11 @@ typedef uint16_t S3L_Index;
   /** Specifies what type of perspective correction (PC) to use. Remember this
   is an expensive operation! Possible values:
  
-  - 0: No perspective correction. Fastest, inaccurate from most angles.
-  - 1: Per-pixel perspective correction, accurate but very expensive.
-  - 2: Approximation (computing only at every S3L_PC_APPROX_LENGTHth pixel). 
-       Quake-style approximation is used, which only computes the PC after
-       S3L_PC_APPROX_LENGTH pixels. This is reasonably accurate and fast. */
+  0: No perspective correction. Fastest, inaccurate from most angles.
+  1: Per-pixel perspective correction, accurate but very expensive.
+  2: Approximation (computing only at every S3L_PC_APPROX_LENGTHth pixel). 
+     Quake-style approximation is used, which only computes the PC after
+     S3L_PC_APPROX_LENGTH pixels. This is reasonably accurate and fast. */
 
   #define S3L_PERSPECTIVE_CORRECTION 0 
 #endif
@@ -266,15 +265,15 @@ typedef uint16_t S3L_Index;
   /** What type of z-buffer (depth buffer) to use for visibility determination.
   Possible values:
 
-  - 0: Don't use z-buffer. This saves a lot of memory, but visibility checking
-       won't be pixel-accurate and has to mostly be done by other means
-       (typically sorting).
-  - 1: Use full z-buffer (of S3L_Units) for visibiltiy determination. This is
-       the most accurate option (and also a fast one), but requires a big
-       amount of memory.
-  - 2: Use reduced-size z-buffer (of bytes). This is fast and somewhat
-       accurate, but inaccuracies can occur and a considerable amount of memory
-       is needed. */
+  0: Don't use z-buffer. This saves a lot of memory, but visibility checking
+     won't be pixel-accurate and has to mostly be done by other means (typically
+     sorting).
+  1: Use full z-buffer (of S3L_Units) for visibiltiy determination. This is the
+     most accurate option (and also a fast one), but requires a big amount of
+     memory.
+  2: Use reduced-size z-buffer (of bytes). This is fast and somewhat accurate,
+     but inaccuracies can occur and a considerable amount of memory is
+     needed. */
 
   #define S3L_Z_BUFFER 0 
 #endif
@@ -304,14 +303,13 @@ typedef uint16_t S3L_Index;
   the maximum number of triangles that can be drawn in a single frame
   (S3L_MAX_TRIANGES_DRAWN). Possible values:
 
-  - 0: Don't sort triangles. This is fastest and doesn't use extra memory.
-  - 1: Sort triangles from back to front. This can in most cases solve 
-       visibility without requiring almost any extra memory compared to 
-       z-buffer.
-  - 2: Sort triangles from front to back. This can be faster than back to
-       front, because we prevent computing pixels that will be overwritten by
-       nearer ones, but we need a 1b stencil buffer for this (enable
-       S3L_STENCIL_BUFFER), so a bit more memory is needed. */
+  0: Don't sort triangles. This is fastest and doesn't use extra memory.
+  1: Sort triangles from back to front. This can in most cases solve visibility
+     without requiring almost any extra memory compared to z-buffer.
+  2: Sort triangles from front to back. This can be faster than back to front
+     because we prevent computing pixels that will be overwritten by nearer
+     ones, but we need a 1b stencil buffer for this (enable S3L_STENCIL_BUFFER),
+     so a bit more memory is needed. */
 
   #define S3L_SORT 0
 #endif
@@ -454,17 +452,17 @@ typedef S3L_Unit S3L_Mat4[4][4];
     (m)[0][3],(m)[1][3],(m)[2][3],(m)[3][3])
 
 /** Initializes a 4x4 matrix to identity. */
-static inline void S3L_initMat4(S3L_Mat4 *m);
+static inline void S3L_initMat4(S3L_Mat4 m);
 
-void S3L_transposeMat4(S3L_Mat4 *m);
+void S3L_copyMat4(S3L_Mat4 src, S3L_Mat4 dst);
 
-// TODO: why pass pointer to matrix when matrix is an array? fix this?
+void S3L_transposeMat4(S3L_Mat4 m);
 
 void S3L_makeTranslationMat(
   S3L_Unit offsetX,
   S3L_Unit offsetY,
   S3L_Unit offsetZ,
-  S3L_Mat4 *m);
+  S3L_Mat4 m);
 
 /** Makes a scaling matrix. DON'T FORGET: scale of 1.0 is set with
   S3L_FRACTIONS_PER_UNIT! */
@@ -472,31 +470,31 @@ void S3L_makeScaleMatrix(
   S3L_Unit scaleX,
   S3L_Unit scaleY,
   S3L_Unit scaleZ,
-  S3L_Mat4 *m);
+  S3L_Mat4 m);
 
 /** Makes a matrix for rotation in the ZXY order. */
 void S3L_makeRotationMatrixZXY(
   S3L_Unit byX,
   S3L_Unit byY,
   S3L_Unit byZ,
-  S3L_Mat4 *m);
+  S3L_Mat4 m);
 
-void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m);
-void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m);
+void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 m);
+void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 m);
 
 /** Multiplies a vector by a matrix with normalization by
   S3L_FRACTIONS_PER_UNIT. Result is stored in the input vector. */
-void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m);
+void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 m);
 
 /** Same as S3L_vec4Xmat4 but faster, because this version doesn't compute the
   W component of the result, which is usually not needed. */
-void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m);
+void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 m);
 
 /** Multiplies two matrices with normalization by S3L_FRACTIONS_PER_UNIT.
   Result is stored in the first matrix. The result represents a transformation
   that has the same effect as applying the transformation represented by m1 and
   then m2 (in that order). */
-void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2);
+void S3L_mat4Xmat4(S3L_Mat4 m1, S3L_Mat4 m2);
 
 typedef struct
 {
@@ -983,9 +981,9 @@ void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted)
   result->z -= substracted.z;
 }
 
-void S3L_initMat4(S3L_Mat4 *m)
+void S3L_initMat4(S3L_Mat4 m)
 {
-  #define M(x,y) (*m)[x][y]
+  #define M(x,y) m[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
 
   M(0,0) = S; M(1,0) = 0; M(2,0) = 0; M(3,0) = 0; 
@@ -995,6 +993,13 @@ void S3L_initMat4(S3L_Mat4 *m)
 
   #undef M
   #undef S
+}
+
+void S3L_copyMat4(S3L_Mat4 src, S3L_Mat4 dst)
+{
+  for (uint8_t j = 0; j < 4; ++j)
+    for (uint8_t i = 0; i < 4; ++i)
+      dst[i][j] = src[i][j];
 }
 
 S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b)
@@ -1171,7 +1176,7 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
     
   S3L_Mat4 m;
 
-  S3L_makeWorldMatrix(model.transform,&m);
+  S3L_makeWorldMatrix(model.transform,m);
 
   if (transformNormals)
     for (S3L_Index i = 0; i < model.vertexCount * 3; i += 3)
@@ -1180,7 +1185,7 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
       n.y = dst[i + 1];
       n.z = dst[i + 2];
 
-      S3L_vec4Xmat4(&n,&m);
+      S3L_vec4Xmat4(&n,m);
 
       dst[i] = n.x;
       dst[i + 1] = n.y;
@@ -1188,7 +1193,7 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
     }
 }
 
-void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
+void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 m)
 {
   S3L_Vec4 vBackup;
 
@@ -1198,10 +1203,10 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
   vBackup.w = v->w;  
 
   #define dotCol(col)\
-    ((vBackup.x * (*m)[col][0]) +\
-     (vBackup.y * (*m)[col][1]) +\
-     (vBackup.z * (*m)[col][2]) +\
-     (vBackup.w * (*m)[col][3])) / S3L_FRACTIONS_PER_UNIT
+    ((vBackup.x * m[col][0]) +\
+     (vBackup.y * m[col][1]) +\
+     (vBackup.z * m[col][2]) +\
+     (vBackup.w * m[col][3])) / S3L_FRACTIONS_PER_UNIT
 
   v->x = dotCol(0);
   v->y = dotCol(1);
@@ -1209,16 +1214,16 @@ void S3L_vec4Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
   v->w = dotCol(3);
 }
 
-void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 *m)
+void S3L_vec3Xmat4(S3L_Vec4 *v, S3L_Mat4 m)
 {
   S3L_Vec4 vBackup;
 
   #undef dotCol
   #define dotCol(col)\
-    (vBackup.x * (*m)[col][0]) / S3L_FRACTIONS_PER_UNIT +\
-    (vBackup.y * (*m)[col][1]) / S3L_FRACTIONS_PER_UNIT +\
-    (vBackup.z * (*m)[col][2]) / S3L_FRACTIONS_PER_UNIT +\
-    (*m)[col][3]
+    (vBackup.x * m[col][0]) / S3L_FRACTIONS_PER_UNIT +\
+    (vBackup.y * m[col][1]) / S3L_FRACTIONS_PER_UNIT +\
+    (vBackup.z * m[col][2]) / S3L_FRACTIONS_PER_UNIT +\
+    m[col][3]
 
   vBackup.x = v->x;  
   vBackup.y = v->y;  
@@ -1296,22 +1301,22 @@ S3L_Unit S3L_distanceManhattan(S3L_Vec4 a, S3L_Vec4 b)
     S3L_abs(a.z - b.z);
 }
 
-void S3L_mat4Xmat4(S3L_Mat4 *m1, S3L_Mat4 *m2)
+void S3L_mat4Xmat4(S3L_Mat4 m1, S3L_Mat4 m2)
 {
   S3L_Mat4 mat1;
 
   for (uint16_t row = 0; row < 4; ++row)
     for (uint16_t col = 0; col < 4; ++col)
-      mat1[col][row] = (*m1)[col][row];
+      mat1[col][row] = m1[col][row];
 
   for (uint16_t row = 0; row < 4; ++row)
     for (uint16_t col = 0; col < 4; ++col)
     {
-      (*m1)[col][row] = 0;
+      m1[col][row] = 0;
 
       for (uint16_t i = 0; i < 4; ++i)
-        (*m1)[col][row] +=
-          (mat1[i][row] * (*m2)[col][i]) / S3L_FRACTIONS_PER_UNIT;
+        m1[col][row] +=
+          (mat1[i][row] * m2[col][i]) / S3L_FRACTIONS_PER_UNIT;
     }
 }
 
@@ -1401,9 +1406,9 @@ void S3L_makeTranslationMat(
   S3L_Unit offsetX,
   S3L_Unit offsetY,
   S3L_Unit offsetZ,
-  S3L_Mat4 *m)
+  S3L_Mat4 m)
 {
-  #define M(x,y) (*m)[x][y]
+  #define M(x,y) m[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
 
   M(0,0) = S; M(1,0) = 0; M(2,0) = 0; M(3,0) = 0; 
@@ -1419,9 +1424,9 @@ void S3L_makeScaleMatrix(
   S3L_Unit scaleX,
   S3L_Unit scaleY,
   S3L_Unit scaleZ,
-  S3L_Mat4 *m)
+  S3L_Mat4 m)
 {
-  #define M(x,y) (*m)[x][y]
+  #define M(x,y) m[x][y]
 
   M(0,0) = scaleX; M(1,0) = 0;      M(2,0) = 0;     M(3,0) = 0; 
   M(0,1) = 0;      M(1,1) = scaleY; M(2,1) = 0; M(3,1) = 0; 
@@ -1435,7 +1440,7 @@ void S3L_makeRotationMatrixZXY(
   S3L_Unit byX,
   S3L_Unit byY,
   S3L_Unit byZ,
-  S3L_Mat4 *m)
+  S3L_Mat4 m)
 {
   byX *= -1;
   byY *= -1;
@@ -1449,7 +1454,7 @@ void S3L_makeRotationMatrixZXY(
   S3L_Unit cy = S3L_cos(byY);
   S3L_Unit cz = S3L_cos(byZ);
 
-  #define M(x,y) (*m)[x][y]
+  #define M(x,y) m[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
 
   M(0,0) = (cy * cz) / S + (sy * sx * sz) / (S * S);
@@ -1599,13 +1604,13 @@ void project3DPointToScreen(
   S3L_Vec4 *result)
 {
   S3L_Mat4 m;
-  S3L_makeCameraMatrix(camera.transform,&m);
+  S3L_makeCameraMatrix(camera.transform,m);
 
   S3L_Unit s = point.w;
 
   point.w = S3L_FRACTIONS_PER_UNIT;
 
-  S3L_vec3Xmat4(&point,&m);
+  S3L_vec3Xmat4(&point,m);
 
   point.z = S3L_nonZero(point.z);
 
@@ -1694,14 +1699,14 @@ void S3L_rotationToDirections(
 {
   S3L_Mat4 m;
 
-  S3L_makeRotationMatrixZXY(rotation.x,rotation.y,rotation.z,&m);
+  S3L_makeRotationMatrixZXY(rotation.x,rotation.y,rotation.z,m);
 
   if (forw != 0)
   {
     forw->x = 0;
     forw->y = 0;
     forw->z = length;
-    S3L_vec3Xmat4(forw,&m);
+    S3L_vec3Xmat4(forw,m);
   }
 
   if (right != 0)
@@ -1709,7 +1714,7 @@ void S3L_rotationToDirections(
     right->x = length;
     right->y = 0;
     right->z = 0;
-    S3L_vec3Xmat4(right,&m);
+    S3L_vec3Xmat4(right,m);
   }
 
   if (up != 0)
@@ -1717,7 +1722,7 @@ void S3L_rotationToDirections(
     up->x = 0;
     up->y = length;
     up->z = 0;
-    S3L_vec3Xmat4(up,&m);
+    S3L_vec3Xmat4(up,m);
   }
 }
 
@@ -2392,14 +2397,13 @@ void S3L_rotate2DPoint(S3L_Unit *x, S3L_Unit *y, S3L_Unit angle)
     (angleCos * (*y)) / S3L_FRACTIONS_PER_UNIT;
 }
 
-void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
+void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 m)
 {
   S3L_makeScaleMatrix(
     worldTransform.scale.x,
     worldTransform.scale.y,
     worldTransform.scale.z,
-    m
-  );
+    m);
 
   S3L_Mat4 t;
 
@@ -2407,33 +2411,33 @@ void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 *m)
     worldTransform.rotation.x,
     worldTransform.rotation.y,
     worldTransform.rotation.z,
-    &t);
+    t);
 
-  S3L_mat4Xmat4(m,&t);
+  S3L_mat4Xmat4(m,t);
 
   S3L_makeTranslationMat(
     worldTransform.translation.x,
     worldTransform.translation.y,
     worldTransform.translation.z,
-    &t);
+    t);
 
-  S3L_mat4Xmat4(m,&t);
+  S3L_mat4Xmat4(m,t);
 }
 
-void S3L_transposeMat4(S3L_Mat4 *m)
+void S3L_transposeMat4(S3L_Mat4 m)
 {
   S3L_Unit tmp;
 
   for (uint8_t y = 0; y < 3; ++y)
     for (uint8_t x = 1 + y; x < 4; ++x)
     {
-      tmp = (*m)[x][y];
-      (*m)[x][y] = (*m)[y][x];
-      (*m)[y][x] = tmp;
+      tmp = m[x][y];
+      m[x][y] = m[y][x];
+      m[y][x] = tmp;
     }
 }
 
-void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
+void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 m)
 {
   S3L_makeTranslationMat(
     -1 * cameraTransform.translation.x,
@@ -2447,11 +2451,11 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 *m)
     cameraTransform.rotation.x,
     cameraTransform.rotation.y,
     cameraTransform.rotation.z,
-    &r);
+    r);
 
-  S3L_transposeMat4(&r); // transposing creates an inverse transform
+  S3L_transposeMat4(r); // transposing creates an inverse transform
 
-  S3L_mat4Xmat4(m,&r);
+  S3L_mat4Xmat4(m,r);
 }
 
 int8_t S3L_triangleWinding(
@@ -2528,7 +2532,7 @@ void _S3L_projectVertex(
   const S3L_Model3D *model,
   S3L_Index triangleIndex,
   uint8_t vertex,
-  S3L_Mat4 *projectionMatrix, 
+  S3L_Mat4 projectionMatrix, 
   S3L_Vec4 *result)
 {
   uint32_t vertexIndex = model->triangles[triangleIndex * 3 + vertex] * 3;
@@ -2570,7 +2574,7 @@ void _S3L_mapProjectedVertexToScreen(S3L_Vec4 *vertex, S3L_Unit focalLength)
 uint8_t _S3L_projectTriangle(
   const S3L_Model3D *model,
   S3L_Index triangleIndex,
-  S3L_Mat4 *matrix,
+  S3L_Mat4 matrix,
   uint32_t focalLength,
   S3L_Vec4 transformed[6])
 {
@@ -2661,7 +2665,7 @@ void S3L_drawScene(S3L_Scene scene)
   const S3L_Model3D *model;
   S3L_Index modelIndex, triangleIndex;
 
-  S3L_makeCameraMatrix(scene.camera.transform,&matCamera);
+  S3L_makeCameraMatrix(scene.camera.transform,matCamera);
 
 #if S3L_SORT != 0
   uint16_t previousModel = 0;
@@ -2681,7 +2685,7 @@ void S3L_drawScene(S3L_Scene scene)
 #endif
 
     if (scene.models[modelIndex].customTransformMatrix == 0)
-      S3L_makeWorldMatrix(scene.models[modelIndex].transform,&matFinal);
+      S3L_makeWorldMatrix(scene.models[modelIndex].transform,matFinal);
     else
     {
       S3L_Mat4 *m = scene.models[modelIndex].customTransformMatrix;
@@ -2691,7 +2695,7 @@ void S3L_drawScene(S3L_Scene scene)
            matFinal[i][j] = (*m)[i][j];
     }
 
-    S3L_mat4Xmat4(&matFinal,&matCamera);
+    S3L_mat4Xmat4(matFinal,matCamera);
 
     S3L_Index triangleCount = scene.models[modelIndex].triangleCount;
 
@@ -2705,7 +2709,7 @@ void S3L_drawScene(S3L_Scene scene)
          already projected vertices, but after some testing this was abandoned,
          no gain was seen. */
 
-      uint8_t split = _S3L_projectTriangle(model,triangleIndex,&matFinal,
+      uint8_t split = _S3L_projectTriangle(model,triangleIndex,matFinal,
         scene.camera.focalLength,transformed);
 
       if (S3L_triangleIsVisible(transformed[0],transformed[1],transformed[2],
@@ -2785,8 +2789,8 @@ void S3L_drawScene(S3L_Scene scene)
     if (modelIndex != previousModel)
     {
       // only recompute the matrix when the model has changed
-      S3L_makeWorldMatrix(model->transform,&matFinal);
-      S3L_mat4Xmat4(&matFinal,&matCamera);
+      S3L_makeWorldMatrix(model->transform,matFinal);
+      S3L_mat4Xmat4(matFinal,matCamera);
       previousModel = modelIndex;
     }
 
@@ -2795,7 +2799,7 @@ void S3L_drawScene(S3L_Scene scene)
        require a lot of memory, which for small resolutions could be even
        worse than z-bufer. So this seems to be the best way memory-wise. */
 
-    uint8_t split = _S3L_projectTriangle(model,triangleIndex,&matFinal,
+    uint8_t split = _S3L_projectTriangle(model,triangleIndex,matFinal,
       scene.camera.focalLength,transformed);
 
     S3L_drawTriangle(transformed[0],transformed[1],transformed[2],modelIndex,
