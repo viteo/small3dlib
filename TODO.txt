@@ -1,0 +1,6 @@
+- ADD THIS!!! Rendering could be made faster by reusing the mapped vertex
+  coordinates between iterations when processing triangles: this supposes that
+  a triangle that's being rendered quite likely shares 1 or 2 vertices with the
+  previously rendered triangle, so there is no need to expensively transform and
+  screen-map all its vertices! ALSO: create a function that optimizes the model
+  for rendering, i.e. rearranges the triangle order to favor this optimization!
