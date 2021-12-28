@@ -398,7 +398,7 @@ S3L_Model3D cat2Model;
 
 void cat2ModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     cat2Vertices,
     CAT2_VERTEX_COUNT,
     cat2TriangleIndices,

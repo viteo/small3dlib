@@ -721,7 +721,7 @@ S3L_Model3D houseModel;
 
 void houseModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     houseVertices,
     HOUSE_VERTEX_COUNT,
     houseTriangleIndices,

@@ -93,7 +93,7 @@ S3L_Model3D carModel;
 
 void carModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     carVertices,
     CAR_VERTEX_COUNT,
     carTriangleIndices,

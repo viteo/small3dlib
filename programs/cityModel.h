@@ -947,7 +947,7 @@ S3L_Model3D cityModel;
 
 void cityModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     cityVertices,
     CITY_VERTEX_COUNT,
     cityTriangleIndices,

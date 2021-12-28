@@ -55,14 +55,14 @@ void drawPixel(S3L_PixelInfo *p)
 
 int main()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     cubeVertices,
     S3L_CUBE_VERTEX_COUNT,
     cubeTriangles,
     S3L_CUBE_TRIANGLE_COUNT,
     &cubeModel); 
 
-  S3L_initScene( // Initialize the scene we'll be rendering.
+  S3L_sceneInit( // Initialize the scene we'll be rendering.
     &cubeModel,  // This is like an array with only one model in it.
     1,
     &scene);

@@ -79,10 +79,10 @@ void drawPixel(S3L_PixelInfo *p)
   normal.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric);
   normal.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric);
 
-  S3L_normalizeVec3(&normal);
+  S3L_vec3Normalize(&normal);
 
   S3L_Unit shading = 
-    (S3L_dotProductVec3(normal,toLight) + S3L_FRACTIONS_PER_UNIT) / 2;
+    (S3L_vec3Dot(normal,toLight) + S3L_FRACTIONS_PER_UNIT) / 2;
 
   shading = S3L_interpolate(shading,0,p->depth,32 * S3L_FRACTIONS_PER_UNIT);
 
@@ -95,15 +95,15 @@ void drawPixel(S3L_PixelInfo *p)
 
 int main()
 {
-  S3L_setVec4(&toLight,10,-10,-10,0);
+  S3L_vec4Set(&toLight,10,-10,-10,0);
 
-  S3L_normalizeVec3(&toLight);
+  S3L_vec3Normalize(&toLight);
 
   alligatorModelInit();
  
   S3L_computeModelNormals(alligatorModel,normals,0);
 
-  S3L_initScene(&alligatorModel,1,&scene);
+  S3L_sceneInit(&alligatorModel,1,&scene);
 
   scene.camera.transform.translation.z = -8 * S3L_FRACTIONS_PER_UNIT;
   scene.camera.transform.translation.x = 9 * S3L_FRACTIONS_PER_UNIT;

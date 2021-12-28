@@ -104,9 +104,9 @@ int testTriangleRasterization(
 
   S3L_Vec4 p0, p1, p2;
 
-  S3L_setVec4(&p0,x0,y0,1000,0);
-  S3L_setVec4(&p1,x1,y1,1000,0);
-  S3L_setVec4(&p2,x2,y2,1000,0);
+  S3L_vec4Set(&p0,x0,y0,1000,0);
+  S3L_vec4Set(&p1,x1,y1,1000,0);
+  S3L_vec4Set(&p2,x2,y2,1000,0);
 
   S3L_drawTriangle(p0,p1,p2,0,0);
   
@@ -329,9 +329,9 @@ int testRasterization(void)
   #define dt(i1,i2,i3)\
   {\
     S3L_Vec4 p0, p1, p2;\
-    S3L_setVec4(&p0,coords[2*i1],coords[2*i1 + 1],1000,0);\
-    S3L_setVec4(&p1,coords[2*i2],coords[2*i2+1],1000,0);\
-    S3L_setVec4(&p2,coords[2*i3],coords[2*i3+1],1000,0);\
+    S3L_vec4Set(&p0,coords[2*i1],coords[2*i1 + 1],1000,0);\
+    S3L_vec4Set(&p1,coords[2*i2],coords[2*i2+1],1000,0);\
+    S3L_vec4Set(&p2,coords[2*i3],coords[2*i3+1],1000,0);\
     S3L_drawTriangle(p0,p1,p2,0,0);\
   }
 
@@ -433,14 +433,14 @@ int testGeneral(void)
       {
         S3L_Vec4 v;
 
-        S3L_setVec4(&v,x,y,z,0);
-        S3L_normalizeVec3Fast(&v);
+        S3L_vec4Set(&v,x,y,z,0);
+        S3L_vec3NormalizeFast(&v);
 
         double l0 = vec3Len(v);
         double e0 = absVal(l0 - S3L_FRACTIONS_PER_UNIT);
 
-        S3L_setVec4(&v,x,y,z,0);
-        S3L_normalizeVec3(&v);
+        S3L_vec4Set(&v,x,y,z,0);
+        S3L_vec3Normalize(&v);
 
         double l1 = vec3Len(v);
         double e1 = absVal(l1 - S3L_FRACTIONS_PER_UNIT);
@@ -478,8 +478,8 @@ int testRender(void)
 
   memset(testScreen,'.',S3L_RESOLUTION_X * S3L_RESOLUTION_Y);
 
-  S3L_initModel3D(cubeVertices,S3L_CUBE_VERTEX_COUNT,cubeTriangles,S3L_CUBE_TRIANGLE_COUNT,&cubeModel); 
-  S3L_initModel3D(triangleVertices,3,triangleTriangles,1,&triangleModel); 
+  S3L_model3DInit(cubeVertices,S3L_CUBE_VERTEX_COUNT,cubeTriangles,S3L_CUBE_TRIANGLE_COUNT,&cubeModel); 
+  S3L_model3DInit(triangleVertices,3,triangleTriangles,1,&triangleModel); 
 
   models[0] = cubeModel;
   models[0].transform.translation.z -= S3L_FRACTIONS_PER_UNIT;
@@ -500,7 +500,7 @@ int testRender(void)
   models[3].transform.translation.y = 1200;
   models[3].transform.rotation.x = S3L_FRACTIONS_PER_UNIT / 2; // turn away, test BF culling
 
-  S3L_initScene(models,4,&scene);
+  S3L_sceneInit(models,4,&scene);
 
   scene.camera.transform.translation.z = -2 * S3L_FRACTIONS_PER_UNIT;
   scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 3;
@@ -534,10 +534,10 @@ int main(void)
   S3L_Mat4 m, m2;
   S3L_Vec4 v;
 
-  S3L_initMat4(&m);
+  S3L_mat4Init(&m);
   S3L_logMat4(m);
 
-  S3L_initVec4(&v);
+  S3L_vec4Init(&v);
 
   S3L_logVec4(v);
  

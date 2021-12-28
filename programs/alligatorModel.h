@@ -21519,7 +21519,7 @@ S3L_Model3D alligatorModel;
 
 void alligatorModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     alligatorVertices,
     ALLIGATOR_VERTEX_COUNT,
     alligatorTriangleIndices,

@@ -45,7 +45,7 @@ S3L_Model3D plantModel;
 
 void plantModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     plantVertices,
     PLANT_VERTEX_COUNT,
     plantTriangleIndices,

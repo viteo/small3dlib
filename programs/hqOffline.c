@@ -213,7 +213,7 @@ void drawPixel(S3L_PixelInfo *p)
   toCameraDirection.x = scene.camera.transform.translation.x - position.x;
   toCameraDirection.y = scene.camera.transform.translation.y - position.y; 
   toCameraDirection.z = scene.camera.transform.translation.z - position.z;
-  S3L_normalizeVec3(&toCameraDirection);
+  S3L_vec3Normalize(&toCameraDirection);
 
   if (p->modelIndex == WATER_MODEL_INDEX)
   {
@@ -267,11 +267,11 @@ void drawPixel(S3L_PixelInfo *p)
     v = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
   }
 
-  S3L_normalizeVec3(&normal);
+  S3L_vec3Normalize(&normal);
   S3L_reflect(toLightDirection,normal,&reflected);
  
-  float diffuse = 0.5 - (S3L_dotProductVec3(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
-  float specular = 0.5 + (S3L_dotProductVec3(reflected,toCameraDirection) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+  float diffuse = 0.5 - (S3L_vec3Dot(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+  float specular = 0.5 + (S3L_vec3Dot(reflected,toCameraDirection) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
   float fog = (p->depth / ((float) S3L_FRACTIONS_PER_UNIT * 20));
  
   if (fog > 1.0)
@@ -298,7 +298,7 @@ void drawPixel(S3L_PixelInfo *p)
     previousColor[1] = frameBuffer[index + 1];
     previousColor[2] = frameBuffer[index + 2];
 
-    float fresnel = 0.5 + (S3L_dotProductVec3(toCameraDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+    float fresnel = 0.5 + (S3L_vec3Dot(toCameraDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
 
     color[0] = interpolate(150,0,fresnel);
     color[1] = interpolate(230,10,fresnel);
@@ -418,7 +418,7 @@ int main()
   toLightDirection.z = 10;
   toLightDirection.w = 0;
 
-  S3L_normalizeVec3(&toLightDirection);
+  S3L_vec3Normalize(&toLightDirection);
 
   treeModelInit();
 
@@ -428,11 +428,11 @@ int main()
 
   S3L_Unit scale = S3L_FRACTIONS_PER_UNIT / 4;
 
-  S3L_setTransform3D(0,1.2 * S3L_FRACTIONS_PER_UNIT,-1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[0].transform));
-  S3L_setTransform3D(0.95 * S3L_FRACTIONS_PER_UNIT,1.3 * S3L_FRACTIONS_PER_UNIT,0,0,0,0,scale,scale * 1.3,scale,&(models[1].transform));
-  S3L_setTransform3D(-2 * S3L_FRACTIONS_PER_UNIT,0.8 * S3L_FRACTIONS_PER_UNIT,1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[2].transform));
+  S3L_transform3DSet(0,1.2 * S3L_FRACTIONS_PER_UNIT,-1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[0].transform));
+  S3L_transform3DSet(0.95 * S3L_FRACTIONS_PER_UNIT,1.3 * S3L_FRACTIONS_PER_UNIT,0,0,0,0,scale,scale * 1.3,scale,&(models[1].transform));
+  S3L_transform3DSet(-2 * S3L_FRACTIONS_PER_UNIT,0.8 * S3L_FRACTIONS_PER_UNIT,1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[2].transform));
 
-  S3L_initModel3D(
+  S3L_model3DInit(
     terrainVertices,
     GRID_W * GRID_H,
     gridTriangles,
@@ -442,21 +442,21 @@ int main()
   S3L_computeModelNormals(models[ISLAND_MODEL_INDEX],terrainNormals,0);
   S3L_computeModelNormals(treeModel,treeNormals,0);
 
-  S3L_initModel3D(
+  S3L_model3DInit(
     waterVertices,
     GRID_W * GRID_H,
     gridTriangles,
     GRID_TRIANGLES,  
     &(models[WATER_MODEL_INDEX]));
 
-  S3L_initScene(models,MODELS_TOTAL,&scene);
+  S3L_sceneInit(models,MODELS_TOTAL,&scene);
 
   char fileName[] = "test00.ppm";
 
   S3L_Transform3D transform0, transform1;
 
-  S3L_initTransform3D(&transform0);
-  S3L_initTransform3D(&transform1);
+  S3L_transform3DInit(&transform0);
+  S3L_transform3DInit(&transform1);
 
   transform0.translation.x = -2 * S3L_FRACTIONS_PER_UNIT;
   transform0.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;

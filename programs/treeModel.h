@@ -189,7 +189,7 @@ S3L_Model3D treeModel;
 
 void treeModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     treeVertices,
     TREE_VERTEX_COUNT,
     treeTriangleIndices,

@@ -238,7 +238,7 @@ int main()
 
   levelModelInit();
 
-  S3L_initScene(&levelModel,1,&scene);
+  S3L_sceneInit(&levelModel,1,&scene);
 
   int running = 1;
 

@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.853d
+  version: 0.860d
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -249,7 +249,7 @@ typedef uint16_t S3L_Index;
 #endif
 
 #if S3L_PERSPECTIVE_CORRECTION
-#define S3L_COMPUTE_DEPTH 1  // PC inevitably computes depth, so enable it
+#define S3L_COMPUTE_DEPTH 1 // PC inevitably computes depth, so enable it
 #endif
 
 #ifndef S3L_COMPUTE_DEPTH
@@ -363,8 +363,8 @@ typedef struct
 #define S3L_logVec4(v)\
   printf("Vec4: %d %d %d %d\n",((v).x),((v).y),((v).z),((v).w))
 
-static inline void S3L_initVec4(S3L_Vec4 *v);
-static inline void S3L_setVec4(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y,
+static inline void S3L_vec4Init(S3L_Vec4 *v);
+static inline void S3L_vec4Set(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y,
   S3L_Unit z, S3L_Unit w);
 static inline void S3L_vec3Add(S3L_Vec4 *result, S3L_Vec4 added);
 static inline void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted);
@@ -373,16 +373,16 @@ S3L_Unit S3L_vec3Length(S3L_Vec4 v);
 /** Normalizes Vec3. Note that this function tries to normalize correctly
   rather than quickly! If you need to normalize quickly, do it yourself in a
   way that best fits your case. */
-void S3L_normalizeVec3(S3L_Vec4 *v);
+void S3L_vec3Normalize(S3L_Vec4 *v);
 
-/** Like S3L_normalizeVec3, but doesn't perform any checks on the input vector,
+/** Like S3L_vec3Normalize, but doesn't perform any checks on the input vector,
   which is faster, but can be very innacurate or overflowing. You are supposed
   to provide a "nice" vector (not too big or small). */
-static inline void S3L_normalizeVec3Fast(S3L_Vec4 *v);
+static inline void S3L_vec3NormalizeFast(S3L_Vec4 *v);
 
 S3L_Unit S3L_vec2Length(S3L_Vec4 v);
-void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result);
-static inline S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b);
+void S3L_vec3Cross(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result);
+static inline S3L_Unit S3L_vec3Dot(S3L_Vec4 a, S3L_Vec4 b);
 
 /** Computes a reflection direction (typically used e.g. for specular component
   in Phong illumination). The input vectors must be normalized. The result will
@@ -415,11 +415,11 @@ typedef struct
     (t).rotation.x,(t).rotation.y,(t).rotation.z,\
     (t).scale.x,(t).scale.y,(t).scale.z)
 
-static inline void S3L_initTransform3D(S3L_Transform3D *t);
+static inline void S3L_transform3DInit(S3L_Transform3D *t);
 
 void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t);
 
-void S3L_setTransform3D(
+void S3L_transform3DSet(
   S3L_Unit tx,
   S3L_Unit ty,
   S3L_Unit tz,
@@ -452,11 +452,11 @@ typedef S3L_Unit S3L_Mat4[4][4];
     (m)[0][3],(m)[1][3],(m)[2][3],(m)[3][3])
 
 /** Initializes a 4x4 matrix to identity. */
-static inline void S3L_initMat4(S3L_Mat4 m);
+static inline void S3L_mat4Init(S3L_Mat4 m);
 
-void S3L_copyMat4(S3L_Mat4 src, S3L_Mat4 dst);
+void S3L_mat4Copy(S3L_Mat4 src, S3L_Mat4 dst);
 
-void S3L_transposeMat4(S3L_Mat4 m);
+void S3L_mat4Transpose(S3L_Mat4 m);
 
 void S3L_makeTranslationMat(
   S3L_Unit offsetX,
@@ -502,7 +502,7 @@ typedef struct
   S3L_Transform3D transform;
 } S3L_Camera;
 
-void S3L_initCamera(S3L_Camera *camera);
+void S3L_cameraInit(S3L_Camera *camera);
 
 typedef struct
 {
@@ -514,7 +514,7 @@ typedef struct
   int8_t visible;             /**< Can be used to easily hide the model. */
 } S3L_DrawConfig;
 
-void S3L_initDrawConfig(S3L_DrawConfig *config);
+void S3L_drawConfigInit(S3L_DrawConfig *config);
 
 typedef struct
 {
@@ -530,7 +530,7 @@ typedef struct
   S3L_DrawConfig config;
 } S3L_Model3D;                ///< Represents a 3D model.
 
-void S3L_initModel3D(
+void S3L_model3DInit(
   const S3L_Unit *vertices,
   S3L_Index vertexCount,
   const S3L_Index *triangles,
@@ -544,7 +544,7 @@ typedef struct
   S3L_Camera camera;
 } S3L_Scene;                  ///< Represent the 3D scene to be rendered.
 
-void S3L_initScene(
+void S3L_sceneInit(
   S3L_Model3D *models,
   S3L_Index modelCount,
   S3L_Scene *scene);
@@ -580,7 +580,7 @@ typedef struct
 } S3L_PixelInfo;         /**< Used to pass the info about a rasterized pixel
                               (fragment) to the user-defined drawing func. */
 
-static inline void S3L_initPixelInfo(S3L_PixelInfo *p);
+static inline void S3L_pixelInfoInit(S3L_PixelInfo *p);
 
 /** Corrects barycentric coordinates so that they exactly meet the defined
   conditions (each fall into <0,S3L_FRACTIONS_PER_UNIT>, sum =
@@ -954,12 +954,12 @@ static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 #define S3L_SIN_TABLE_UNIT_STEP\
   (S3L_FRACTIONS_PER_UNIT / (S3L_SIN_TABLE_LENGTH * 4))
 
-void S3L_initVec4(S3L_Vec4 *v)
+void S3L_vec4Init(S3L_Vec4 *v)
 {
   v->x = 0; v->y = 0; v->z = 0; v->w = S3L_FRACTIONS_PER_UNIT;
 }
 
-void S3L_setVec4(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y, S3L_Unit z, S3L_Unit w)
+void S3L_vec4Set(S3L_Vec4 *v, S3L_Unit x, S3L_Unit y, S3L_Unit z, S3L_Unit w)
 {
   v->x = x;
   v->y = y;
@@ -981,7 +981,7 @@ void S3L_vec3Sub(S3L_Vec4 *result, S3L_Vec4 substracted)
   result->z -= substracted.z;
 }
 
-void S3L_initMat4(S3L_Mat4 m)
+void S3L_mat4Init(S3L_Mat4 m)
 {
   #define M(x,y) m[x][y]
   #define S S3L_FRACTIONS_PER_UNIT
@@ -995,28 +995,28 @@ void S3L_initMat4(S3L_Mat4 m)
   #undef S
 }
 
-void S3L_copyMat4(S3L_Mat4 src, S3L_Mat4 dst)
+void S3L_mat4Copy(S3L_Mat4 src, S3L_Mat4 dst)
 {
   for (uint8_t j = 0; j < 4; ++j)
     for (uint8_t i = 0; i < 4; ++i)
       dst[i][j] = src[i][j];
 }
 
-S3L_Unit S3L_dotProductVec3(S3L_Vec4 a, S3L_Vec4 b)
+S3L_Unit S3L_vec3Dot(S3L_Vec4 a, S3L_Vec4 b)
 {
   return (a.x * b.x + a.y * b.y + a.z * b.z) / S3L_FRACTIONS_PER_UNIT;
 }
 
 void S3L_reflect(S3L_Vec4 toLight, S3L_Vec4 normal, S3L_Vec4 *result)
 {
-  S3L_Unit d = 2 * S3L_dotProductVec3(toLight,normal);
+  S3L_Unit d = 2 * S3L_vec3Dot(toLight,normal);
 
   result->x = (normal.x * d) / S3L_FRACTIONS_PER_UNIT - toLight.x;
   result->y = (normal.y * d) / S3L_FRACTIONS_PER_UNIT - toLight.y;
   result->z = (normal.z * d) / S3L_FRACTIONS_PER_UNIT - toLight.z;
 }
 
-void S3L_crossProduct(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result)
+void S3L_vec3Cross(S3L_Vec4 a, S3L_Vec4 b, S3L_Vec4 *result)
 {
   result->x = a.y * b.z - a.z * b.y;
   result->y = a.z * b.x - a.x * b.z;
@@ -1037,9 +1037,9 @@ void S3L_triangleNormal(S3L_Vec4 t0, S3L_Vec4 t1, S3L_Vec4 t2, S3L_Vec4 *n)
 
   #undef ANTI_OVERFLOW
 
-  S3L_crossProduct(t1,t2,n);
+  S3L_vec3Cross(t1,t2,n);
 
-  S3L_normalizeVec3(n);
+  S3L_vec3Normalize(n);
 }
 
 void S3L_getIndexedTriangleValues(
@@ -1161,7 +1161,7 @@ void S3L_computeModelNormals(S3L_Model3D model, S3L_Unit *dst,
       n.y /= normalCount;
       n.z /= normalCount;
 
-      S3L_normalizeVec3(&n);
+      S3L_vec3Normalize(&n);
     }
 
     dst[vPos] = n.x;
@@ -1523,7 +1523,7 @@ S3L_Unit S3L_vec2Length(S3L_Vec4 v)
   return S3L_sqrt(v.x * v.x + v.y * v.y);  
 }
 
-void S3L_normalizeVec3(S3L_Vec4 *v)
+void S3L_vec3Normalize(S3L_Vec4 *v)
 {
   #define SCALE 16
   #define BOTTOM_LIMIT 16
@@ -1567,7 +1567,7 @@ void S3L_normalizeVec3(S3L_Vec4 *v)
   v->z = (v->z * S3L_FRACTIONS_PER_UNIT) / l;
 }
 
-void S3L_normalizeVec3Fast(S3L_Vec4 *v)
+void S3L_vec3NormalizeFast(S3L_Vec4 *v)
 {
   S3L_Unit l = S3L_vec3Length(*v);
 
@@ -1579,10 +1579,10 @@ void S3L_normalizeVec3Fast(S3L_Vec4 *v)
   v->z = (v->z * S3L_FRACTIONS_PER_UNIT) / l;
 }
 
-void S3L_initTransform3D(S3L_Transform3D *t)
+void S3L_transform3DInit(S3L_Transform3D *t)
 {
-  S3L_initVec4(&(t->translation));
-  S3L_initVec4(&(t->rotation));
+  S3L_vec4Init(&(t->translation));
+  S3L_vec4Init(&(t->rotation));
   t->scale.x = S3L_FRACTIONS_PER_UNIT;
   t->scale.y = S3L_FRACTIONS_PER_UNIT;
   t->scale.z = S3L_FRACTIONS_PER_UNIT;
@@ -1659,7 +1659,7 @@ void S3L_lookAt(S3L_Vec4 pointTo, S3L_Transform3D *t)
   t->rotation.x = S3L_asin(dx);
 }
 
-void S3L_setTransform3D(
+void S3L_transform3DSet(
   S3L_Unit tx,
   S3L_Unit ty,
   S3L_Unit tz,
@@ -1684,10 +1684,10 @@ void S3L_setTransform3D(
   t->scale.z = sz;
 }
 
-void S3L_initCamera(S3L_Camera *camera)
+void S3L_cameraInit(S3L_Camera *camera)
 {
   camera->focalLength = S3L_FRACTIONS_PER_UNIT;
-  S3L_initTransform3D(&(camera->transform));
+  S3L_transform3DInit(&(camera->transform));
 }
 
 void S3L_rotationToDirections(
@@ -1726,7 +1726,7 @@ void S3L_rotationToDirections(
   }
 }
 
-void S3L_initPixelInfo(S3L_PixelInfo *p)
+void S3L_pixelInfoInit(S3L_PixelInfo *p)
 {
   p->x = 0;
   p->y = 0;
@@ -1740,7 +1740,7 @@ void S3L_initPixelInfo(S3L_PixelInfo *p)
   p->previousZ = 0;
 }
 
-void S3L_initModel3D(
+void S3L_model3DInit(
   const S3L_Unit *vertices,
   S3L_Index vertexCount,
   const S3L_Index *triangles,
@@ -1753,21 +1753,21 @@ void S3L_initModel3D(
   model->triangleCount = triangleCount;
   model->customTransformMatrix = 0;  
 
-  S3L_initTransform3D(&(model->transform));
-  S3L_initDrawConfig(&(model->config));
+  S3L_transform3DInit(&(model->transform));
+  S3L_drawConfigInit(&(model->config));
 }
 
-void S3L_initScene(
+void S3L_sceneInit(
   S3L_Model3D *models,
   S3L_Index modelCount,
   S3L_Scene *scene)
 {
   scene->models = models;
   scene->modelCount = modelCount;
-  S3L_initCamera(&(scene->camera));
+  S3L_cameraInit(&(scene->camera));
 }
 
-void S3L_initDrawConfig(S3L_DrawConfig *config)
+void S3L_drawConfigInit(S3L_DrawConfig *config)
 {
   config->backfaceCulling = 2;
   config->visible = 1;
@@ -1861,7 +1861,7 @@ void S3L_drawTriangle(
   S3L_Index triangleIndex)
 {
   S3L_PixelInfo p;
-  S3L_initPixelInfo(&p);
+  S3L_pixelInfoInit(&p);
   p.modelIndex = modelIndex;
   p.triangleIndex = triangleIndex;
   p.triangleID = (modelIndex << 16) | triangleIndex;
@@ -2424,7 +2424,7 @@ void S3L_makeWorldMatrix(S3L_Transform3D worldTransform, S3L_Mat4 m)
   S3L_mat4Xmat4(m,t);
 }
 
-void S3L_transposeMat4(S3L_Mat4 m)
+void S3L_mat4Transpose(S3L_Mat4 m)
 {
   S3L_Unit tmp;
 
@@ -2453,7 +2453,7 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 m)
     cameraTransform.rotation.z,
     r);
 
-  S3L_transposeMat4(r); // transposing creates an inverse transform
+  S3L_mat4Transpose(r); // transposing creates an inverse transform
 
   S3L_mat4Xmat4(m,r);
 }

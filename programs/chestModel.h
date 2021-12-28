@@ -757,7 +757,7 @@ S3L_Model3D chestModel;
 
 void chestModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     chestVertices,
     CHEST_VERTEX_COUNT,
     chestTriangleIndices,

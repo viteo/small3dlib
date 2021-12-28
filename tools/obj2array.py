@@ -207,7 +207,7 @@ print("S3L_Model3D " + NAME + "Model;\n")
 
 print("void " + NAME + "ModelInit()")
 print("{")
-print("  S3L_initModel3D(")
+print("  S3L_model3DInit(")
 print("    " + NAME + "Vertices,")
 print("    " + NAME.upper() + "_VERTEX_COUNT,")
 print("    " + NAME + "TriangleIndices,")

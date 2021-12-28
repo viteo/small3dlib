@@ -187,9 +187,9 @@ void drawPixel(S3L_PixelInfo *p)
     {
       S3L_getIndexedTriangleValues(p->triangleIndex,model.triangles,normals,3,&n0,&n1,&n2);
 
-      l0 = 256 + S3L_clamp(S3L_dotProductVec3(n0,toLight),-511,511) / 2;
-      l1 = 256 + S3L_clamp(S3L_dotProductVec3(n1,toLight),-511,511) / 2;
-      l2 = 256 + S3L_clamp(S3L_dotProductVec3(n2,toLight),-511,511) / 2;
+      l0 = 256 + S3L_clamp(S3L_vec3Dot(n0,toLight),-511,511) / 2;
+      l1 = 256 + S3L_clamp(S3L_vec3Dot(n1,toLight),-511,511) / 2;
+      l2 = 256 + S3L_clamp(S3L_vec3Dot(n2,toLight),-511,511) / 2;
     }
 
     previousTriangle = p->triangleID;
@@ -242,7 +242,7 @@ void drawPixel(S3L_PixelInfo *p)
       n.y = S3L_interpolateBarycentric(n0.y,n1.y,n2.y,p->barycentric);
       n.z = S3L_interpolateBarycentric(n0.z,n1.z,n2.z,p->barycentric);
 
-      S3L_normalizeVec3(&n);
+      S3L_vec3Normalize(&n);
 
       r = S3L_clamp(128 + n.x / 4,0,255);
       g = S3L_clamp(128 + n.y / 4,0,255);
@@ -346,8 +346,8 @@ void setModel(uint8_t index)
 
   #undef modelCase
 
-  S3L_initTransform3D(&(scene.models[0].transform));
-  S3L_initDrawConfig(&(scene.models[0].config));
+  S3L_transform3DInit(&(scene.models[0].transform));
+  S3L_drawConfigInit(&(scene.models[0].config));
 
   if (index == 3)
   {
@@ -380,9 +380,9 @@ int main()
   toLight.y = 10;
   toLight.z = 10;
 
-  S3L_normalizeVec3(&toLight);
+  S3L_vec3Normalize(&toLight);
 
-  S3L_initScene(&model,1,&scene);
+  S3L_sceneInit(&model,1,&scene);
 
   houseModelInit();
   chestModelInit();

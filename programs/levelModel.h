@@ -1390,7 +1390,7 @@ S3L_Model3D levelModel;
 
 void levelModelInit()
 {
-  S3L_initModel3D(
+  S3L_model3DInit(
     levelVertices,
     LEVEL_VERTEX_COUNT,
     levelTriangleIndices,

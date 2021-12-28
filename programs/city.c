@@ -195,9 +195,9 @@ int main()
   models[0] = cityModel;
   models[1] = carModel;
 
-  S3L_initScene(models,2,&scene);
+  S3L_sceneInit(models,2,&scene);
 
-  S3L_setTransform3D(1909,16,-3317,0,-510,0,512,512,512,&(models[1].transform));
+  S3L_transform3DSet(1909,16,-3317,0,-510,0,512,512,512,&(models[1].transform));
 
   int running = 1;
 
@@ -207,7 +207,7 @@ int main()
 
   S3L_Vec4 carDirection;
 
-  S3L_initVec4(&carDirection);
+  S3L_vec4Init(&carDirection);
   
   scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 2;
   scene.camera.transform.rotation.x = -S3L_FRACTIONS_PER_UNIT / 16;
