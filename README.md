@@ -33,6 +33,7 @@ PC (SDL, offline rendering, terminal):
 - Uses **only integer math** (32bit).
 - **No dependencies** (uses only stdint standard library), extremely portable.
 - **Single header**, KISS, suckless.
+- **No dynamic heap allocation.**
 - **Pure C99**, tested to run as C++ as well.
 - Still **flexible** -- pixels are left for you to draw in any way you want with a custom fragment-shader like function.
 - **Perspective correction**, 3 modes: none (linear only), full (per-pixel), approximation (per-N-pixels). 
