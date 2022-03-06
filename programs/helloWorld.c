@@ -44,10 +44,10 @@ int main()
     screen[i] = '.';
 
   S3L_Model3D triangleModel; // 3D model representing our triangle
-  S3L_initModel3D(triangleVertices,9,triangleTriangles,1,&triangleModel);
+  S3L_model3DInit(triangleVertices,9,triangleTriangles,1,&triangleModel);
 
   S3L_Scene scene;           // scene of 3D models (we only have 1)
-  S3L_initScene(&triangleModel,1,&scene);
+  S3L_sceneInit(&triangleModel,1,&scene);
 
   // shift the camera a little bit so that we can see the triangle
   scene.camera.transform.translation.z = -2 * S3L_FRACTIONS_PER_UNIT;
