@@ -6,6 +6,7 @@
 */
 
 #define TEXTURES 1 // whether to use textures for the level
+#define FOG 1
 
 #include <SDL2/SDL.h>
 #include <stdio.h>
@@ -53,16 +54,13 @@ void clearScreen()
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
 {
-  uint32_t r = red & 0x000000FF;
-  r = r << 24;
+  uint8_t *p = ((uint8_t *) pixels) + (y * S3L_resolutionX + x) * 4 + 1;
 
-  uint32_t g = green & 0x000000FF;
-  g = g << 16;
-
-  uint32_t b = blue & 0x000000FF;
-  b = b << 8;
-
-  pixels[y * S3L_resolutionX + x] = r | g | b;
+  *p = blue;
+  ++p;
+  *p = green;
+  ++p;
+  *p = red;
 }
 
 void sampleTexture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
@@ -73,13 +71,13 @@ void sampleTexture(S3L_Unit u, S3L_Unit v, uint8_t *r, uint8_t *g, uint8_t *b)
   u = S3L_wrap(u,LEVEL_TEXTURE_WIDTH);
   v = S3L_wrap(v,LEVEL_TEXTURE_HEIGHT);
 
-  uint32_t index = (v * LEVEL_TEXTURE_WIDTH + u) * 3;
+  const uint8_t *t = texture + (v * LEVEL_TEXTURE_WIDTH + u) * 3;
 
-  *r = texture[index];
-  index++;
-  *g = texture[index];
-  index++;
-  *b = texture[index];
+  *r = *t;
+  t++;
+  *g = *t;
+  t++;
+  *b = *t;
 }
 
 void drawTeleport(int16_t x, int16_t y, S3L_ScreenCoord size)
@@ -161,6 +159,7 @@ void drawPixel(S3L_PixelInfo *p)
   }
 #endif
 
+#if FOG
   S3L_Unit fog = (p->depth * 
 #if TEXTURES
     8
@@ -172,6 +171,7 @@ void drawPixel(S3L_PixelInfo *p)
   r = S3L_clamp(((S3L_Unit) r) - fog,0,255);
   g = S3L_clamp(((S3L_Unit) g) - fog,0,255);
   b = S3L_clamp(((S3L_Unit) b) - fog,0,255);
+#endif
 
   setPixel(p->x,p->y,r,g,b); 
 }

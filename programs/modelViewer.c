@@ -98,19 +98,13 @@ void clearScreen()
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
 {
-  if (x < 0 || x >= S3L_RESOLUTION_X || y < 0 || y >= S3L_RESOLUTION_Y)
-    return;
+  uint8_t *p = ((uint8_t *) pixels) + (y * S3L_RESOLUTION_X + x) * 4 + 1;
 
-  uint32_t r = red & 0x000000FF;
-  r = r << 24;
-
-  uint32_t g = green & 0x000000FF;
-  g = g << 16;
-
-  uint32_t b = blue & 0x000000FF;
-  b = b << 8;
-
-  pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
+  *p = blue;
+  ++p;
+  *p = green;
+  ++p;
+  *p = red;
 }
 
 void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
@@ -118,13 +112,13 @@ void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
   u = S3L_clamp(u,0,TEXTURE_W - 1);
   v = S3L_clamp(v,0,TEXTURE_H - 1);
 
-  int32_t index = (v * TEXTURE_W + u) * 3;
+  const uint8_t *t = texture + (v * TEXTURE_W + u) * 3;
 
-  *r = texture[index];
-  index++;
-  *g = texture[index];
-  index++;
-  *b = texture[index];
+  *r = *t;
+  t++;
+  *g = *t;
+  t++;
+  *b = *t;
 }
 
 void animate(double time)
@@ -310,7 +304,7 @@ void drawPixel(S3L_PixelInfo *p)
     setPixel(p->x,p->y,r,g,b); 
 }
 
-void draw()
+void draw(void)
 {
   S3L_newFrame();
   clearScreen();
@@ -366,7 +360,7 @@ void setModel(uint8_t index)
 
 int16_t fps = 0;
 
-int main()
+int main(void)
 {
   printHelp();
 

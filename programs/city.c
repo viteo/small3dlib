@@ -81,16 +81,13 @@ void clearScreen()
 
 static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
 {
-  uint32_t r = red & 0x000000FF;
-  r = r << 24;
+  uint8_t *p = ((uint8_t *) pixels) + (y * S3L_RESOLUTION_X + x) * 4 + 1;
 
-  uint32_t g = green & 0x000000FF;
-  g = g << 16;
-
-  uint32_t b = blue & 0x000000FF;
-  b = b << 8;
-
-  pixels[y * S3L_RESOLUTION_X + x] = r | g | b;
+  *p = blue;
+  ++p;
+  *p = green;
+  ++p;
+  *p = red;
 }
 
 void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
@@ -98,13 +95,13 @@ void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
   u = S3L_clamp(u,0,CITY_TEXTURE_WIDTH - 1);
   v = S3L_clamp(v,0,CITY_TEXTURE_HEIGHT - 1);
 
-  int32_t index = (v * CITY_TEXTURE_WIDTH + u) * 3;
+  const uint8_t *t = cityTexture + (v * CITY_TEXTURE_WIDTH + u) * 3;
 
-  *r = cityTexture[index];
-  index++;
-  *g = cityTexture[index];
-  index++;
-  *b = cityTexture[index];
+  *r = *t;
+  t++;
+  *g = *t;
+  t++;
+  *b = *t;
 }
 
 uint32_t previousTriangle = -1;
