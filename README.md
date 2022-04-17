@@ -30,15 +30,16 @@ PC (SDL, offline rendering, terminal):
 ## features
 
 - Very **fast, small and efficient**.
-- Uses **only integer math** (32bit).
+- Uses **only 32bit integer math** by default, with a compile time option to use wider types if needed.
 - **No dependencies** (uses only stdint standard library), extremely portable.
-- **Single header**, KISS, suckless.
+- **Single header**, KISS, suckless. No OOP, no design patterns, just nicely documented functions.
 - **No dynamic heap allocation.**
 - **Pure C99**, tested to run as C++ as well.
 - Still **flexible** -- pixels are left for you to draw in any way you want with a custom fragment-shader like function.
 - **Perspective correction**, 3 modes: none (linear only), full (per-pixel), approximation (per-N-pixels). 
 - **Different drawing strategies** to choose from: none, z-buffer (none, full, reduced), triangle sorting (back-to-front, fron-to-back with stencil buffer).
 - Triangles provide **barycentric coordinates**, thanks to which practically anything that can be achieved with OpenGL can be achieved (texturing, shading, normal-mapping, texture fitering, transparency, PBR, shadow mapping, MIP mapping, ...).
+- **Different near plane coliision handling strategies**, several options: cull, push, geometrically correct clip, geometrically and barycentric correct clip. Choose the one that best suits you program.
 - **Top-left rasterization rule**, pixels of adjacent triangles don't overlap or have holes (just like in OpenGL).
 - **Tested on many platforms**:
   - PC (little endian, 64bit GNU)
@@ -65,14 +66,14 @@ interface.
 ## why?
 
 You just need to make a small mini 3D game, quick 3D animation or visualization and don't want to go through the horror of learning and setting
-up OpenGL, installing drivers and libraries? Don't want to be tied to HW, 3rd party API or libraries and their dependencies? Don't want to install
-gigabytes of heavy super ultra graphics engines just to play around with a few low poly models? You want to create extremely portable 3D
-graphics that will run on small and obscure platforms that don't have OpenGL, good specs or even standard C library? Want to just render something
-offline simply without caring about highest rendering speed? You want to toy around with modifying something in the rendering pipeline that you
-can't easily do or debug in OpenGL (such as the rasterization algorithm)? Want to hack around in the demo scene? Want to create something public
-domain and need a public domain renderer? Or just don't want to be bothered by conditions such as proper attribution or copyleft?
-
-This library may help you.
+up OpenGL or Vulkan, installing drivers, learning complex APIs and libraries? Don't want to be tied to HW, 3rd party API or libraries and their
+dependencies? Don't want to install gigabytes of heavy super ultra graphics engines just to play around with a few low poly models? You need a
+simple software renderer as a fallback to your main renderer? You want to create extremely portable 3D graphics that will run on small obscure
+embedded platforms that don't have OpenGL, good specs, FPU unit or even standard C library? Want to just render something offline simply without
+caring about highest rendering speed? You want to toy around with modifying something in the rendering pipeline that you can't easily do or debug
+in big frameworks (such as the rasterization algorithm)? Want to hack around in the demo scene? Want to create something public domain and need a
+public domain renderer? Or just don't want to be bothered by conditions such as proper attribution or copyleft? You want to create an authentic
+retro wobbly PS1 style graphics? Then this library may help you.
 
 ## limitations
 
@@ -83,7 +84,9 @@ And advantages at the same time :)
 - There is **no far plane**.
 - There is **no subpixel accuracy** (PS1 style graphics).
 - There is **no antialiasing**, but you can still achieve it by supersampling (render in higher resolution and downscale) or filters like FXAA.
-- Due to the limitations of 32bit integer arithmetics some types of movement (particularly camera) **may look jerky, and artifact may appear** in specific situations.
+- At the moment there is no wireframe rendering, but you can simulate it easily (see model viewer example), or write it by hand (drawing lines is not that hard).
+- Due to the limitations of using only integer arithmetics, some types of movement (particularly camera) **may look jerky, and artifact may appear** in specific situations. This can partially be fixed with `S3L_USE_WIDER_TYPES`.
+- There's no extensive error and memory safety checking, you're supposed to not try to crash the library.
 
 ## how to use
 
@@ -93,7 +96,7 @@ For more see the other examples and **the library code itself**, it is meant to 
 
 The basic philosophy is:
 
-- The library implements only a rendering back-end, it doesn't perform any drawing to the actual screen,
+- The library implements only a rendering back-end, it doesn't perform any drawing to the actual screen itself,
   hence there is no dependency on any library such as OpenGL or SDL. It just calls your front-end function
   and tells you which pixels you should write. How you do it is up to you.
 - Before including the header, define `S3L_PIXEL_FUNCTION` to the name of a function you will use to
@@ -101,7 +104,7 @@ The basic philosophy is:
   be passed info about the pixel and can decide what to do with it, so you can process it, discard it,
   or simply write it to the screen.
 - Also init screen resolution, either by defining `S3L_RESOLUTION_X` and `S3L_RESOLUTION_Y` (before including the library) or by setting `S3L_resolutionX` and `S3L_resolutionY` variables.
-- Use the provided Python tools to convert your model and textures to C arrays, include them in your
+- Use the provided Python tools to convert your models and textures to C arrays, include them in your
   program and set up the scene struct.
 - Init the 3D models and the scene with provided init functions (`S3L_init*`), set the position of the camera.
 - Call `S3L_newFrame` to prepare for rendering, then call `S3L_drawScene` on the scene to perform the frame rendering.
@@ -109,7 +112,7 @@ The basic philosophy is:
   modify the function or write a similar one of your own using the more low-level functions which are
   also provided.
 - Fixed point arithmetics is used as a principle, but there is no abstraction above it, everything is simply
-  an integer (`S3L_Unit` type). The space is considered to be a dense grid, and what would normally be
+  an integer (`S3L_Unit` type). The space is considered to be a uniform dense grid of discrete points, and what would normally be
   a 1.0 float value is an int value equal to `S3L_FRACTIONS_PER_UNIT` units. Numbers are normalized by this
   constant, so e.g. the sin function returns a value from `-S3L_FRACTIONS_PER_UNIT` to `S3L_FRACTIONS_PER_UNIT`. You have to
   pass numbers of this format to the library functions, but of course you may chooe to use floats in other places of your program.
