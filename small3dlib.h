@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.900d
+  version: 0.901d
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -171,20 +171,48 @@
   #define S3L_RESOLUTION_Y S3L_resolutionY
 #endif
 
+#ifndef S3L_USE_WIDER_TYPES
+  /** If true, the library will use wider data types which will largely supress
+  many rendering bugs and imprecisions happening due to overflows, but this will
+  also consumer more RAM and may potentially be slower on computers with smaller
+  native integer. */
+
+  #define S3L_USE_WIDER_TYPES 0
+#endif
+
 /** Units of measurement in 3D space. There is S3L_FRACTIONS_PER_UNIT in one
 spatial unit. By dividing the unit into fractions we effectively achieve a
 fixed point arithmetic. The number of fractions is a constant that serves as
 1.0 in floating point arithmetic (normalization etc.). */
 
-typedef int32_t S3L_Unit;    
-
+typedef
+#if S3L_USE_WIDER_TYPES
+  int64_t    
+#else
+  int32_t 
+#endif
+  S3L_Unit;
+    
 /** How many fractions a spatial unit is split into. This is NOT SUPPOSED TO
 BE REDEFINED, so rather don't do it (otherwise things may overflow etc.). */
 
 #define S3L_FRACTIONS_PER_UNIT 512
 
-typedef int16_t S3L_ScreenCoord;
-typedef uint16_t S3L_Index;
+typedef 
+#if S3L_USE_WIDER_TYPES
+  int32_t 
+#else
+  int16_t
+#endif
+  S3L_ScreenCoord;
+
+typedef 
+#if S3L_USE_WIDER_TYPES
+  uint32_t
+#else
+  uint16_t
+#endif
+  S3L_Index;
 
 #ifndef S3L_NEAR_CROSS_STRATEGY
   /** Specifies how the library will handle triangles that partially cross the

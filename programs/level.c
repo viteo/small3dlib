@@ -22,6 +22,7 @@
 
 #define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 5)
 
+#define S3L_USE_WIDER_TYPES 0
 #define S3L_FLAT 0
 #define S3L_SORT 0
 #define S3L_Z_BUFFER 1
