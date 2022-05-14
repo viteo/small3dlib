@@ -29,9 +29,9 @@ PC (SDL, offline rendering, terminal):
 
 ## features
 
-- Very **fast, small and efficient**.
-- Uses **only 32bit integer math** by default, with a compile time option to use wider types if needed.
-- **No dependencies** (uses only stdint standard library), extremely portable.
+- Very **fast, small and efficient**, runs even on tiny embedded with just megahertz CPUs and kilobytes of RAM.
+- Uses **only 32bit integer math**, NO float, with a compile time option to use wider types if needed.
+- **No dependencies** (uses only stdint standard library, NO stdio), extremely portable.
 - **Single header**, KISS, suckless. No OOP, no design patterns, just nicely documented functions.
 - **No dynamic heap allocation.**
 - **Pure C99**, tested to run as C++ as well.
@@ -46,6 +46,7 @@ PC (SDL, offline rendering, terminal):
   - PowerPC emulator (big endian)
   - compilers: gcc, clang
   - Arduboy (only experimental)
+  - Pokitto (32 bit resource-limited, ~80 MHz CPU, 32 kB RAM)
   - Gamebuino META (32bit resource-limited embedded ARM)
   - TODO:
     - Android
