@@ -635,7 +635,7 @@ S3L_Unit S3L_sqrt(S3L_Unit value);
   can be useful e.g. for drawing sprites. The w component of input and result
   holds the point size. If this size is 0 in the result, the sprite is outside
   the view. */
-void project3DPointToScreen(
+void S3L_project3DPointToScreen(
   S3L_Vec4 point,
   S3L_Camera camera,
   S3L_Vec4 *result);
@@ -1625,7 +1625,7 @@ static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   vector->y = (vector->y * focalLength) / vector->z;
 }
 
-void project3DPointToScreen(
+void S3L_project3DPointToScreen(
   S3L_Vec4 point,
   S3L_Camera camera,
   S3L_Vec4 *result)

@@ -194,7 +194,7 @@ void draw()
 
   S3L_Vec4 screenPoint;
 
-  project3DPointToScreen(teleportPoint,scene.camera,&screenPoint);
+  S3L_project3DPointToScreen(teleportPoint,scene.camera,&screenPoint);
 
   if (screenPoint.w > 0 && 
       screenPoint.x >= 0 && screenPoint.x < S3L_resolutionX &&
