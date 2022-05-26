@@ -1388,7 +1388,7 @@ const S3L_Index levelUVIndices[LEVEL_UV_INDEX_COUNT * 3] = {
 
 S3L_Model3D levelModel;
 
-void levelModelInit()
+void levelModelInit(void)
 {
   S3L_model3DInit(
     levelVertices,

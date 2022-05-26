@@ -945,7 +945,7 @@ const S3L_Index cityUVIndices[CITY_UV_INDEX_COUNT * 3] = {
 
 S3L_Model3D cityModel;
 
-void cityModelInit()
+void cityModelInit(void)
 {
   S3L_model3DInit(
     cityVertices,

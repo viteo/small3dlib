@@ -43,7 +43,7 @@ const S3L_Index plantUVIndices[PLANT_UV_INDEX_COUNT * 3] = {
 
 S3L_Model3D plantModel;
 
-void plantModelInit()
+void plantModelInit(void)
 {
   S3L_model3DInit(
     plantVertices,

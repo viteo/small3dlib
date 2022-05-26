@@ -719,7 +719,7 @@ const S3L_Index houseUVIndices[HOUSE_UV_INDEX_COUNT * 3] = {
 
 S3L_Model3D houseModel;
 
-void houseModelInit()
+void houseModelInit(void)
 {
   S3L_model3DInit(
     houseVertices,

@@ -755,7 +755,7 @@ const S3L_Index chestUVIndices[CHEST_UV_INDEX_COUNT * 3] = {
 
 S3L_Model3D chestModel;
 
-void chestModelInit()
+void chestModelInit(void)
 {
   S3L_model3DInit(
     chestVertices,

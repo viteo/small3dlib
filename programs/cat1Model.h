@@ -396,7 +396,7 @@ const S3L_Index cat1UVIndices[CAT1_UV_INDEX_COUNT * 3] = {
 
 S3L_Model3D cat1Model;
 
-void cat1ModelInit()
+void cat1ModelInit(void)
 {
   S3L_model3DInit(
     cat1Vertices,

@@ -91,7 +91,7 @@ const S3L_Index carUVIndices[CAR_UV_INDEX_COUNT * 3] = {
 
 S3L_Model3D carModel;
 
-void carModelInit()
+void carModelInit(void)
 {
   S3L_model3DInit(
     carVertices,
