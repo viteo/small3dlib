@@ -92,7 +92,7 @@ And advantages at the same time :)
 
 ## how to use
 
-For start take a look at the [helloWorld.c](programs/helloWorld.c) program and other examples (e.g. `level.c` shows simple integration with SDL).
+For start take a look at the [helloWorld.c](programs/helloWorld.c) program, then [terminalCube](programs/terminalCube.c) and then other examples (e.g. `level.c` shows simple integration with SDL).
 
 For more see the other examples and **the library code itself**, it is meant to be self-documenting, i.e. the source code IS the documentation -- you'll find the description of a lot of things at the start of the file. You can also use doxygen to generate an HTML documentation.
 
