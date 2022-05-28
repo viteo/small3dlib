@@ -5,7 +5,6 @@
   license: CC0 1.0
 */
 
-#include <SDL2/SDL.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -30,6 +29,8 @@
 #define TEXTURE_W 256
 #define TEXTURE_H 256
 
+#include "sdl_helper.h"
+
 #define MAX_VELOCITY 1000
 #define ACCELERATION 700
 #define TURN_SPEED 300
@@ -53,11 +54,9 @@ const uint8_t collisionMap[8 * 10] =
 
 S3L_Scene scene;
 
-uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
-
 uint32_t frame = 0;
 
-void clearScreen()
+void clearScreenBlue()
 {
   uint32_t index = 0;
 
@@ -77,31 +76,6 @@ void clearScreen()
       index++;
     }
   }
-}
-
-static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
-{
-  uint8_t *p = ((uint8_t *) pixels) + (y * S3L_RESOLUTION_X + x) * 4 + 1;
-
-  *p = blue;
-  ++p;
-  *p = green;
-  ++p;
-  *p = red;
-}
-
-void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
-{
-  u = S3L_clamp(u,0,CITY_TEXTURE_WIDTH - 1);
-  v = S3L_clamp(v,0,CITY_TEXTURE_HEIGHT - 1);
-
-  const uint8_t *t = cityTexture + (v * CITY_TEXTURE_WIDTH + u) * 3;
-
-  *r = *t;
-  t++;
-  *g = *t;
-  t++;
-  *b = *t;
 }
 
 uint32_t previousTriangle = -1;
@@ -137,7 +111,7 @@ void drawPixel(S3L_PixelInfo *p)
   uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
   uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
-  sampleTexture(uv[0] >> 1,uv[1] >> 1,&r,&g,&b);
+  sampleTexture(cityTexture,uv[0] >> 1,uv[1] >> 1,&r,&g,&b);
   
   setPixel(p->x,p->y,r,g,b); 
 }
@@ -145,7 +119,7 @@ void drawPixel(S3L_PixelInfo *p)
 void draw()
 {
   S3L_newFrame();
-  clearScreen();
+  clearScreenBlue();
   S3L_drawScene(scene);
 }
 
@@ -178,13 +152,9 @@ static inline void handleCollision(S3L_Vec4 *pos, S3L_Vec4 previousPos)
 
 int16_t fps = 0;
 
-int main()
+int main(void)
 {
-  SDL_Window *window = SDL_CreateWindow("city demo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
-  SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
-  SDL_Texture *textureSDL = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
-  SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
-  SDL_Event event;
+  sdlInit();
 
   cityModelInit();
   carModelInit();
@@ -223,8 +193,6 @@ int main()
 
     fps++;
 
-    SDL_UpdateTexture(textureSDL,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
-
     clock_t nowT = clock();
 
     double timeDiff = ((double) (nowT - nextPrintT)) / CLOCKS_PER_SEC;
@@ -256,7 +224,9 @@ int main()
     if (velocity < 0)
       stepRotation *= -1;
 
-    if (state[SDL_SCANCODE_LEFT])
+    if (state[SDL_SCANCODE_ESCAPE])
+      running = 0;
+    else if (state[SDL_SCANCODE_LEFT])
     {
       models[1].transform.rotation.y += stepRotation;
       models[1].transform.rotation.z =
@@ -326,9 +296,7 @@ int main()
 
     scene.camera.transform.rotation.y = models[1].transform.rotation.y;
 
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
-    SDL_RenderPresent(renderer);
+    sdlUpdate();
 
     frame++;
   }

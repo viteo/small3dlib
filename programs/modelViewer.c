@@ -5,7 +5,6 @@
   license: CC0
 */
 
-#include <SDL2/SDL.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
@@ -25,6 +24,10 @@
 
 #include "../small3dlib.h"
 
+#define TEXTURE_W 128
+#define TEXTURE_H 128
+#include "sdl_helper.h"
+
 #include "houseTexture.h"
 #include "houseModel.h"
 
@@ -38,9 +41,6 @@
 #include "cat2Model.h"
 #include "catTexture.h"
 
-#define TEXTURE_W 128
-#define TEXTURE_H 128
-
 #define MODE_TEXTUERED 0
 #define MODE_SINGLE_COLOR 1
 #define MODE_NORMAL_SMOOTH 2
@@ -48,7 +48,7 @@
 #define MODE_BARYCENTRIC 4
 #define MODE_TRIANGLE_INDEX 5
 
-void printHelp()
+void printHelp(void)
 {
   printf("Modelviewer: example program for small3dlib.\n\n");
 
@@ -87,39 +87,7 @@ const S3L_Index *uvIndices;
 
 S3L_Scene scene;
 
-uint32_t pixels[S3L_RESOLUTION_X * S3L_RESOLUTION_Y];
-
 uint32_t frame = 0;
-
-void clearScreen()
-{
-  memset(pixels,200,S3L_RESOLUTION_X * S3L_RESOLUTION_Y * sizeof(uint32_t));
-}
-
-static inline void setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue)
-{
-  uint8_t *p = ((uint8_t *) pixels) + (y * S3L_RESOLUTION_X + x) * 4 + 1;
-
-  *p = blue;
-  ++p;
-  *p = green;
-  ++p;
-  *p = red;
-}
-
-void sampleTexture(int32_t u, int32_t v, uint8_t *r, uint8_t *g, uint8_t *b)
-{
-  u = S3L_clamp(u,0,TEXTURE_W - 1);
-  v = S3L_clamp(v,0,TEXTURE_H - 1);
-
-  const uint8_t *t = texture + (v * TEXTURE_W + u) * 3;
-
-  *r = *t;
-  t++;
-  *g = *t;
-  t++;
-  *b = *t;
-}
 
 void animate(double time)
 {
@@ -211,7 +179,7 @@ void drawPixel(S3L_PixelInfo *p)
       uv[0] = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric);
       uv[1] = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric);
 
-      sampleTexture(uv[0] / 4,uv[1] / 4,&r,&g,&b);
+      sampleTexture(texture,uv[0] / 4,uv[1] / 4,&r,&g,&b);
 
       if (transparency && r == 255 && g == 0 && b == 0)
         transparent = 1;
@@ -364,11 +332,7 @@ int main(void)
 {
   printHelp();
 
-  SDL_Window *window = SDL_CreateWindow("model viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, S3L_RESOLUTION_X, S3L_RESOLUTION_Y, SDL_WINDOW_SHOWN); 
-  SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
-  SDL_Texture *textureSDL = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGBX8888, SDL_TEXTUREACCESS_STATIC, S3L_RESOLUTION_X, S3L_RESOLUTION_Y);
-  SDL_Surface *screenSurface = SDL_GetWindowSurface(window);
-  SDL_Event event;
+  sdlInit();
 
   toLight.x = 10;
   toLight.y = 10;
@@ -407,8 +371,6 @@ int main(void)
     draw();
 
     fps++;
-
-    SDL_UpdateTexture(textureSDL,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
 
     clock_t nowT = clock();
 
@@ -451,6 +413,9 @@ int main(void)
     int16_t rotationStep = S3L_max(1,300 * frameDiff);
     int16_t moveStep = S3L_max(1,3000 * frameDiff);
     int16_t fovStep = S3L_max(1,1000 * frameDiff);
+
+    if (state[SDL_SCANCODE_ESCAPE])
+      running = 0;
 
     if (!state[SDL_SCANCODE_LCTRL])
     {
@@ -497,12 +462,12 @@ int main(void)
     if (modelIndex == 2)
       animate(((double) clock()) / CLOCKS_PER_SEC); 
 
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer,textureSDL,NULL,NULL);
-    SDL_RenderPresent(renderer);
+    sdlUpdate();
 
     frame++;
   }
+
+  sdlEnd();
 
   return 0;
 }

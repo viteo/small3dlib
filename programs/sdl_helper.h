@@ -16,6 +16,13 @@ void sdlInit(void)
   screenSurface = SDL_GetWindowSurface(window);
 }
 
+void sdlEnd(void)
+{
+  SDL_DestroyTexture(textureSDL);
+  SDL_DestroyRenderer(renderer); 
+  SDL_DestroyWindow(window);
+}
+
 void sdlUpdate(void)
 {
   SDL_UpdateTexture(textureSDL,NULL,pixels,S3L_RESOLUTION_X * sizeof(uint32_t));
