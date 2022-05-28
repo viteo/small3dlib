@@ -88,23 +88,24 @@ And advantages at the same time :)
 - At the moment there is no wireframe rendering, but you can simulate it easily (see model viewer example), or write it by hand (drawing lines is not that hard).
 - Due to the limitations of using only integer arithmetics, some types of movement (particularly camera) **may look jerky, and artifact may appear** in specific situations. This can partially be fixed with `S3L_USE_WIDER_TYPES`.
 - There's no extensive error and memory safety checking, you're supposed to not try to crash the library.
+- There are **no built in-shaders, I/O, LOD, mipmaps, texture filtering, collision detection, sprite drawing, terrain, bone animation, font drawing, postprocessing, v-sync, sound** and other things you might find in the "big" engines. This is only a simple 3D rasterization library, you're supposed to implement the above mentioned things yourself (or use other libraries), however it's not that hard and it's usually the fun step. Check out the examples to see how it's done.
 
 ## how to use
 
-For start take a look at the [helloWorld.c](programs/helloWorld.c) program and other examples.
+For start take a look at the [helloWorld.c](programs/helloWorld.c) program and other examples (e.g. `level.c` shows simple integration with SDL).
 
-For more see the other examples and **the library code itself**, it is meant to be self-documenting -- you'll find the description of a lot of things at the start of the file.
+For more see the other examples and **the library code itself**, it is meant to be self-documenting, i.e. the source code IS the documentation -- you'll find the description of a lot of things at the start of the file. You can also use doxygen to generate an HTML documentation.
 
 The basic philosophy is:
 
-- The library implements only a rendering back-end, it doesn't perform any drawing to the actual screen itself,
+- The library implements **only a rendering back-end**, it doesn't perform any drawing to the actual screen itself,
   hence there is no dependency on any library such as OpenGL or SDL. It just calls your front-end function
-  and tells you which pixels you should write. How you do it is up to you.
-- Before including the header, define `S3L_PIXEL_FUNCTION` to the name of a function you will use to
+  and tells you which pixels you should write. How you do it is up to you, you can use whatever library that can draw pixels to the screen to do it (SDL, SFML, X11, QT, ncurses, ...).
+- **Before including the header, define `S3L_PIXEL_FUNCTION`** to the name of a function you will use to
   draw pixels. It is basically a fragment/pixel shader function that the library will call. You will
   be passed info about the pixel and can decide what to do with it, so you can process it, discard it,
   or simply write it to the screen.
-- Also init screen resolution, either by defining `S3L_RESOLUTION_X` and `S3L_RESOLUTION_Y` (before including the library) or by setting `S3L_resolutionX` and `S3L_resolutionY` variables.
+- Also **init screen resolution**, either by defining `S3L_RESOLUTION_X` and `S3L_RESOLUTION_Y` (before including the library) or by setting `S3L_resolutionX` and `S3L_resolutionY` variables.
 - Use the provided Python tools to convert your models and textures to C arrays, include them in your
   program and set up the scene struct.
 - Init the 3D models and the scene with provided init functions (`S3L_init*`), set the position of the camera.
