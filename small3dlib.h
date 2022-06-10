@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.901d
+  version: 0.902d
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -82,16 +82,6 @@
   -S3L_FRACTIONS_PER_UNIT to S3L_FRACTIONS_PER_UNIT horizontally (x),
   vertical size (y) depends on the aspect ratio (S3L_RESOLUTION_X and
   S3L_RESOLUTION_Y). Camera FOV is defined by focal length in S3L_Units.
-
-           y ^
-             |  _
-             |  /| z
-         ____|_/__
-        |    |/   |
-     -----[0,0,0]-|-----> x
-        |____|____|
-             |    
-             |
 
   Rotations use Euler angles and are generally in the extrinsic Euler angles in
   ZXY order (by Z, then by X, then by Y). Positive rotation about an axis
@@ -178,6 +168,14 @@
   native integer. */
 
   #define S3L_USE_WIDER_TYPES 0
+#endif
+
+#ifndef S3L_SIN_METHOD
+  /** Says which method should be used for computing sin/cos functions, possible
+  values: 0 (lookup table, takes more program memory), 1 (Bhaskara's
+  approximation, slower). This may cause the trigonometric functions give
+  slightly different results. */
+  #define S3L_SIN_METHOD 0
 #endif
 
 /** Units of measurement in 3D space. There is S3L_FRACTIONS_PER_UNIT in one
@@ -907,6 +905,7 @@ static inline int8_t S3L_stencilTest(
 
 #define S3L_SIN_TABLE_LENGTH 128
 
+#if S3L_SIN_METHOD == 0
 static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
 {
   /* 511 was chosen here as a highest number that doesn't overflow during
@@ -977,6 +976,7 @@ static const S3L_Unit S3L_sinTable[S3L_SIN_TABLE_LENGTH] =
   (510*S3L_FRACTIONS_PER_UNIT)/511, (510*S3L_FRACTIONS_PER_UNIT)/511, 
   (510*S3L_FRACTIONS_PER_UNIT)/511, (510*S3L_FRACTIONS_PER_UNIT)/511
 };
+#endif
 
 #define S3L_SIN_TABLE_UNIT_STEP\
   (S3L_FRACTIONS_PER_UNIT / (S3L_SIN_TABLE_LENGTH * 4))
@@ -1349,6 +1349,7 @@ void S3L_mat4Xmat4(S3L_Mat4 m1, S3L_Mat4 m2)
 
 S3L_Unit S3L_sin(S3L_Unit x)
 {
+#if S3L_SIN_METHOD == 0
   x = S3L_wrap(x / S3L_SIN_TABLE_UNIT_STEP,S3L_SIN_TABLE_LENGTH * 4);
   int8_t positive = 1;
 
@@ -1371,10 +1372,37 @@ S3L_Unit S3L_sin(S3L_Unit x)
   }
 
   return positive ? S3L_sinTable[x] : -1 * S3L_sinTable[x];
+#else
+  int8_t sign = 1;
+    
+  if (x < 0) // odd function
+  {
+    x *= -1;
+    sign = -1;
+  }
+    
+  x %= S3L_FRACTIONS_PER_UNIT;
+  
+  if (x > S3L_FRACTIONS_PER_UNIT / 2)
+  {
+    x -= S3L_FRACTIONS_PER_UNIT / 2;
+    sign *= -1;
+  }
+
+  S3L_Unit tmp = S3L_FRACTIONS_PER_UNIT - 2 * x;
+ 
+  #define _PI2 ((S3L_Unit) (9.8696044 * S3L_FRACTIONS_PER_UNIT))
+  return sign * // Bhaskara's approximation
+    (((32 * x * _PI2) / S3L_FRACTIONS_PER_UNIT) * tmp) / 
+    ((_PI2 * (5 * S3L_FRACTIONS_PER_UNIT - (8 * x * tmp) / 
+      S3L_FRACTIONS_PER_UNIT)) / S3L_FRACTIONS_PER_UNIT);
+  #undef _PI2
+#endif
 }
 
 S3L_Unit S3L_asin(S3L_Unit x)
 {
+#if S3L_SIN_METHOD == 0
   x = S3L_clamp(x,-S3L_FRACTIONS_PER_UNIT,S3L_FRACTIONS_PER_UNIT);
 
   int8_t sign = 1;
@@ -1385,9 +1413,7 @@ S3L_Unit S3L_asin(S3L_Unit x)
     x *= -1;
   }
 
-  int16_t low = 0;
-  int16_t high = S3L_SIN_TABLE_LENGTH -1;
-  int16_t middle;
+  int16_t low = 0, high = S3L_SIN_TABLE_LENGTH -1, middle;
 
   while (low <= high) // binary search
   {
@@ -1406,6 +1432,27 @@ S3L_Unit S3L_asin(S3L_Unit x)
   middle *= S3L_SIN_TABLE_UNIT_STEP;
 
   return sign * middle;
+#else
+  S3L_Unit low = -1 * S3L_FRACTIONS_PER_UNIT / 4,
+           high = S3L_FRACTIONS_PER_UNIT / 4,
+           middle;
+    
+  while (low <= high) // binary search
+  {
+    middle = (low + high) / 2;
+
+    S3L_Unit v = S3L_sin(middle);
+
+    if (v > x)
+      high = middle - 1;
+    else if (v < x)
+      low = middle + 1;
+    else
+      break;
+  }
+
+  return middle;
+#endif
 }
 
 S3L_Unit S3L_cos(S3L_Unit x)
@@ -2244,7 +2291,6 @@ void S3L_drawTriangle(
 #endif
 
       // draw the row -- inner loop:
-
       for (S3L_ScreenCoord x = lXClipped; x < rXClipped; ++x)
       {
         int8_t testsPassed = 1;
@@ -2404,7 +2450,6 @@ if (_S3L_projectedTriangleState != 0)
   p.barycentric[2] = newBarycentric[2];
 }
 #endif
-
           S3L_PIXEL_FUNCTION(&p);
         } // tests passed
 
