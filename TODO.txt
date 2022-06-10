@@ -1,3 +1,4 @@
+- Add option to compute sin with Bhaskaras approx instead of using a LUT.
 - ADD THIS!!! Rendering could be made faster by reusing the mapped vertex
   coordinates between iterations when processing triangles: this supposes that
   a triangle that's being rendered quite likely shares 1 or 2 vertices with the
