@@ -2422,33 +2422,32 @@ void S3L_drawTriangle(
 #endif
 
 #if S3L_NEAR_CROSS_STRATEGY == 3
+          if (_S3L_projectedTriangleState != 0)
+          {
+            S3L_Unit newBarycentric[3];
 
-if (_S3L_projectedTriangleState != 0)
-{
-  S3L_Unit newBarycentric[3];
+            newBarycentric[0] = S3L_interpolateBarycentric(
+              _S3L_triangleRemapBarycentrics[0].x,
+              _S3L_triangleRemapBarycentrics[1].x,
+              _S3L_triangleRemapBarycentrics[2].x,
+              p.barycentric); 
 
-  newBarycentric[0] = S3L_interpolateBarycentric(
-    _S3L_triangleRemapBarycentrics[0].x,
-    _S3L_triangleRemapBarycentrics[1].x,
-    _S3L_triangleRemapBarycentrics[2].x,
-    p.barycentric); 
+            newBarycentric[1] = S3L_interpolateBarycentric(
+              _S3L_triangleRemapBarycentrics[0].y,
+              _S3L_triangleRemapBarycentrics[1].y,
+              _S3L_triangleRemapBarycentrics[2].y,
+              p.barycentric); 
 
-  newBarycentric[1] = S3L_interpolateBarycentric(
-    _S3L_triangleRemapBarycentrics[0].y,
-    _S3L_triangleRemapBarycentrics[1].y,
-    _S3L_triangleRemapBarycentrics[2].y,
-    p.barycentric); 
+            newBarycentric[2] = S3L_interpolateBarycentric(
+              _S3L_triangleRemapBarycentrics[0].z,
+              _S3L_triangleRemapBarycentrics[1].z,
+              _S3L_triangleRemapBarycentrics[2].z,
+              p.barycentric); 
 
-  newBarycentric[2] = S3L_interpolateBarycentric(
-    _S3L_triangleRemapBarycentrics[0].z,
-    _S3L_triangleRemapBarycentrics[1].z,
-    _S3L_triangleRemapBarycentrics[2].z,
-    p.barycentric); 
-
-  p.barycentric[0] = newBarycentric[0];
-  p.barycentric[1] = newBarycentric[1];
-  p.barycentric[2] = newBarycentric[2];
-}
+            p.barycentric[0] = newBarycentric[0];
+            p.barycentric[1] = newBarycentric[1];
+            p.barycentric[2] = newBarycentric[2];
+          }
 #endif
           S3L_PIXEL_FUNCTION(&p);
         } // tests passed
@@ -2772,12 +2771,12 @@ void _S3L_projectTriangle(
     transformed[5] = transformed[infrontI[0]];
 
 #if S3L_NEAR_CROSS_STRATEGY == 3
-  _S3L_triangleRemapBarycentrics[3] =
-    _S3L_triangleRemapBarycentrics[behindI[1]];
-  _S3L_triangleRemapBarycentrics[4] =
-    _S3L_triangleRemapBarycentrics[infrontI[0]];
-  _S3L_triangleRemapBarycentrics[5] =
-    _S3L_triangleRemapBarycentrics[infrontI[0]];
+    _S3L_triangleRemapBarycentrics[3] =
+      _S3L_triangleRemapBarycentrics[behindI[1]];
+    _S3L_triangleRemapBarycentrics[4] =
+      _S3L_triangleRemapBarycentrics[infrontI[0]];
+    _S3L_triangleRemapBarycentrics[5] =
+      _S3L_triangleRemapBarycentrics[infrontI[0]];
 #endif
 
     for (uint8_t i = 0; i < 2; ++i)
