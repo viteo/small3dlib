@@ -1,3 +1,4 @@
+- orthographics projection - did I forget this lol?
 - Add option to compute sin with Bhaskaras approx instead of using a LUT.
 - ADD THIS!!! Rendering could be made faster by reusing the mapped vertex
   coordinates between iterations when processing triangles: this supposes that
