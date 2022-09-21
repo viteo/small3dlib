@@ -18,7 +18,7 @@
 
 // we'll use a predefined geometry of a cube from the library:
 
-S3L_Unit cubeVertices[] = { S3L_CUBE_VERTICES(S3L_FRACTIONS_PER_UNIT) };
+S3L_Unit cubeVertices[] = { S3L_CUBE_VERTICES(S3L_F) };
 S3L_Index cubeTriangles[] = { S3L_CUBE_TRIANGLES };
 
 S3L_Model3D cubeModel; // 3D model, has a geometry, position, rotation etc.
@@ -69,7 +69,7 @@ int main()
 
   // shift the camera a little bit backwards so that it's not inside the cube:
 
-  scene.camera.transform.translation.z = -2 * S3L_FRACTIONS_PER_UNIT;
+  scene.camera.transform.translation.z = -2 * S3L_F;
 
   for (int i = 0; i < 200; ++i) // render 200 frames
   {

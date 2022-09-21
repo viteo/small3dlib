@@ -15,7 +15,7 @@
 
 #include "../small3dlib.h" // now include the library
 
-#define U S3L_FRACTIONS_PER_UNIT // this is the library unit, like e.g. 1 meter
+#define U S3L_F // this is the library unit, like e.g. 1 meter
 
 S3L_Unit triangleVertices[]   = {  // x,   y,   z 
                                       U,   0,   0,     // vertex 1
@@ -50,8 +50,8 @@ int main()
   S3L_sceneInit(&triangleModel,1,&scene);
 
   // shift the camera a little bit so that we can see the triangle
-  scene.camera.transform.translation.z = -2 * S3L_FRACTIONS_PER_UNIT;
-  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 2;
+  scene.camera.transform.translation.z = -2 * S3L_F;
+  scene.camera.transform.translation.y = S3L_F / 2;
 
   S3L_newFrame();            // has to be called before each frame
   S3L_drawScene(scene);      /* this starts the scene rendering, the library

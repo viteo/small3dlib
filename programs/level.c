@@ -22,7 +22,7 @@
   #define S3L_PERSPECTIVE_CORRECTION 0
 #endif
 
-#define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 5)
+#define S3L_NEAR (S3L_F / 5)
 
 #define S3L_USE_WIDER_TYPES 0
 #define S3L_FLAT 0
@@ -137,7 +137,7 @@ void drawPixel(S3L_PixelInfo *p)
 #else
     16
 #endif
-  ) / S3L_FRACTIONS_PER_UNIT;
+  ) / S3L_F;
 
   r = S3L_clamp(((S3L_Unit) r) - fog,0,255);
   g = S3L_clamp(((S3L_Unit) g) - fog,0,255);
@@ -193,10 +193,10 @@ int main(void)
 {
   sdlInit();
 
-  teleportPoint.x = 6 * S3L_FRACTIONS_PER_UNIT;
-  teleportPoint.y = -3 * S3L_FRACTIONS_PER_UNIT;
-  teleportPoint.z = 3 * S3L_FRACTIONS_PER_UNIT / 2;
-  teleportPoint.w = S3L_FRACTIONS_PER_UNIT;
+  teleportPoint.x = 6 * S3L_F;
+  teleportPoint.y = -3 * S3L_F;
+  teleportPoint.z = 3 * S3L_F / 2;
+  teleportPoint.w = S3L_F;
 
   nextT = clock();
 

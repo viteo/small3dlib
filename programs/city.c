@@ -62,7 +62,7 @@ void clearScreenBlue()
 
   for (uint16_t y = 0; y < S3L_RESOLUTION_Y; ++y)
   {
-    S3L_Unit t = S3L_min(S3L_FRACTIONS_PER_UNIT,((y * S3L_FRACTIONS_PER_UNIT) / S3L_RESOLUTION_Y) * 4);
+    S3L_Unit t = S3L_min(S3L_F,((y * S3L_F) / S3L_RESOLUTION_Y) * 4);
 
     uint32_t r = S3L_interpolateByUnit(200,242,t);
     uint32_t g = S3L_interpolateByUnit(102,255,t);
@@ -125,8 +125,8 @@ void draw()
 
 static inline uint8_t collision(S3L_Vec4 worldPosition)
 {
-  worldPosition.x /= S3L_FRACTIONS_PER_UNIT;
-  worldPosition.z /= -S3L_FRACTIONS_PER_UNIT;    
+  worldPosition.x /= S3L_F;
+  worldPosition.z /= -S3L_F;    
 
   uint16_t index = worldPosition.z * 8 + worldPosition.x;
 
@@ -176,8 +176,8 @@ int main(void)
 
   S3L_vec4Init(&carDirection);
   
-  scene.camera.transform.translation.y = S3L_FRACTIONS_PER_UNIT / 2;
-  scene.camera.transform.rotation.x = -S3L_FRACTIONS_PER_UNIT / 16;
+  scene.camera.transform.translation.y = S3L_F / 2;
+  scene.camera.transform.rotation.x = -S3L_F / 16;
 
   int16_t velocity = 0;
 
@@ -241,7 +241,7 @@ int main(void)
     else
       models[1].transform.rotation.z = (models[1].transform.rotation.z * 3) / 4;
 
-    S3L_rotationToDirections(models[1].transform.rotation,S3L_FRACTIONS_PER_UNIT,&carDirection,0,0);
+    S3L_rotationToDirections(models[1].transform.rotation,S3L_F,&carDirection,0,0);
 
     S3L_Vec4 previousCarPos = models[1].transform.translation;
 
@@ -254,8 +254,8 @@ int main(void)
     else
       friction = 1;
 
-    models[1].transform.translation.x += (carDirection.x * step) / S3L_FRACTIONS_PER_UNIT;
-    models[1].transform.translation.z += (carDirection.z * step) / S3L_FRACTIONS_PER_UNIT;
+    models[1].transform.translation.x += (carDirection.x * step) / S3L_F;
+    models[1].transform.translation.z += (carDirection.z * step) / S3L_F;
 
     uint8_t coll = collision(models[1].transform.translation);
 
@@ -269,14 +269,14 @@ int main(void)
       else if (coll == 2)
       {
         // teleport the car
-        models[1].transform.translation.x += 5 * S3L_FRACTIONS_PER_UNIT;
-        models[1].transform.translation.z += 2 * S3L_FRACTIONS_PER_UNIT;
+        models[1].transform.translation.x += 5 * S3L_F;
+        models[1].transform.translation.z += 2 * S3L_F;
       }
       else
       {
         // teleport the car
-        models[1].transform.translation.x -= 5 * S3L_FRACTIONS_PER_UNIT;
-        models[1].transform.translation.z -= 2 * S3L_FRACTIONS_PER_UNIT;
+        models[1].transform.translation.x -= 5 * S3L_F;
+        models[1].transform.translation.z -= 2 * S3L_F;
       }
     }
 
@@ -286,13 +286,13 @@ int main(void)
       velocity = S3L_min(0,velocity + stepFriction * friction);
 
     S3L_Unit cameraDistance =
-      S3L_interpolate(S3L_FRACTIONS_PER_UNIT / 2,(3 * S3L_FRACTIONS_PER_UNIT) / 4,S3L_abs(velocity),MAX_VELOCITY);
+      S3L_interpolate(S3L_F / 2,(3 * S3L_F) / 4,S3L_abs(velocity),MAX_VELOCITY);
 
     scene.camera.transform.translation.x =
-      scene.models[1].transform.translation.x - (carDirection.x * cameraDistance) / S3L_FRACTIONS_PER_UNIT;
+      scene.models[1].transform.translation.x - (carDirection.x * cameraDistance) / S3L_F;
 
     scene.camera.transform.translation.z =
-      scene.models[1].transform.translation.z - (carDirection.z * cameraDistance) / S3L_FRACTIONS_PER_UNIT;
+      scene.models[1].transform.translation.z - (carDirection.z * cameraDistance) / S3L_F;
 
     scene.camera.transform.rotation.y = models[1].transform.rotation.y;
 

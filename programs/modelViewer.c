@@ -93,7 +93,7 @@ void animate(double time)
 {
   time = (1.0 + sin(time * 8)) / 2; 
 
-  S3L_Unit t = time * S3L_FRACTIONS_PER_UNIT;
+  S3L_Unit t = time * S3L_F;
 
   for (S3L_Index i = 0; i < CAT1_VERTEX_COUNT * 3; i += 3)
   {
@@ -244,14 +244,14 @@ void drawPixel(S3L_PixelInfo *p)
   {
     int16_t l = S3L_interpolateBarycentric(l0,l1,l2,p->barycentric);
 
-    r = S3L_clamp((((int16_t) r) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
-    g = S3L_clamp((((int16_t) g) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
-    b = S3L_clamp((((int16_t) b) * l) / S3L_FRACTIONS_PER_UNIT,0,255);
+    r = S3L_clamp((((int16_t) r) * l) / S3L_F,0,255);
+    g = S3L_clamp((((int16_t) g) * l) / S3L_F,0,255);
+    b = S3L_clamp((((int16_t) b) * l) / S3L_F,0,255);
   }
 
   if (fog)
   {
-    int16_t f = ((p->depth - S3L_NEAR) * 255) / (S3L_FRACTIONS_PER_UNIT * 64);
+    int16_t f = ((p->depth - S3L_NEAR) * 255) / (S3L_F * 64);
 
     f *= 2;
 
@@ -348,7 +348,7 @@ int main(void)
   cat1ModelInit();
   cat2ModelInit();
 
-  scene.camera.transform.translation.z = -S3L_FRACTIONS_PER_UNIT * 8;
+  scene.camera.transform.translation.z = -S3L_F * 8;
 
   catModel = cat1Model;
   catModel.vertices = catVertices;
@@ -433,17 +433,17 @@ int main(void)
     {
       if (state[SDL_SCANCODE_LEFT])
         scene.camera.focalLength =
-          S3L_min(S3L_FRACTIONS_PER_UNIT * 5,scene.camera.focalLength + fovStep);
+          S3L_min(S3L_F * 5,scene.camera.focalLength + fovStep);
       else if (state[SDL_SCANCODE_RIGHT])
         scene.camera.focalLength =
-          S3L_max(S3L_FRACTIONS_PER_UNIT / 2,scene.camera.focalLength - fovStep);
+          S3L_max(S3L_F / 2,scene.camera.focalLength - fovStep);
 
       if (state[SDL_SCANCODE_UP])
         scene.camera.transform.translation.z =
-          S3L_min(S3L_FRACTIONS_PER_UNIT, scene.camera.transform.translation.z + moveStep);
+          S3L_min(S3L_F, scene.camera.transform.translation.z + moveStep);
       else if (state[SDL_SCANCODE_DOWN])
         scene.camera.transform.translation.z =
-          S3L_max(-S3L_FRACTIONS_PER_UNIT * 16, scene.camera.transform.translation.z - moveStep);
+          S3L_max(-S3L_F * 16, scene.camera.transform.translation.z - moveStep);
     }
     
     if (state[SDL_SCANCODE_KP_0])

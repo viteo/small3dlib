@@ -16,7 +16,7 @@
   #define S3L_PERSPECTIVE_CORRECTION 0
 #endif
 
-#define S3L_NEAR (S3L_FRACTIONS_PER_UNIT / 5)
+#define S3L_NEAR (S3L_F / 5)
 
 #define S3L_Z_BUFFER 1
 
@@ -82,9 +82,9 @@ void drawPixel(S3L_PixelInfo *p)
   S3L_vec3Normalize(&normal);
 
   S3L_Unit shading = 
-    (S3L_vec3Dot(normal,toLight) + S3L_FRACTIONS_PER_UNIT) / 2;
+    (S3L_vec3Dot(normal,toLight) + S3L_F) / 2;
 
-  shading = S3L_interpolate(shading,0,p->depth,32 * S3L_FRACTIONS_PER_UNIT);
+  shading = S3L_interpolate(shading,0,p->depth,32 * S3L_F);
 
   int index = (p->y * S3L_RESOLUTION_X + p->x) * 3;
 
@@ -105,9 +105,9 @@ int main()
 
   S3L_sceneInit(&alligatorModel,1,&scene);
 
-  scene.camera.transform.translation.z = -8 * S3L_FRACTIONS_PER_UNIT;
-  scene.camera.transform.translation.x = 9 * S3L_FRACTIONS_PER_UNIT;
-  scene.camera.transform.translation.y = 6 * S3L_FRACTIONS_PER_UNIT;
+  scene.camera.transform.translation.z = -8 * S3L_F;
+  scene.camera.transform.translation.x = 9 * S3L_F;
+  scene.camera.transform.translation.y = 6 * S3L_F;
 
   S3L_lookAt(scene.models[0].transform.translation,&(scene.camera.transform));
 

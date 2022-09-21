@@ -239,8 +239,8 @@ void drawPixel(S3L_PixelInfo *p)
     specularIntensity = 0.7;
     specularPower = 10.0;
 
-    u = position.x / ((float) S3L_FRACTIONS_PER_UNIT * 2);
-    v = position.z / ((float) S3L_FRACTIONS_PER_UNIT * 2);
+    u = position.x / ((float) S3L_F * 2);
+    v = position.z / ((float) S3L_F * 2);
  
     uint8_t textureNormal[3];
     uint8_t textureNormal2[3];
@@ -248,7 +248,7 @@ void drawPixel(S3L_PixelInfo *p)
     sampleTexture(sandNormalTexture,SANDNORMAL_TEXTURE_WIDTH,SANDNORMAL_TEXTURE_HEIGHT,u,v,textureNormal);
     sampleTexture(grassNormalTexture,GRASSNORMAL_TEXTURE_WIDTH,GRASSNORMAL_TEXTURE_HEIGHT,u / 2,v / 2,textureNormal2);
 
-    blend = S3L_clamp(position.y * 4 - S3L_FRACTIONS_PER_UNIT,0,S3L_FRACTIONS_PER_UNIT);
+    blend = S3L_clamp(position.y * 4 - S3L_F,0,S3L_F);
 
     textureNormal[0] = S3L_interpolateByUnit(textureNormal[0],textureNormal2[0],blend);
     textureNormal[1] = S3L_interpolateByUnit(textureNormal[1],textureNormal2[1],blend);
@@ -263,16 +263,16 @@ void drawPixel(S3L_PixelInfo *p)
     specularIntensity = 0.2;
     specularPower = 20.0;
 
-    u = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
-    v = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric) / ((float) S3L_FRACTIONS_PER_UNIT);
+    u = S3L_interpolateBarycentric(uv0.x,uv1.x,uv2.x,p->barycentric) / ((float) S3L_F);
+    v = S3L_interpolateBarycentric(uv0.y,uv1.y,uv2.y,p->barycentric) / ((float) S3L_F);
   }
 
   S3L_vec3Normalize(&normal);
   S3L_reflect(toLightDirection,normal,&reflected);
  
-  float diffuse = 0.5 - (S3L_vec3Dot(toLightDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
-  float specular = 0.5 + (S3L_vec3Dot(reflected,toCameraDirection) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
-  float fog = (p->depth / ((float) S3L_FRACTIONS_PER_UNIT * 20));
+  float diffuse = 0.5 - (S3L_vec3Dot(toLightDirection,normal) / ((float) S3L_F)) * 0.5;
+  float specular = 0.5 + (S3L_vec3Dot(reflected,toCameraDirection) / ((float) S3L_F)) * 0.5;
+  float fog = (p->depth / ((float) S3L_F * 20));
  
   if (fog > 1.0)
     fog = 1.0;
@@ -285,7 +285,7 @@ void drawPixel(S3L_PixelInfo *p)
   {
     S3L_Unit waterDepth = (p->previousZ - p->depth) / 2;
 
-    float transparency = waterDepth / ((float) (S3L_FRACTIONS_PER_UNIT / 3));
+    float transparency = waterDepth / ((float) (S3L_F / 3));
 
     transparency = transparency > 1.0 ? 1.0 : transparency;
 
@@ -298,7 +298,7 @@ void drawPixel(S3L_PixelInfo *p)
     previousColor[1] = frameBuffer[index + 1];
     previousColor[2] = frameBuffer[index + 2];
 
-    float fresnel = 0.5 + (S3L_vec3Dot(toCameraDirection,normal) / ((float) S3L_FRACTIONS_PER_UNIT)) * 0.5;
+    float fresnel = 0.5 + (S3L_vec3Dot(toCameraDirection,normal) / ((float) S3L_F)) * 0.5;
 
     color[0] = interpolate(150,0,fresnel);
     color[1] = interpolate(230,10,fresnel);
@@ -347,9 +347,9 @@ void createGeometry()
   for (int y = 0; y < GRID_H; ++y)
     for (int x = 0; x < GRID_W; ++x)
      {
-       terrainVertices[i] = (x - GRID_W / 2) * S3L_FRACTIONS_PER_UNIT;
-       terrainVertices[i + 1] = (heightMap[i / 3] - 1) * S3L_FRACTIONS_PER_UNIT / 4;
-       terrainVertices[i + 2] = (y - GRID_H / 2) * S3L_FRACTIONS_PER_UNIT;
+       terrainVertices[i] = (x - GRID_W / 2) * S3L_F;
+       terrainVertices[i + 1] = (heightMap[i / 3] - 1) * S3L_F / 4;
+       terrainVertices[i + 2] = (y - GRID_H / 2) * S3L_F;
 
        waterVertices[i] = terrainVertices[i];
        waterVertices[i + 1] = 0;
@@ -385,7 +385,7 @@ void createGeometry()
 void animateWater()
 {
   for (int i = 1; i < GRID_W * GRID_H * 3; i += 3)
-    waterVertices[i] = S3L_FRACTIONS_PER_UNIT / 4 + sin(frame * 0.2) * S3L_FRACTIONS_PER_UNIT / 4;
+    waterVertices[i] = S3L_F / 4 + sin(frame * 0.2) * S3L_F / 4;
 
   S3L_computeModelNormals(models[WATER_MODEL_INDEX],waterNormals,0);
 }
@@ -426,11 +426,11 @@ int main()
   models[1] = treeModel;
   models[2] = treeModel;
 
-  S3L_Unit scale = S3L_FRACTIONS_PER_UNIT / 4;
+  S3L_Unit scale = S3L_F / 4;
 
-  S3L_transform3DSet(0,1.2 * S3L_FRACTIONS_PER_UNIT,-1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[0].transform));
-  S3L_transform3DSet(0.95 * S3L_FRACTIONS_PER_UNIT,1.3 * S3L_FRACTIONS_PER_UNIT,0,0,0,0,scale,scale * 1.3,scale,&(models[1].transform));
-  S3L_transform3DSet(-2 * S3L_FRACTIONS_PER_UNIT,0.8 * S3L_FRACTIONS_PER_UNIT,1.5 * S3L_FRACTIONS_PER_UNIT,0,0,0,scale,scale,scale,&(models[2].transform));
+  S3L_transform3DSet(0,1.2 * S3L_F,-1.5 * S3L_F,0,0,0,scale,scale,scale,&(models[0].transform));
+  S3L_transform3DSet(0.95 * S3L_F,1.3 * S3L_F,0,0,0,0,scale,scale * 1.3,scale,&(models[1].transform));
+  S3L_transform3DSet(-2 * S3L_F,0.8 * S3L_F,1.5 * S3L_F,0,0,0,scale,scale,scale,&(models[2].transform));
 
   S3L_model3DInit(
     terrainVertices,
@@ -458,16 +458,16 @@ int main()
   S3L_transform3DInit(&transform0);
   S3L_transform3DInit(&transform1);
 
-  transform0.translation.x = -2 * S3L_FRACTIONS_PER_UNIT;
-  transform0.translation.y = 5 * S3L_FRACTIONS_PER_UNIT;
-  transform0.translation.z = -14 * S3L_FRACTIONS_PER_UNIT;
+  transform0.translation.x = -2 * S3L_F;
+  transform0.translation.y = 5 * S3L_F;
+  transform0.translation.z = -14 * S3L_F;
 
-  transform0.rotation.x = -S3L_FRACTIONS_PER_UNIT / 12;
-  transform1.rotation.y = S3L_FRACTIONS_PER_UNIT / 8;
+  transform0.rotation.x = -S3L_F / 12;
+  transform1.rotation.y = S3L_F / 8;
 
-  transform1.translation.x = 5 * S3L_FRACTIONS_PER_UNIT;
-  transform1.translation.y = 6 * S3L_FRACTIONS_PER_UNIT;
-  transform1.translation.z = 3 * S3L_FRACTIONS_PER_UNIT;
+  transform1.translation.x = 5 * S3L_F;
+  transform1.translation.y = 6 * S3L_F;
+  transform1.translation.z = 3 * S3L_F;
 
   transform1.rotation.x = transform0.rotation.x;
   transform1.rotation.y = transform0.rotation.y;

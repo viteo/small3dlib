@@ -115,7 +115,7 @@ The basic philosophy is:
   also provided.
 - Fixed point arithmetics is used as a principle, but there is no abstraction above it, everything is simply
   an integer (`S3L_Unit` type). The space is considered to be a uniform dense grid of discrete points, and what would normally be
-  a 1.0 float value is an int value equal to `S3L_FRACTIONS_PER_UNIT` units. Numbers are normalized by this
+  a 1.0 float value is an int value equal to `S3L_FRACTIONS_PER_UNIT` units (aka `S3L_F`). Numbers are normalized by this
   constant, so e.g. the sin function returns a value from `-S3L_FRACTIONS_PER_UNIT` to `S3L_FRACTIONS_PER_UNIT`. You have to
   pass numbers of this format to the library functions, but of course you may chooe to use floats in other places of your program.
 
