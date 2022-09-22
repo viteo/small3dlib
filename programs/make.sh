@@ -1,5 +1,23 @@
-#!/bin/bash
+#!/bin/sh
 
-PROGRAM=testTerminal # change this to name of a program you want to compile :)
+# Make script for small3dlib programs.
+# by drummyfish
+# released under CC0 1.0, public domain
 
-clear; clear; g++ -x c -g -fmax-errors=5 -pedantic -O3 -Wall -Wextra -Wstrict-prototypes -Wold-style-definition -Wno-unused-parameter -Wno-missing-field-initializers -o $PROGRAM $PROGRAM.c -lSDL2 2>&1 >/dev/null && ./$PROGRAM
+if [ "$#" -ne 1 ]; then
+  echo "ERROR: expecting one argument, the name of program without extension (e.g. \"helloWorld\")"
+  exit 0
+fi
+
+link=""
+
+clear
+clear
+
+flags="-x c -g -O3 -std=c99 -pedantic -Wall -Wextra -o $1 $1.c -lSDL2"
+compiler=gcc
+#compiler=clang
+
+echo "making:" ${compiler} ${flags}
+
+${compiler} ${flags} && ./$1

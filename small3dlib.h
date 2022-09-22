@@ -178,7 +178,7 @@
   #define S3L_SIN_METHOD 0
 #endif
 
-/** Units of measurement in 3D space. There is S3L_F in one
+/** Units of measurement in 3D space. There is S3L_FRACTIONS_PER_UNIT in one
 spatial unit. By dividing the unit into fractions we effectively achieve a
 fixed point arithmetic. The number of fractions is a constant that serves as
 1.0 in floating point arithmetic (normalization etc.). */
@@ -190,10 +190,10 @@ typedef
   int32_t 
 #endif
   S3L_Unit;
-    
-/** How many fractions a spatial unit is split into. This is NOT SUPPOSED TO
-BE REDEFINED, so rather don't do it (otherwise things may overflow etc.). */
-
+ 
+/** How many fractions a spatial unit is split into, i.e. this is the fixed
+point scaling. This is NOT SUPPOSED TO BE REDEFINED, so rather don't do it
+(otherwise things may overflow etc.). */
 #define S3L_FRACTIONS_PER_UNIT 512
 #define S3L_F S3L_FRACTIONS_PER_UNIT
 
