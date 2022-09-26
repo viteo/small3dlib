@@ -14,7 +14,7 @@ link=""
 clear
 clear
 
-flags="-x c -g -O3 -std=c99 -pedantic -Wall -Wextra -o $1 $1.c -lSDL2"
+flags="-x c -g -lm -O3 -std=c99 -pedantic -Wall -Wextra -o $1 $1.c -lSDL2"
 compiler=gcc
 #compiler=clang
 

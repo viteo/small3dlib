@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.903d
+  version: 0.904d
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -1678,6 +1678,23 @@ void S3L_project3DPointToScreen(
   S3L_Camera camera,
   S3L_Vec4 *result)
 {
+  // TODO: hotfix to prevent a mapping bug probably to overlfows
+  S3L_Vec4 toPoint = point, camForw;
+
+  S3L_vec3Sub(&toPoint,camera.transform.translation);
+
+  S3L_vec3Normalize(&toPoint);
+
+  S3L_rotationToDirections(camera.transform.rotation,S3L_FRACTIONS_PER_UNIT,
+    &camForw,0,0);
+
+  if (S3L_vec3Dot(toPoint,camForw) < S3L_FRACTIONS_PER_UNIT / 6)
+  {
+    result->z = -1;
+    result->w = 0;
+    return;
+  }
+  // end of hotfix
   S3L_Mat4 m;
   S3L_makeCameraMatrix(camera.transform,m);
 
