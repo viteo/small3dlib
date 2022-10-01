@@ -10,7 +10,7 @@
   license: CC0 1.0 (public domain)
            found at https://creativecommons.org/publicdomain/zero/1.0/
            + additional waiver of all IP
-  version: 0.904d
+  version: 0.905d
 
   Before including the library, define S3L_PIXEL_FUNCTION to the name of the
   function you'll be using to draw single pixels (this function will be called
@@ -166,7 +166,6 @@
   many rendering bugs and imprecisions happening due to overflows, but this will
   also consumer more RAM and may potentially be slower on computers with smaller
   native integer. */
-
   #define S3L_USE_WIDER_TYPES 0
 #endif
 
@@ -233,7 +232,6 @@ typedef
     3: Perform both geometrical and barycentric correction of triangle crossing
        the near plane. This is significantly more expensive but results in
        correct rendering. */
-
   #define S3L_NEAR_CROSS_STRATEGY 0
 #endif
 
@@ -243,8 +241,7 @@ typedef
   for the whole triangle. This can be used to create flat-shaded renders and
   will be a lot faster. With this option on you will probably want to use
   sorting instead of z-buffer. */
-
-  #define S3L_FLAT 0           
+  #define S3L_FLAT 0
 #endif
 
 #if S3L_FLAT
@@ -262,7 +259,6 @@ typedef
   2: Approximation (computing only at every S3L_PC_APPROX_LENGTHth pixel). 
      Quake-style approximation is used, which only computes the PC after
      S3L_PC_APPROX_LENGTH pixels. This is reasonably accurate and fast. */
-
   #define S3L_PERSPECTIVE_CORRECTION 0 
 #endif
 
@@ -270,7 +266,6 @@ typedef
   /** For S3L_PERSPECTIVE_CORRECTION == 2, this specifies after how many pixels
   PC is recomputed. Should be a power of two to keep up the performance.
   Smaller is nicer but slower. */
-
   #define S3L_PC_APPROX_LENGTH 32
 #endif
 
@@ -300,13 +295,11 @@ typedef
   2: Use reduced-size z-buffer (of bytes). This is fast and somewhat accurate,
      but inaccuracies can occur and a considerable amount of memory is
      needed. */
-
   #define S3L_Z_BUFFER 0 
 #endif
 
 #ifndef S3L_REDUCED_Z_BUFFER_GRANULARITY
   /** For S3L_Z_BUFFER == 2 this sets the reduced z-buffer granularity. */
-
   #define S3L_REDUCED_Z_BUFFER_GRANULARITY 5
 #endif
 
@@ -314,7 +307,6 @@ typedef
   /** Whether to use stencil buffer for drawing -- with this a pixel that would
   be resterized over an already rasterized pixel (within a frame) will be
   discarded. This is mostly for front-to-back sorted drawing. */
-
   #define S3L_STENCIL_BUFFER 0 
 #endif
 
@@ -336,21 +328,18 @@ typedef
      because we prevent computing pixels that will be overwritten by nearer
      ones, but we need a 1b stencil buffer for this (enable S3L_STENCIL_BUFFER),
      so a bit more memory is needed. */
-
   #define S3L_SORT 0
 #endif
 
 #ifndef S3L_MAX_TRIANGES_DRAWN
   /** Maximum number of triangles that can be drawn in sorted modes. This
   affects the size of the cache used for triangle sorting. */
-
   #define S3L_MAX_TRIANGES_DRAWN 128 
 #endif
 
 #ifndef S3L_NEAR
   /** Distance of the near clipping plane. Points in front or EXATLY ON this
   plane are considered outside the frustum. This must be >= 0. */
-
   #define S3L_NEAR (S3L_F / 4) 
 #endif
 
@@ -361,7 +350,6 @@ typedef
 #ifndef S3L_NORMAL_COMPUTE_MAXIMUM_AVERAGE
   /** Affects the S3L_computeModelNormals function. See its description for
   details. */
-
   #define S3L_NORMAL_COMPUTE_MAXIMUM_AVERAGE 6
 #endif
 
@@ -371,7 +359,6 @@ typedef
   higher values can fix this -- in theory all higher values will have the same
   speed (it is a shift value), but it mustn't be too high to prevent
   overflow. */
-
   #define S3L_FAST_LERP_QUALITY 11 
 #endif
 
@@ -524,7 +511,9 @@ void S3L_mat4Xmat4(S3L_Mat4 m1, S3L_Mat4 m2);
 
 typedef struct
 {
-  S3L_Unit focalLength;       ///< Defines the field of view (FOV).
+  S3L_Unit focalLength;       /**< Defines the field of view (FOV). 0 sets an
+                                   orthographics projection (scale is controlled
+                                   with camera's scale in its transform). */
   S3L_Transform3D transform;
 } S3L_Camera;
 
@@ -1669,6 +1658,9 @@ void S3L_transform3DInit(S3L_Transform3D *t)
 static inline void S3L_perspectiveDivide(S3L_Vec4 *vector,
   S3L_Unit focalLength)
 {
+  if (focalLength == 0)
+    return;
+
   vector->x = (vector->x * focalLength) / vector->z;
   vector->y = (vector->y * focalLength) / vector->z;
 }
@@ -1719,8 +1711,10 @@ void S3L_project3DPointToScreen(
   result->w =
     (point.z <= 0) ? 0 :
     (
+      camera.focalLength > 0 ?(
       (s * camera.focalLength * S3L_RESOLUTION_X) /
-        (point.z * S3L_F)
+        (point.z * S3L_F)) :
+      ((camera.transform.scale.x * S3L_RESOLUTION_X) / S3L_F)
     );
 }
 
@@ -1945,10 +1939,8 @@ void S3L_newFrame(void)
   S3L_stencilBufferClear();
 }
 
-/* 
-  the following serves to communicate info about if the triangle has been split
-  and how the barycentrics should be remapped.
-*/
+/* the following serves to communicate info about if the triangle has been split
+  and how the barycentrics should be remapped. */
 uint8_t _S3L_projectedTriangleState = 0; // 0 = normal, 1 = cut, 2 = split
 
 #if S3L_NEAR_CROSS_STRATEGY == 3
@@ -2585,7 +2577,15 @@ void S3L_makeCameraMatrix(S3L_Transform3D cameraTransform, S3L_Mat4 m)
 
   S3L_mat4Transpose(r); // transposing creates an inverse transform
 
+  S3L_Mat4 s;
+
+  S3L_makeScaleMatrix(
+  cameraTransform.scale.x,
+  cameraTransform.scale.y,
+  cameraTransform.scale.z,s);
+    
   S3L_mat4Xmat4(m,r);
+  S3L_mat4Xmat4(m,s);
 }
 
 int8_t S3L_triangleWinding(
@@ -2603,11 +2603,9 @@ int8_t S3L_triangleWinding(
   return winding > 0 ? 1 : (winding < 0 ? -1 : 0);
 }
 
-/**
-  Checks if given triangle (in Screen Space) is at least partially visible,
+/** Checks if given triangle (in Screen Space) is at least partially visible,
   i.e. returns false if the triangle is either completely outside the frustum
-  (left, right, top, bottom, near) or is invisible due to backface culling.
-*/
+  (left, right, top, bottom, near) or is invisible due to backface culling. */
 static inline int8_t S3L_triangleIsVisible(
   S3L_Vec4 p0,
   S3L_Vec4 p1,
@@ -2658,12 +2656,8 @@ _S3L_TriangleToSort S3L_sortArray[S3L_MAX_TRIANGES_DRAWN];
 uint16_t S3L_sortArrayLength;
 #endif
 
-void _S3L_projectVertex(
-  const S3L_Model3D *model,
-  S3L_Index triangleIndex,
-  uint8_t vertex,
-  S3L_Mat4 projectionMatrix, 
-  S3L_Vec4 *result)
+void _S3L_projectVertex(const S3L_Model3D *model, S3L_Index triangleIndex,
+  uint8_t vertex, S3L_Mat4 projectionMatrix, S3L_Vec4 *result)
 {
   uint32_t vertexIndex = model->triangles[triangleIndex * 3 + vertex] * 3;
 
@@ -2696,12 +2690,10 @@ void _S3L_mapProjectedVertexToScreen(S3L_Vec4 *vertex, S3L_Unit focalLength)
   vertex->y = sY;
 }
 
-/**
-  Projects a triangle to the screen. If enabled, a triangle can be potentially
+/** Projects a triangle to the screen. If enabled, a triangle can be potentially
   subdivided into two if it crosses the near plane, in which case two projected
   triangles are returned (the info about splitting or cutting the triangle is
-  passed in global variables, see above).
-*/
+  passed in global variables, see above). */
 void _S3L_projectTriangle(
   const S3L_Model3D *model,
   S3L_Index triangleIndex,
@@ -2712,7 +2704,6 @@ void _S3L_projectTriangle(
   _S3L_projectVertex(model,triangleIndex,0,matrix,&(transformed[0]));
   _S3L_projectVertex(model,triangleIndex,1,matrix,&(transformed[1]));
   _S3L_projectVertex(model,triangleIndex,2,matrix,&(transformed[2]));
-
   _S3L_projectedTriangleState = 0;
 
 #if S3L_NEAR_CROSS_STRATEGY == 2 || S3L_NEAR_CROSS_STRATEGY == 3
@@ -2999,7 +2990,6 @@ void S3L_drawScene(S3L_Scene scene)
       S3L_drawTriangle(transformed[3],transformed[4],transformed[5],
       modelIndex, triangleIndex);
     }
-
   }
 #endif
 }

@@ -55,6 +55,7 @@ PC (SDL, offline rendering, terminal):
 - **Extremely portable** due to no dependencies, no float, no build systems, low HW requirements, endian independence etc.
 - **Many compile-time options** to tune the performance vs quality.
 - **Similar to OpenGL** in principle, but simpler, easier to use, with higher-level features.
+- **Perspective and orthographic** projections.
 - **Tools** (Python scripts) for converting 3D models and textures to C array format used by the library.
 - **Well commented** and formatted code. Automatic documentation (comments + provided Doxyfile).
 - Completely **free of legal restrictions**, public domain, do literally anything you want.

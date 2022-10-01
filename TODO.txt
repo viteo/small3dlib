@@ -1,4 +1,3 @@
-- orthographics projection - did I forget this lol?
 - Add option to compute sin with Bhaskaras approx instead of using a LUT.
 - camera's focallength attribute could really rather be stored in
   transformation.scale.z, while scale.x and scale.y could be used for
