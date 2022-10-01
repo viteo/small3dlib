@@ -1,5 +1,8 @@
 - orthographics projection - did I forget this lol?
 - Add option to compute sin with Bhaskaras approx instead of using a LUT.
+- camera's focallength attribute could really rather be stored in
+  transformation.scale.z, while scale.x and scale.y could be used for
+  orthographic scaling
 - ADD THIS!!! Rendering could be made faster by reusing the mapped vertex
   coordinates between iterations when processing triangles: this supposes that
   a triangle that's being rendered quite likely shares 1 or 2 vertices with the
