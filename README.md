@@ -48,6 +48,7 @@ PC (SDL, offline rendering, terminal):
   - Arduboy (only experimental)
   - Pokitto (32 bit resource-limited, ~80 MHz CPU, 32 kB RAM)
   - Gamebuino META (32bit resource-limited embedded ARM)
+  - ESPboy (embedded open console, demos ported by by RomanS)
   - TODO:
     - Android
     - Windows
