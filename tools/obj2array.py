@@ -4,6 +4,14 @@
 # by drummyfish
 # released under CC0 1.0.
 
+# NOTE: this script doesn't work with any OBJ file! If this doesn't work, the
+# format is probably wrong. If you're exporting the OBJ from Blender, you may
+# have to play around with the export options. Try this: unwrap model UVs
+# (the script expects UV coords to exist), check "selection only", "apply
+# modifiers", "include UVs", "triangulate faces", uncheck other things.
+#
+# Yes, I'll fix all this later :)
+
 import sys
 
 def printHelp():
