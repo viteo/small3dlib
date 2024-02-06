@@ -1403,7 +1403,7 @@ S3L_Unit S3L_asin(S3L_Unit x)
     x *= -1;
   }
 
-  int16_t low = 0, high = S3L_SIN_TABLE_LENGTH -1, middle;
+  int16_t low = 0, high = S3L_SIN_TABLE_LENGTH -1, middle = 0;
 
   while (low <= high) // binary search
   {
