@@ -147,7 +147,7 @@ print("#define " + NAME.upper() + "_TEXTURE_WIDTH " + str(OUT_WIDTH))
 print("#define " + NAME.upper() + "_TEXTURE_HEIGHT " + str(OUT_HEIGHT))
 print("")
 
-printArray(imageArray,NAME + "Texture",str(len(imageArray)))
+printArray(imageArray,NAME + "Texture",str(len(imageArray)), "const uint16_t" if USE_565 else "const uint8_t")
 
 if GUARDS:
   print("\n#endif // guard")
